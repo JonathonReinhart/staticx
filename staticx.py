@@ -41,6 +41,27 @@ def get_shobj_deps(path):
         libpath = libpath or libname
         yield libpath
 
+
+def readelf(path, *args):
+    args = ['readelf'] + list(args) + [path]
+    try:
+        output = subprocess.check_output(args)
+    except FileNotFoundError:
+        raise AppError("Couldn't find 'readelf'. Is 'binutils' installed?")
+    except subprocess.CalledProcessError as e:
+        raise AppError("'readelef' failed")
+    return output.decode('ascii').splitlines()
+
+def get_prog_interp(path):
+    # Example:
+    #      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+    pat = re.compile('\s*\[Requesting program interpreter: ([\w./-]+)\]')
+    for line in readelf(path, '-l', '-W'):
+        m = pat.match(line)
+        if m:
+            return m.group(1)
+    raise AppError("{}: not a dynamic executable".format(path))
+
 def elf_add_section(elfpath, secname, secfilename):
     subprocess.check_call(['objcopy',
         '--add-section', '{}={}'.format(secname, secfilename),
@@ -60,8 +81,10 @@ def make_symlink_TarInfo(name, target):
 
 
 def generate_archive(prog):
-    f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
+    interp = get_prog_interp(prog)
+    print("Program interpreter:", interp)
 
+    f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     with tarfile.open(fileobj=f, mode='w') as tar:
 
         # Add the program
@@ -85,9 +108,8 @@ def generate_archive(prog):
                 tar.add(reallib, arcname=arcname)
                 # TODO: Recursively handle symlinks
 
-
-            # TODO: Look up INTERP from prog instead of assuming ld-linux
-            if 'ld-linux' in lib:
+            # Add special symlink for interpreter
+            if lib == interp:
                 tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, os.path.basename(lib)))
 
     f.flush()
