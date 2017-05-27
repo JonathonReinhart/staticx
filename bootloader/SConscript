@@ -1,0 +1,11 @@
+Import('env')
+
+env.Append(
+    CCFLAGS = ['-static'],
+    LINKFLAGS = ['-static'],
+)
+
+env.Program(
+    target = 'bootloader',
+    source = ['main.c'],
+)
