@@ -1,0 +1,29 @@
+Import('env')
+
+env.Append(
+    CPPPATH = ['compat'],
+    CPPDEFINES = {
+        'PACKAGE_VERSION': '\\"1.2.20\\"',
+    }
+)
+
+libtar = env.StaticLibrary(
+    target = 'tar',
+    source = [
+        'append.c',
+        'block.c',
+        'decode.c',
+        'encode.c',
+        'extract.c',
+        'handle.c',
+        'output.c',
+        'util.c',
+        'wrapper.c',
+        'compat/strlcpy.c',
+        'compat/strmode.c',
+        'listhash/list.c',
+        'listhash/hash.c',
+    ]
+)
+
+Return('libtar')
