@@ -19,7 +19,7 @@ def main():
     try:
         generate(args.prog, args.output, args.bootloader)
     except Error as e:
-        print("staticx:" ,e)
+        print("staticx: " + str(e))
         sys.exit(2)
 
 if __name__ == '__main__':
