@@ -15,7 +15,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <fnmatch.h>
 #include "libtar.h"
+#include "compat.h"
 
 
 int
