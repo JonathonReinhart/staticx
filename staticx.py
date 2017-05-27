@@ -88,7 +88,7 @@ def generate_archive(prog):
 
             # TODO: Look up INTERP from prog instead of assuming ld-linux
             if 'ld-linux' in lib:
-                tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, lib))
+                tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, os.path.basename(lib)))
 
     f.flush()
     return f
