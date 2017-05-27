@@ -7,6 +7,8 @@ env = Environment(
     LIBPATH = '$LIBDIR'
 )
 
+env['CC'] = ARGUMENTS.get('CC', env['CC'])
+
 if ARGUMENTS.get('DEBUG'):
     env.Append(CPPDEFINES = {'DEBUG': 1})
 
