@@ -17,14 +17,9 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <utime.h>
-
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
+#include <stdlib.h>
+#include <unistd.h>
+#include "libtar.h"
 
 
 static int

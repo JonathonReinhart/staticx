@@ -14,11 +14,9 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/types.h>
-
-#ifdef STDC_HEADERS
-# include <string.h>
-# include <stdlib.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
+#include "libtar.h"
 
 
 /* magic, version, and checksum */

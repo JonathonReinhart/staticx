@@ -14,12 +14,10 @@
 #include <sys/param.h>
 #include <pwd.h>
 #include <grp.h>
+#include <string.h>
+#include "libtar.h"
 
 #define TLS_THREAD __thread
-#ifdef STDC_HEADERS
-# include <string.h>
-#endif
-
 
 /* determine full path name */
 char *

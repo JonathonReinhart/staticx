@@ -11,11 +11,9 @@
 */
 
 #include <errno.h>
-
-#ifdef STDC_HEADERS
-# include <string.h>
-# include <stdlib.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
+#include "libtar.h"
 
 
 #define BIT_ISSET(bitmask, bit) ((bitmask) & (bit))

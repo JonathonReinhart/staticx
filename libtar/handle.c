@@ -13,14 +13,9 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
-
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-#endif
+#include <unistd.h>
+#include <stdlib.h>
+#include "libtar.h"
 
 
 const char libtar_version[] = PACKAGE_VERSION;
