@@ -1,17 +1,15 @@
-#!/usr/bin/env python3
-#
 # StaticX
 # Copyright 2017 Jonathon Reinhart
 # https://github.com/JonathonReinhart/staticx
 #
-import argparse
 import subprocess
 import tarfile
 import shutil
 from tempfile import NamedTemporaryFile
 import os
-import sys
 import re
+
+__version__ = '0.0.1'
 
 ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
@@ -120,29 +118,15 @@ def generate_archive(prog):
     f.flush()
     return f
 
+def generate(prog, output, bootloader=None):
+    """Main API: Generate a staticx executable
 
-def parse_args():
-    ap = argparse.ArgumentParser()
-    ap.add_argument('prog',
-            help = 'Input program to bundle')
-    ap.add_argument('output',
-            help = 'Output path')
-    ap.add_argument('--bootloader',
-            help = 'Path to bootloader')
-    return ap.parse_args()
+    Parameters:
+    prog:   Dynamic executable to staticx
+    output: Path to result
+    bootloader: Override the bootloader binary
+    """
+    shutil.copy2(bootloader, output)
 
-def main():
-    args = parse_args()
-
-    shutil.copy2(args.bootloader, args.output)
-
-    with generate_archive(args.prog) as ar:
-        elf_add_section(args.output, ARCHIVE_SECTION, ar.name)
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except AppError as e:
-        print("staticx:", e)
-        sys.exit(e.exitcode)
+    with generate_archive(prog) as ar:
+        elf_add_section(output, ARCHIVE_SECTION, ar.name)
