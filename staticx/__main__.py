@@ -5,7 +5,7 @@ from .api import generate
 from .errors import Error
 
 def parse_args():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(prog='staticx')
     ap.add_argument('prog',
             help = 'Input program to bundle')
     ap.add_argument('output',
