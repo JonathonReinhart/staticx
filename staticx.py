@@ -9,6 +9,8 @@ import sys
 import re
 
 ARCHIVE_SECTION = ".staticx.archive"
+INTERP_FILENAME = ".staticx.interp"
+PROG_FILENAME   = ".staticx.prog"
 
 class AppError(Exception):
     def __init__(self, message, exitcode=2):
@@ -49,11 +51,25 @@ def get_symlink_target(path):
     dirpath = os.path.dirname(os.path.abspath(path))
     return os.path.join(dirpath, os.readlink(path))
 
+def make_symlink_TarInfo(name, target):
+    t = tarfile.TarInfo()
+    t.type = tarfile.SYMTYPE
+    t.name = name
+    t.linkname = target
+    return t
+
 
 def generate_archive(prog):
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
 
     with tarfile.open(fileobj=f, mode='w') as tar:
+
+        # Add the program
+        arcname = PROG_FILENAME
+        print("    Adding {} as {}".format(prog, arcname))
+        tar.add(prog, arcname=arcname)
+
+        # Add all of the libraries
         for lib in get_shobj_deps(prog):
             if lib.startswith('linux-vdso.so'):
                 continue
@@ -63,10 +79,16 @@ def generate_archive(prog):
             tar.add(lib, arcname=arcname)
 
             if os.path.islink(lib):
-                lib = get_symlink_target(lib)
-                arcname = os.path.basename(lib)
-                print("    Adding {} as {}".format(lib, arcname))
-                tar.add(lib, arcname=arcname)
+                reallib = get_symlink_target(lib)
+                arcname = os.path.basename(reallib)
+                print("    Adding {} as {}".format(reallib, arcname))
+                tar.add(reallib, arcname=arcname)
+                # TODO: Recursively handle symlinks
+
+
+            # TODO: Look up INTERP from prog instead of assuming ld-linux
+            if 'ld-linux' in lib:
+                tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, lib))
 
     f.flush()
     return f
