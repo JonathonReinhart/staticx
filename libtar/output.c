@@ -18,6 +18,7 @@
 #include <sys/param.h>
 #include <string.h>
 #include "libtar.h"
+#include "compat.h"
 
 
 #ifndef _POSIX_LOGIN_NAME_MAX

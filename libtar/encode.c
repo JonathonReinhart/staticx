@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libtar.h"
+#include "compat.h"
 
 
 /* magic, version, and checksum */
