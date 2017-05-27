@@ -28,7 +28,7 @@ def get_shobj_deps(path):
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
-    pat = re.compile('\t([\w./-]*) (?:=> ([\w./-]*) )?\((0x[0-9a-fA-F]*)\)')
+    pat = re.compile('\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
     for line in output.decode('ascii').splitlines():
         m = pat.match(line)
