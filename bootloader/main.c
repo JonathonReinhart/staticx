@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <elf.h>
+#include <libtar.h>
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 
@@ -104,8 +105,9 @@ extract_archive(const char *destpath)
     if (!shdr)
         error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
 
-    /* Extract the tarball */
     /* TODO: Extract from memory instead of dumping out tar file */
+
+    /* Write out the tarball */
     char *tarpath = NULL;
     if (asprintf(&tarpath, "%s/%s", destpath, "archive.tar") < 0)
         error(2, 0, "Failed to allocate tar path string");
@@ -123,6 +125,25 @@ extract_archive(const char *destpath)
 
     if (close(tarfd))
         error(2, errno, "Error on tar file close: %s", tarpath);
+
+    /* Extract the tarball */
+    /* TODO: Open using gztype
+     * See https://github.com/tklauser/libtar/blob/master/libtar/libtar.c
+     */
+    TAR *t;
+    errno = 0;
+    if (tar_open(&t, tarpath, NULL, O_RDONLY, 0, TAR_VERBOSE) != 0)
+        error(2, errno, "tar_open() failed for %s", tarpath);
+
+    /* XXX Why is it so hard for people to use 'const'? */
+    if (tar_extract_all(t, (char*)destpath) != 0)
+        error(2, errno, "tar_extract_all() failed for %s", tarpath);
+
+    if (tar_close(t) != 0)
+        error(2, errno, "tar_close() failed for %s", tarpath);
+    t = NULL;
+    verbose_msg("Successfully extracted archive to %s\n", destpath);
+
 
     free(tarpath);
     tarpath = NULL;
