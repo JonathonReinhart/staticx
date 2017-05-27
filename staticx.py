@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# StaticX
+# Copyright 2017 Jonathon Reinhart
+# https://github.com/JonathonReinhart/staticx
+#
 import argparse
 import subprocess
 import tarfile
