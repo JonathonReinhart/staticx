@@ -10,13 +10,12 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#include <internal.h>
-
 #include <stdio.h>
 #include <sys/param.h>
 #include <pwd.h>
 #include <grp.h>
 
+#define TLS_THREAD __thread
 #ifdef STDC_HEADERS
 # include <string.h>
 #endif

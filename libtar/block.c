@@ -10,8 +10,6 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#include <internal.h>
-
 #include <errno.h>
 
 #ifdef STDC_HEADERS

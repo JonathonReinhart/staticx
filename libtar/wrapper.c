@@ -10,8 +10,6 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#include <internal.h>
-
 #include <stdio.h>
 #include <sys/param.h>
 #include <dirent.h>
