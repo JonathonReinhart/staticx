@@ -19,6 +19,7 @@
 #include <utime.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <libgen.h>
 #include "libtar.h"
 
 
@@ -172,6 +173,10 @@ tar_extract_regfile(TAR *t, char *realname)
 	size = th_get_size(t);
 	uid = th_get_uid(t);
 	gid = th_get_gid(t);
+
+	(void)mode;
+	(void)uid;
+	(void)gid;
 
 	if (mkdirhier(dirname(filename)) == -1)
 		return -1;
@@ -377,7 +382,7 @@ tar_extract_chardev(TAR *t, char *realname)
 	       filename, devmaj, devmin);
 #endif
 	if (mknod(filename, mode | S_IFCHR,
-		  compat_makedev(devmaj, devmin)) == -1)
+		  makedev(devmaj, devmin)) == -1)
 	{
 #ifdef DEBUG
 		perror("mknod()");
@@ -416,7 +421,7 @@ tar_extract_blockdev(TAR *t, char *realname)
 	       filename, devmaj, devmin);
 #endif
 	if (mknod(filename, mode | S_IFBLK,
-		  compat_makedev(devmaj, devmin)) == -1)
+		  makedev(devmaj, devmin)) == -1)
 	{
 #ifdef DEBUG
 		perror("mknod()");
