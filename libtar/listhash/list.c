@@ -10,19 +10,14 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#include <config.h>
-#include <compat.h>
-
-#include <libtar_listhash.h>
-
 #include <stdio.h>
 #include <errno.h>
 #include <sys/param.h>
+#include <string.h>
+#include <stdlib.h>
 
-#ifdef STDC_HEADERS
-# include <string.h>
-# include <stdlib.h>
-#endif
+#include "listhash.h"
+#include "compat.h"
 
 
 /*

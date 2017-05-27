@@ -10,18 +10,12 @@
 **  University of Illinois at Urbana-Champaign
 */
 
-#include <config.h>
-#include <compat.h>
-
-#include <libtar_listhash.h>
-
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-#endif
-
+#include "listhash.h"
+#include "compat.h"
 
 /*
 ** libtar_hashptr_reset() - reset a hash pointer
