@@ -7,6 +7,10 @@ env.Append(
     }
 )
 
+# We don't want libtar DEBUG
+if 'DEBUG' in env['CPPDEFINES']:
+    del env['CPPDEFINES']['DEBUG']
+
 libtar = env.StaticLibrary(
     target = 'tar',
     source = [
