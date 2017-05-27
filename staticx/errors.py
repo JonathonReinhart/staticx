@@ -3,6 +3,10 @@ class Error(Exception):
     """Base type for all exceptions raised by staticx"""
     pass
 
+class InternalError(Error):
+    """Something internal to staticx went wrong"""
+    pass
+
 class ToolError(Error):
     """An external tool indicated an error"""
     def __init__(self, program, message=None):

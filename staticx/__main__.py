@@ -11,7 +11,7 @@ def parse_args():
     ap.add_argument('output',
             help = 'Output path')
     ap.add_argument('--bootloader',
-            help = 'Path to bootloader')
+            help = argparse.SUPPRESS)
     return ap.parse_args()
 
 def main():

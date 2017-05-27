@@ -115,6 +115,15 @@ def generate_archive(prog):
     f.flush()
     return f
 
+def _locate_bootloader():
+    """Determine path to bootloader"""
+    pkg_path = os.path.dirname(__file__)
+    blpath = os.path.abspath(os.path.join(pkg_path, 'bootloader'))
+    if not os.path.isfile(blpath):
+        raise InternalError("bootloader not found at {}".format(blpath))
+    return blpath
+
+
 def generate(prog, output, bootloader=None):
     """Main API: Generate a staticx executable
 
@@ -123,6 +132,9 @@ def generate(prog, output, bootloader=None):
     output: Path to result
     bootloader: Override the bootloader binary
     """
+    if not bootloader:
+        bootloader = _locate_bootloader()
+
     shutil.copy2(bootloader, output)
 
     with generate_archive(prog) as ar:
