@@ -9,24 +9,21 @@ from tempfile import NamedTemporaryFile
 import os
 import re
 
+from .errors import *
+
 __version__ = '0.0.1'
 
 ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
 PROG_FILENAME   = ".staticx.prog"
 
-class AppError(Exception):
-    def __init__(self, message, exitcode=2):
-        super().__init__(message)
-        self.exitcode = exitcode
-
 def get_shobj_deps(path):
     try:
         output = subprocess.check_output(['ldd', path])
     except FileNotFoundError:
-        raise AppError("Couldn't find 'ldd'. Is 'binutils' installed?")
+        raise MissingToolError('ldd', 'binutils')
     except subprocess.CalledProcessError as e:
-        raise AppError("'ldd' failed")
+        raise ToolError('ldd')
 
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
@@ -36,7 +33,7 @@ def get_shobj_deps(path):
     for line in output.decode('ascii').splitlines():
         m = pat.match(line)
         if not m:
-            raise ValueError("Unexpected line in ldd output: " + line)
+            raise ToolError('ldd', "Unexpected line in ldd output: " + line)
         libname  = m.group(1)
         libpath  = m.group(2)
         baseaddr = int(m.group(3), 16)
@@ -50,9 +47,9 @@ def readelf(path, *args):
     try:
         output = subprocess.check_output(args)
     except FileNotFoundError:
-        raise AppError("Couldn't find 'readelf'. Is 'binutils' installed?")
+        raise MissingToolError('readelf', 'binutils')
     except subprocess.CalledProcessError as e:
-        raise AppError("'readelef' failed")
+        raise ToolError('readelf')
     return output.decode('ascii').splitlines()
 
 def get_prog_interp(path):
@@ -63,7 +60,7 @@ def get_prog_interp(path):
         m = pat.match(line)
         if m:
             return m.group(1)
-    raise AppError("{}: not a dynamic executable".format(path))
+    raise InvalidInputError("{}: not a dynamic executable".format(path))
 
 def elf_add_section(elfpath, secname, secfilename):
     subprocess.check_call(['objcopy',

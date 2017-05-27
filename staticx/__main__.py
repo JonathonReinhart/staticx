@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from .api import generate
+from .errors import Error
 
 def parse_args():
     ap = argparse.ArgumentParser()
@@ -15,12 +16,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    generate(args.prog, args.output, args.bootloader)
-
+    try:
+        generate(args.prog, args.output, args.bootloader)
+    except Error as e:
+        print("staticx:" ,e)
+        sys.exit(2)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except AppError as e:
-        print("staticx:", e)
-        sys.exit(e.exitcode)
+    main()
