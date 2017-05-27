@@ -2,10 +2,13 @@
 import argparse
 import subprocess
 import tarfile
+import shutil
 from tempfile import NamedTemporaryFile
 import os
 import sys
 import re
+
+ARCHIVE_SECTION = ".staticx.archive"
 
 class AppError(Exception):
     def __init__(self, message, exitcode=2):
@@ -35,6 +38,11 @@ def get_shobj_deps(path):
 
         libpath = libpath or libname
         yield libpath
+
+def elf_add_section(elfpath, secname, secfilename):
+    subprocess.check_call(['objcopy',
+        '--add-section', '{}={}'.format(secname, secfilename),
+        elfpath])
 
 
 def get_symlink_target(path):
@@ -68,6 +76,8 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('prog',
             help = 'Input program to bundle')
+    ap.add_argument('output',
+            help = 'Output path')
     ap.add_argument('--bootloader',
             help = 'Path to bootloader')
     return ap.parse_args()
@@ -75,8 +85,10 @@ def parse_args():
 def main():
     args = parse_args()
 
+    shutil.copy2(args.bootloader, args.output)
+
     with generate_archive(args.prog) as ar:
-        print("Archive:", ar.name)
+        elf_add_section(args.output, ARCHIVE_SECTION, ar.name)
 
 
 if __name__ == '__main__':
