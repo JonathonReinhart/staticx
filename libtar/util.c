@@ -14,6 +14,9 @@
 #include <sys/param.h>
 #include <errno.h>
 #include <string.h>
+#include <libgen.h>
+#include "libtar.h"
+#include "compat.h"
 
 
 /* hashing function for pathnames */
@@ -153,7 +156,7 @@ oct_to_int(char *oct)
 void
 int_to_oct_nonull(int num, char *oct, size_t octlen)
 {
-	snprintf(oct, octlen, "%*lo", octlen - 1, (unsigned long)num);
+	snprintf(oct, octlen, "%*lo", (int)octlen - 1, (unsigned long)num);
 	oct[octlen - 1] = ' ';
 }
 
