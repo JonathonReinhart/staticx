@@ -5,6 +5,7 @@
 #include <string.h>
 #include <error.h>
 #include <errno.h>
+#include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -13,6 +14,8 @@
 #include <libtar.h>
 
 #define ARCHIVE_SECTION         ".staticx.archive"
+#define INTERP_FILENAME         ".staticx.interp"
+#define PROG_FILENAME           ".staticx.prog"
 
 #define verbose_msg(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
 
@@ -80,6 +83,15 @@ write_all(int fd, const void *buf, size_t sz)
     return 0;
 }
 
+static char *
+path_join(const char *p1, const char *p2)
+{
+    char *result;
+    if (asprintf(&result, "%s/%s", p1, p2) < 0)
+        error(2, 0, "Failed to allocate path string");
+    return result;
+}
+
 static void
 extract_archive(const char *destpath)
 {
@@ -108,9 +120,7 @@ extract_archive(const char *destpath)
     /* TODO: Extract from memory instead of dumping out tar file */
 
     /* Write out the tarball */
-    char *tarpath = NULL;
-    if (asprintf(&tarpath, "%s/%s", destpath, "archive.tar") < 0)
-        error(2, 0, "Failed to allocate tar path string");
+    char *tarpath = path_join(destpath, "archive.tar");
     verbose_msg("Tar path: %s\n", tarpath);
 
     int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
@@ -159,6 +169,30 @@ create_tmpdir(void)
     return tmpdir;
 }
 
+static char **
+make_argv(int orig_argc, char **orig_argv, const char *destpath)
+{
+    /**
+     * Generate an argv to execute the user app:
+     * ./.staticx.interp --library-path . ./.staticx.prog */
+    int len = 1 + 2 + 1 + (orig_argc-1) + 1;
+    char **argv = calloc(len, sizeof(char*));
+
+    int w = 0;
+    argv[w++] = path_join(destpath, INTERP_FILENAME);
+    argv[w++] = "--library-path";
+    argv[w++] = strdup(destpath);
+    argv[w++] = path_join(destpath, PROG_FILENAME);
+
+    for (int i=1; i < orig_argc; i++) {
+        argv[w++] = orig_argv[i];
+    }
+    argv[w++] = NULL;
+    assert(w == len);
+
+    return argv;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -166,6 +200,20 @@ main(int argc, char **argv)
     verbose_msg("Temp dir: %s\n", path);
 
     extract_archive(path);
+
+    char **new_argv = make_argv(argc, argv, path);
+
+    printf("New argv:\n");
+    for (int i=0; ; i++) {
+        char *a = new_argv[i];
+        if (!a) break;
+
+        printf("[%d] = \"%s\"\n", i, a);
+    }
+
+    errno = 0;
+    execv(new_argv[0], new_argv);
+    error(3, errno, "Failed to execv() %s", new_argv[0]);
 
     return 0;
 }
