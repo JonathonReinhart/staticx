@@ -22,6 +22,22 @@
 #include <libgen.h>
 #include "libtar.h"
 
+static int mkdirs_for(const char *filename)
+{
+	char *fndup;
+	int rc;
+
+	fndup = strdup(filename);
+	if (!fndup) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	rc = mkdirhier(dirname(fndup));
+
+	free(fndup);
+	return rc;
+}
 
 static int
 tar_set_file_perms(TAR *t, char *realname)
@@ -178,7 +194,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	(void)uid;
 	(void)gid;
 
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 #ifdef DEBUG
@@ -293,7 +309,7 @@ tar_extract_hardlink(TAR * t, char *realname)
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 	libtar_hashptr_reset(&hp);
 	if (libtar_hash_getkey(t->h, &hp, th_get_linkname(t),
@@ -333,7 +349,7 @@ tar_extract_symlink(TAR *t, char *realname)
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 	if (unlink(filename) == -1 && errno != ENOENT)
@@ -374,7 +390,7 @@ tar_extract_chardev(TAR *t, char *realname)
 	devmaj = th_get_devmajor(t);
 	devmin = th_get_devminor(t);
 
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 #ifdef DEBUG
@@ -413,7 +429,7 @@ tar_extract_blockdev(TAR *t, char *realname)
 	devmaj = th_get_devmajor(t);
 	devmin = th_get_devminor(t);
 
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 #ifdef DEBUG
@@ -449,7 +465,7 @@ tar_extract_dir(TAR *t, char *realname)
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
 
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 #ifdef DEBUG
@@ -504,7 +520,7 @@ tar_extract_fifo(TAR *t, char *realname)
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
 
-	if (mkdirhier(dirname(filename)) == -1)
+	if (mkdirs_for(filename) == -1)
 		return -1;
 
 #ifdef DEBUG
