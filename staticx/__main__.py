@@ -3,6 +3,7 @@ import sys
 
 from .api import generate
 from .errors import Error
+from .version import __version__
 
 def parse_args():
     ap = argparse.ArgumentParser(prog='staticx')
@@ -10,6 +11,10 @@ def parse_args():
             help = 'Input program to bundle')
     ap.add_argument('output',
             help = 'Output path')
+
+    ap.add_argument('-V', '--version', action='version',
+            version = '%(prog)s ' + __version__)
+
     ap.add_argument('--bootloader',
             help = argparse.SUPPRESS)
     return ap.parse_args()

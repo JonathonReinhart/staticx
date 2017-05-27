@@ -12,8 +12,6 @@ import logging
 
 from .errors import *
 
-__version__ = '0.0.1'
-
 ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
 PROG_FILENAME   = ".staticx.prog"
