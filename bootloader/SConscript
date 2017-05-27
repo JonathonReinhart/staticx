@@ -5,8 +5,10 @@ env.Append(
     LINKFLAGS = ['-static'],
 )
 
-env.Program(
+bootloader = env.Program(
     target = 'bootloader',
     source = ['main.c'],
     LIBS = ['tar'],
 )
+
+Return('bootloader')
