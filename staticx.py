@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import subprocess
+import tarfile
+from tempfile import NamedTemporaryFile
 import os
 import sys
 import re
@@ -35,17 +37,46 @@ def get_shobj_deps(path):
         yield libpath
 
 
+def get_symlink_target(path):
+    dirpath = os.path.dirname(os.path.abspath(path))
+    return os.path.join(dirpath, os.readlink(path))
+
+
+def generate_archive(prog):
+    f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
+
+    with tarfile.open(fileobj=f, mode='w') as tar:
+        for lib in get_shobj_deps(prog):
+            if lib.startswith('linux-vdso.so'):
+                continue
+
+            arcname = os.path.basename(lib)
+            print("    Adding {} as {}".format(lib, arcname))
+            tar.add(lib, arcname=arcname)
+
+            if os.path.islink(lib):
+                lib = get_symlink_target(lib)
+                arcname = os.path.basename(lib)
+                print("    Adding {} as {}".format(lib, arcname))
+                tar.add(lib, arcname=arcname)
+
+    f.flush()
+    return f
+
+
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('prog',
             help = 'Input program to bundle')
+    ap.add_argument('--bootloader',
+            help = 'Path to bootloader')
     return ap.parse_args()
 
 def main():
     args = parse_args()
 
-    for lib in get_shobj_deps(args.prog):
-        print(lib)
+    with generate_archive(args.prog) as ar:
+        print("Archive:", ar.name)
 
 
 if __name__ == '__main__':
