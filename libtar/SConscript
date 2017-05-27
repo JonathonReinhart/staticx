@@ -7,7 +7,7 @@ env.Append(
     }
 )
 
-env.StaticLibrary(
+libtar = env.StaticLibrary(
     target = 'tar',
     source = [
         'append.c',
@@ -26,3 +26,4 @@ env.StaticLibrary(
     ]
 )
 
+Return('libtar')
