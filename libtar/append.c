@@ -57,7 +57,7 @@ tar_append_file(TAR *t, const char *realname, const char *savename)
 	char path[MAXPATHLEN];
 
 #ifdef DEBUG
-	printf("==> tar_append_file(TAR=0x%lx (\"%s\"), realname=\"%s\", "
+	printf("==> tar_append_file(TAR=0x%p (\"%s\"), realname=\"%s\", "
 	       "savename=\"%s\")\n", t, t->pathname, realname,
 	       (savename ? savename : "[NULL]"));
 #endif
@@ -94,7 +94,7 @@ tar_append_file(TAR *t, const char *realname, const char *savename)
 	else
 	{
 #ifdef DEBUG
-		printf("+++ adding hash for device (0x%lx, 0x%lx)...\n",
+		printf("+++ adding hash for device (0x%x, 0x%x)...\n",
 		       major(s.st_dev), minor(s.st_dev));
 #endif
 		td = (tar_dev_t *)calloc(1, sizeof(tar_dev_t));
@@ -120,7 +120,7 @@ tar_append_file(TAR *t, const char *realname, const char *savename)
 	else
 	{
 #ifdef DEBUG
-		printf("+++ adding entry: device (0x%lx,0x%lx), inode %ld "
+		printf("+++ adding entry: device (0x%x,0x%x), inode %ld "
 		       "(\"%s\")...\n", major(s.st_dev), minor(s.st_dev),
 		       s.st_ino, realname);
 #endif
@@ -160,7 +160,7 @@ tar_append_file(TAR *t, const char *realname, const char *savename)
 	if (th_write(t) != 0)
 	{
 #ifdef DEBUG
-		printf("t->fd = %d\n", t->fd);
+		printf("t->fd = %ld\n", t->fd);
 #endif
 		return -1;
 	}

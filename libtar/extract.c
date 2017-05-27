@@ -158,7 +158,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	char *filename;
 
 #ifdef DEBUG
-	printf("==> tar_extract_regfile(t=0x%lx, realname=\"%s\")\n", t,
+	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
 	       realname);
 #endif
 
@@ -182,7 +182,7 @@ tar_extract_regfile(TAR *t, char *realname)
 		return -1;
 
 #ifdef DEBUG
-	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %d bytes)\n",
+	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %zd bytes)\n",
 	       filename, mode, uid, gid, size);
 #endif
 	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC

@@ -96,7 +96,7 @@ tar_append_tree(TAR *t, char *realdir, char *savedir)
 	struct stat s;
 
 #ifdef DEBUG
-	printf("==> tar_append_tree(0x%lx, \"%s\", \"%s\")\n",
+	printf("==> tar_append_tree(0x%p, \"%s\", \"%s\")\n",
 	       t, realdir, (savedir ? savedir : "[NULL]"));
 #endif
 

@@ -11,6 +11,7 @@
 */
 
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "libtar.h"
@@ -91,7 +92,7 @@ th_read(TAR *t)
 	char *ptr;
 
 #ifdef DEBUG
-	printf("==> th_read(t=0x%lx)\n", t);
+	printf("==> th_read(t=0x%p)\n", t);
 #endif
 
 	if (t->th_buf.gnu_longname != NULL)
@@ -122,7 +123,7 @@ th_read(TAR *t)
 		}
 #ifdef DEBUG
 		printf("    th_read(): GNU long linkname detected "
-		       "(%ld bytes, %d blocks)\n", sz, blocks);
+		       "(%zd bytes, %zd blocks)\n", sz, blocks);
 #endif
 		t->th_buf.gnu_longlink = (char *)malloc(blocks * T_BLOCKSIZE);
 		if (t->th_buf.gnu_longlink == NULL)
@@ -133,7 +134,7 @@ th_read(TAR *t)
 		{
 #ifdef DEBUG
 			printf("    th_read(): reading long linkname "
-			       "(%d blocks left, ptr == %ld)\n", blocks-j, ptr);
+			       "(%zd blocks left, ptr == %p)\n", blocks-j, ptr);
 #endif
 			i = tar_block_read(t, ptr);
 			if (i != T_BLOCKSIZE)
@@ -172,7 +173,7 @@ th_read(TAR *t)
 		}
 #ifdef DEBUG
 		printf("    th_read(): GNU long filename detected "
-		       "(%ld bytes, %d blocks)\n", sz, blocks);
+		       "(%zd bytes, %zd blocks)\n", sz, blocks);
 #endif
 		t->th_buf.gnu_longname = (char *)malloc(blocks * T_BLOCKSIZE);
 		if (t->th_buf.gnu_longname == NULL)
@@ -183,7 +184,7 @@ th_read(TAR *t)
 		{
 #ifdef DEBUG
 			printf("    th_read(): reading long filename "
-			       "(%d blocks left, ptr == %ld)\n", blocks-j, ptr);
+			       "(%zd blocks left, ptr == %p)\n", blocks-j, ptr);
 #endif
 			i = tar_block_read(t, ptr);
 			if (i != T_BLOCKSIZE)
