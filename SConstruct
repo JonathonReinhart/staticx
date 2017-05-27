@@ -1,3 +1,5 @@
+import os
+
 env = Environment(
     CCFLAGS = ['-Wall', '-Werror', '-fdiagnostics-color'],
     CPPPATH = ['#libtar'],
@@ -7,7 +9,7 @@ env = Environment(
     LIBPATH = '$LIBDIR'
 )
 
-env['CC'] = ARGUMENTS.get('CC', env['CC'])
+env['CC'] = ARGUMENTS.get('CC', os.environ.get('CC', env['CC']))
 
 if ARGUMENTS.get('DEBUG'):
     env.Append(CPPDEFINES = {'DEBUG': 1})
