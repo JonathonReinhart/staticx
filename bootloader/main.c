@@ -17,7 +17,13 @@
 #define INTERP_FILENAME         ".staticx.interp"
 #define PROG_FILENAME           ".staticx.prog"
 
-#define verbose_msg(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
+#ifdef DEBUG
+#define debug_printf(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
+#define TAR_DEBUG_OPTIONS		(TAR_VERBOSE)
+#else
+#define debug_printf(fmt, ...)
+#define TAR_DEBUG_OPTIONS		0
+#endif
 
 #define Elf_Ehdr    Elf64_Ehdr
 #define Elf_Shdr    Elf64_Shdr
@@ -75,12 +81,12 @@ elf_get_section_by_name(const Elf_Ehdr *ehdr, const char *secname)
             ehdr->e_shentsize, sizeof(Elf_Shdr));
 
     /* Iterate sections */
-    verbose_msg("Sections:\n");
+    debug_printf("Sections:\n");
     for (int i=0; i < ehdr->e_shnum; i++) {
         const Elf_Shdr *sh = &shdr_table[i];
         const char *sh_name = strtab + sh->sh_name;
 
-        verbose_msg("[%d] %s  offset=0x%lX\n", i, sh_name, sh->sh_offset);
+        debug_printf("[%d] %s  offset=0x%lX\n", i, sh_name, sh->sh_offset);
 
         if (strcmp(sh_name, secname) == 0)
             return sh;
@@ -141,7 +147,7 @@ extract_archive(const char *destpath)
 
     /* Write out the tarball */
     char *tarpath = path_join(destpath, "archive.tar");
-    verbose_msg("Tar path: %s\n", tarpath);
+    debug_printf("Tar path: %s\n", tarpath);
 
     int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
     if (tarfd < 0)
@@ -162,7 +168,7 @@ extract_archive(const char *destpath)
      */
     TAR *t;
     errno = 0;
-    if (tar_open(&t, tarpath, NULL, O_RDONLY, 0, TAR_VERBOSE) != 0)
+    if (tar_open(&t, tarpath, NULL, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
         error(2, errno, "tar_open() failed for %s", tarpath);
 
     /* XXX Why is it so hard for people to use 'const'? */
@@ -172,7 +178,7 @@ extract_archive(const char *destpath)
     if (tar_close(t) != 0)
         error(2, errno, "tar_close() failed for %s", tarpath);
     t = NULL;
-    verbose_msg("Successfully extracted archive to %s\n", destpath);
+    debug_printf("Successfully extracted archive to %s\n", destpath);
 
 
     free(tarpath);
@@ -217,18 +223,18 @@ int
 main(int argc, char **argv)
 {
     char *path = create_tmpdir();
-    verbose_msg("Temp dir: %s\n", path);
+    debug_printf("Temp dir: %s\n", path);
 
     extract_archive(path);
 
     char **new_argv = make_argv(argc, argv, path);
 
-    printf("New argv:\n");
+    debug_printf("New argv:\n");
     for (int i=0; ; i++) {
         char *a = new_argv[i];
         if (!a) break;
 
-        printf("[%d] = \"%s\"\n", i, a);
+        debug_printf("[%d] = \"%s\"\n", i, a);
     }
 
     errno = 0;

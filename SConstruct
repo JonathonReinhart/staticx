@@ -7,6 +7,10 @@ env = Environment(
     LIBPATH = '$LIBDIR'
 )
 
+if ARGUMENTS.get('DEBUG'):
+    env.Append(CPPDEFINES = {'DEBUG': 1})
+
+
 libtar = env.SConscript(
     dirs = 'libtar',
     variant_dir = env.subst('$BUILD_ROOT/libtar'),
