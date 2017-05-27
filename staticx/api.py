@@ -8,6 +8,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 import os
 import re
+import logging
 
 from .errors import *
 
@@ -82,14 +83,14 @@ def make_symlink_TarInfo(name, target):
 
 def generate_archive(prog):
     interp = get_prog_interp(prog)
-    print("Program interpreter:", interp)
+    logging.info("Program interpreter: " + interp)
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     with tarfile.open(fileobj=f, mode='w') as tar:
 
         # Add the program
         arcname = PROG_FILENAME
-        print("    Adding {} as {}".format(prog, arcname))
+        logging.info("Adding {} as {}".format(prog, arcname))
         tar.add(prog, arcname=arcname)
 
         # Add all of the libraries
@@ -98,13 +99,13 @@ def generate_archive(prog):
                 continue
 
             arcname = os.path.basename(lib)
-            print("    Adding {} as {}".format(lib, arcname))
+            logging.info("    Adding {} as {}".format(lib, arcname))
             tar.add(lib, arcname=arcname)
 
             if os.path.islink(lib):
                 reallib = get_symlink_target(lib)
                 arcname = os.path.basename(reallib)
-                print("    Adding {} as {}".format(reallib, arcname))
+                logging.info("    Adding {} as {}".format(reallib, arcname))
                 tar.add(reallib, arcname=arcname)
                 # TODO: Recursively handle symlinks
 
