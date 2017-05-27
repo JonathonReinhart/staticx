@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -63,6 +64,21 @@ elf_get_section_by_name(const Elf_Ehdr *ehdr, const char *secname)
     return NULL;
 }
 
+static int
+write_all(int fd, const void *buf, size_t sz)
+{
+    const uint8_t *p = buf;
+    while (sz) {
+        ssize_t written = write(fd, p, sz);
+        if (written == -1)
+            return -1;
+
+        p += written;
+        sz -= written;
+    }
+    return 0;
+}
+
 static void
 extract_archive(const char *destpath)
 {
@@ -88,6 +104,28 @@ extract_archive(const char *destpath)
     if (!shdr)
         error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
 
+    /* Extract the tarball */
+    /* TODO: Extract from memory instead of dumping out tar file */
+    char *tarpath = NULL;
+    if (asprintf(&tarpath, "%s/%s", destpath, "archive.tar") < 0)
+        error(2, 0, "Failed to allocate tar path string");
+    verbose_msg("Tar path: %s\n", tarpath);
+
+    int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
+    if (tarfd < 0)
+        error(2, errno, "Failed to open tar path: %s", tarpath);
+
+    size_t tar_size = shdr->sh_size;
+    const void *tar_data = cptr_add(ehdr, shdr->sh_offset);
+
+    if (write_all(tarfd, tar_data, tar_size))
+        error(2, errno, "Failed to write tar file: %s", tarpath);
+
+    if (close(tarfd))
+        error(2, errno, "Error on tar file close: %s", tarpath);
+
+    free(tarpath);
+    tarpath = NULL;
 }
 
 static char *
