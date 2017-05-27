@@ -21,9 +21,10 @@ libtar = env.SConscript(
 )
 env.Install('$LIBDIR', libtar)
 
-env.SConscript(
+bl = env.SConscript(
     dirs = 'bootloader',
     variant_dir = env.subst('$BUILD_ROOT/bootloader'),
     duplicate = False,
     exports = dict(env=env.Clone()),
 )
+env.Install('#staticx', bl)
