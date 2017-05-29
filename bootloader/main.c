@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -12,6 +11,7 @@
 #include <sys/mman.h>
 #include <elf.h>
 #include <libtar.h>
+#include "error.h"
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
@@ -28,25 +28,6 @@
 #define Elf_Ehdr    Elf64_Ehdr
 #define Elf_Shdr    Elf64_Shdr
 
-static void
-error(int status, int errnum, const char *format, ...)
-{
-    fflush(stdout);
-
-    fprintf(stderr, "%s: ", program_invocation_short_name);
-
-    va_list ap;
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
-
-    if (errnum)
-        fprintf(stderr, ": %s", strerror(errnum));
-    fprintf(stderr, "\n");
-
-    if (status)
-        exit(status);
-}
 
 static inline const void *
 cptr_add(const void *p, size_t off)
