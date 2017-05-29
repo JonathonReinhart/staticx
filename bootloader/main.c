@@ -7,11 +7,10 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <elf.h>
 #include <libtar.h>
 #include "error.h"
+#include "mmap.h"
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
@@ -103,20 +102,10 @@ static void
 extract_archive(const char *destpath)
 {
     /* mmap this ELF file */
-    int fd = open("/proc/self/exe", O_RDONLY);
-    if (fd < 0)
-        error(2, errno, "Failed to open self");
-
-    struct stat st;
-    if (fstat(fd, &st) < 0)
-        error(2, errno, "Failed to stat self");
-
-    void *m = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (m == MAP_FAILED)
-        error(2, errno, "Failed to mmap self");
+    struct map *map = mmap_file("/proc/self/exe", true);
 
     /* Find the .staticx.archive section */
-    const Elf_Ehdr *ehdr = m;
+    const Elf_Ehdr *ehdr = map->map;
     if (!elf_is_valid(ehdr))
         error(2, 0, "Invalid ELF header");
 
@@ -164,6 +153,9 @@ extract_archive(const char *destpath)
 
     free(tarpath);
     tarpath = NULL;
+
+    unmap_file(map);
+    map = NULL;
 }
 
 static char *

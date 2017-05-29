@@ -10,6 +10,7 @@ bootloader = env.Program(
     source = [
         'error.c',
         'main.c',
+        'mmap.c',
     ],
     LIBS = ['tar'],
 )
