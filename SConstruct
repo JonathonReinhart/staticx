@@ -1,7 +1,11 @@
 import os
 
 env = Environment(
-    CCFLAGS = ['-Wall', '-Werror', '-fdiagnostics-color'],
+    CCFLAGS = [
+        '-Wall', '-Werror',
+        '-fdiagnostics-color',
+        '-Wmissing-prototypes', '-Wstrict-prototypes',
+    ],
     CPPPATH = ['#libtar'],
 
     BUILD_ROOT = '#build',
