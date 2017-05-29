@@ -21,7 +21,7 @@
 
 
 /* read a header block */
-int
+static int
 th_read_internal(TAR *t)
 {
 	int i;
