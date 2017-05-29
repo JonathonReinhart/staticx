@@ -111,6 +111,16 @@ int libtar_list_search(libtar_list_t *,
 				  libtar_listptr_t *, void *,
 				  libtar_matchfunc_t);
 
+/* copy an existing list */
+libtar_list_t *
+libtar_list_dup(libtar_list_t *l);
+
+/* merge two lists into a new list */
+libtar_list_t *
+libtar_list_merge(libtar_cmpfunc_t cmpfunc, int flags,
+			     libtar_list_t *list1,
+			     libtar_list_t *list2);
+
 /* return number of elements from list */
 unsigned int libtar_list_nents(libtar_list_t *);
 
