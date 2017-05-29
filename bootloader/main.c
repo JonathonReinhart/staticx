@@ -28,6 +28,10 @@
 #define Elf_Shdr    Elf64_Shdr
 
 
+/* Our "home" directory, where the archive is extracted */
+static const char *m_homedir;
+
+
 static inline const void *
 cptr_add(const void *p, size_t off)
 {
@@ -99,7 +103,7 @@ path_join(const char *p1, const char *p2)
 }
 
 static void
-extract_archive(const char *destpath)
+extract_archive(void)
 {
     /* mmap this ELF file */
     struct map *map = mmap_file("/proc/self/exe", true);
@@ -116,7 +120,7 @@ extract_archive(const char *destpath)
     /* TODO: Extract from memory instead of dumping out tar file */
 
     /* Write out the tarball */
-    char *tarpath = path_join(destpath, "archive.tar");
+    char *tarpath = path_join(m_homedir, "archive.tar");
     debug_printf("Tar path: %s\n", tarpath);
 
     int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
@@ -142,13 +146,13 @@ extract_archive(const char *destpath)
         error(2, errno, "tar_open() failed for %s", tarpath);
 
     /* XXX Why is it so hard for people to use 'const'? */
-    if (tar_extract_all(t, (char*)destpath) != 0)
+    if (tar_extract_all(t, (char*)m_homedir) != 0)
         error(2, errno, "tar_extract_all() failed for %s", tarpath);
 
     if (tar_close(t) != 0)
         error(2, errno, "tar_close() failed for %s", tarpath);
     t = NULL;
-    debug_printf("Successfully extracted archive to %s\n", destpath);
+    debug_printf("Successfully extracted archive to %s\n", m_homedir);
 
 
     free(tarpath);
@@ -169,7 +173,7 @@ create_tmpdir(void)
 }
 
 static char **
-make_argv(int orig_argc, char **orig_argv, const char *destpath)
+make_argv(int orig_argc, char **orig_argv)
 {
     /**
      * Generate an argv to execute the user app:
@@ -178,10 +182,10 @@ make_argv(int orig_argc, char **orig_argv, const char *destpath)
     char **argv = calloc(len, sizeof(char*));
 
     int w = 0;
-    argv[w++] = path_join(destpath, INTERP_FILENAME);
+    argv[w++] = path_join(m_homedir, INTERP_FILENAME);
     argv[w++] = "--library-path";
-    argv[w++] = strdup(destpath);
-    argv[w++] = path_join(destpath, PROG_FILENAME);
+    argv[w++] = strdup(m_homedir);
+    argv[w++] = path_join(m_homedir, PROG_FILENAME);
 
     for (int i=1; i < orig_argc; i++) {
         argv[w++] = orig_argv[i];
@@ -192,15 +196,10 @@ make_argv(int orig_argc, char **orig_argv, const char *destpath)
     return argv;
 }
 
-int
-main(int argc, char **argv)
+static void
+run_app(int argc, char **argv)
 {
-    char *path = create_tmpdir();
-    debug_printf("Temp dir: %s\n", path);
-
-    extract_archive(path);
-
-    char **new_argv = make_argv(argc, argv, path);
+    char **new_argv = make_argv(argc, argv);
 
     debug_printf("New argv:\n");
     for (int i=0; ; i++) {
@@ -213,6 +212,17 @@ main(int argc, char **argv)
     errno = 0;
     execv(new_argv[0], new_argv);
     error(3, errno, "Failed to execv() %s", new_argv[0]);
+}
 
-    return 0;
+int
+main(int argc, char **argv)
+{
+    m_homedir = create_tmpdir();
+    debug_printf("Home dir: %s\n", m_homedir);
+
+    extract_archive();
+
+    run_app(argc, argv);
+
+    return 119;
 }
