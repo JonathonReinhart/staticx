@@ -17,6 +17,8 @@ ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
 PROG_FILENAME   = ".staticx.prog"
 
+MAX_INTERP_LEN = 256
+
 def get_shobj_deps(path):
     try:
         output = subprocess.check_output(['ldd', path])
@@ -66,6 +68,22 @@ def elf_add_section(elfpath, secname, secfilename):
     subprocess.check_call(['objcopy',
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath])
+
+def patch_elf(path, interpreter=None, rpath=None):
+    args = ['patchelf']
+    if interpreter:
+        args += ['--set-interpreter', interpreter]
+    if rpath:
+        args += ['--set-rpath', rpath]
+    args.append(path)
+
+    logging.debug("Running " + str(args))
+    try:
+        output = subprocess.check_call(args)
+    except FileNotFoundError:
+        raise MissingToolError('patchelf', 'patchelf')
+    except subprocess.CalledProcessError as e:
+        raise ToolError('patchelf')
 
 
 def get_symlink_target(path):
@@ -149,6 +167,10 @@ def generate(prog, output, bootloader=None):
     with _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False) as tmpf:
         prog = tmpf.name
         make_executable(prog)
+
+    # TODO: Set RPATH
+    new_interp = 'i' * MAX_INTERP_LEN
+    patch_elf(prog, interpreter=new_interp)
 
 
     # TODO: Work on a copy
