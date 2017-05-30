@@ -74,17 +74,19 @@ elf_get_proghdr_by_type(Elf_Ehdr *ehdr, unsigned int ptype)
     return NULL;
 }
 
-static const Elf_Shdr *
-elf_get_section_by_name(const Elf_Ehdr *ehdr, const char *secname)
+#define SHT_NOT_USED    (SHT_HIUSER + 1)
+
+static Elf_Shdr *
+elf_get_section(Elf_Ehdr *ehdr, const char *lookup_name, Elf64_Word lookup_type)
 {
     /* Pointer to the section header table */
-    const Elf_Shdr *shdr_table = cptr_add(ehdr, ehdr->e_shoff);
+    Elf_Shdr *shdr_table = ptr_add(ehdr, ehdr->e_shoff);
 
     /* Pointer to the string table section header */
-    const Elf_Shdr *sh_strtab = &shdr_table[ehdr->e_shstrndx];
+    Elf_Shdr *sh_strtab = &shdr_table[ehdr->e_shstrndx];
 
     /* Pointer to the string table data */
-    const char *strtab = cptr_add(ehdr, sh_strtab->sh_offset);
+    char *strtab = ptr_add(ehdr, sh_strtab->sh_offset);
 
     /* Sanity check on size of Elf_Shdr */
     if (ehdr->e_shentsize != sizeof(Elf_Shdr))
@@ -94,15 +96,31 @@ elf_get_section_by_name(const Elf_Ehdr *ehdr, const char *secname)
     /* Iterate sections */
     debug_printf("Sections:\n");
     for (int i=0; i < ehdr->e_shnum; i++) {
-        const Elf_Shdr *sh = &shdr_table[i];
+        Elf_Shdr *sh = &shdr_table[i];
         const char *sh_name = strtab + sh->sh_name;
 
-        debug_printf("[%d] %s  offset=0x%lX\n", i, sh_name, sh->sh_offset);
+        debug_printf("[%d] %s type=0x%lX  offset=0x%lX\n",
+                i, sh_name, sh->sh_type, sh->sh_offset);
 
-        if (strcmp(sh_name, secname) == 0)
-            return sh;
+        /* Look up by name */
+        if (lookup_name) {
+            if (strcmp(sh_name, lookup_name) == 0)
+                return sh;
+        }
+
+        /* Look up by type */
+        if (lookup_type != SHT_NOT_USED) {
+            if (sh->sh_type == lookup_type)
+                return sh;
+        }
     }
     return NULL;
+}
+
+static Elf_Shdr *
+elf_get_section_by_name(Elf_Ehdr *ehdr, const char *lookup_name)
+{
+    return elf_get_section(ehdr, lookup_name, SHT_NOT_USED);
 }
 
 static int
@@ -136,7 +154,7 @@ extract_archive(void)
     struct map *map = mmap_file("/proc/self/exe", true);
 
     /* Find the .staticx.archive section */
-    const Elf_Ehdr *ehdr = map->map;
+    Elf_Ehdr *ehdr = map->map;
     if (!elf_is_valid(ehdr))
         error(2, 0, "Invalid ELF header");
 
