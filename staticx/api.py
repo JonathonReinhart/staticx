@@ -11,6 +11,7 @@ import re
 import logging
 
 from .errors import *
+from .utils import *
 
 ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
@@ -79,8 +80,7 @@ def make_symlink_TarInfo(name, target):
     return t
 
 
-def generate_archive(prog):
-    interp = get_prog_interp(prog)
+def generate_archive(prog, interp):
     logging.info("Program interpreter: " + interp)
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
@@ -122,6 +122,14 @@ def _locate_bootloader():
         raise InternalError("bootloader not found at {}".format(blpath))
     return blpath
 
+def _copy_to_tempfile(srcpath, **kwargs):
+    fdst = NamedTemporaryFile(**kwargs)
+    with open(srcpath, 'rb') as fsrc:
+        shutil.copyfileobj(fsrc, fdst)
+
+    fdst.flush()
+    return fdst
+
 
 def generate(prog, output, bootloader=None):
     """Main API: Generate a staticx executable
@@ -134,7 +142,20 @@ def generate(prog, output, bootloader=None):
     if not bootloader:
         bootloader = _locate_bootloader()
 
-    shutil.copy2(bootloader, output)
+    # First, learn things about the original program
+    orig_interp = get_prog_interp(prog)
 
-    with generate_archive(prog) as ar:
+    # Now modify a copy of the user prog
+    with _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False) as tmpf:
+        prog = tmpf.name
+        make_executable(prog)
+
+
+    # TODO: Work on a copy
+    # Starting from the bootloader, append archive
+    shutil.copy2(bootloader, output)
+    with generate_archive(prog, orig_interp) as ar:
         elf_add_section(output, ARCHIVE_SECTION, ar.name)
+
+
+    # TODO: Delete temp files
