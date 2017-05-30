@@ -18,6 +18,7 @@ INTERP_FILENAME = ".staticx.interp"
 PROG_FILENAME   = ".staticx.prog"
 
 MAX_INTERP_LEN = 256
+MAX_RPATH_LEN = 256
 
 def get_shobj_deps(path):
     try:
@@ -69,12 +70,14 @@ def elf_add_section(elfpath, secname, secfilename):
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath])
 
-def patch_elf(path, interpreter=None, rpath=None):
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args = ['patchelf']
     if interpreter:
         args += ['--set-interpreter', interpreter]
     if rpath:
         args += ['--set-rpath', rpath]
+    if force_rpath:
+        args.append('--force-rpath')
     args.append(path)
 
     logging.debug("Running " + str(args))
@@ -168,9 +171,12 @@ def generate(prog, output, bootloader=None):
         prog = tmpf.name
         make_executable(prog)
 
-    # TODO: Set RPATH
+    # Set long dummy INTERP and RPATH in the executable to allow plenty of space
+    # for bootloader to patch them at runtime, without the reording complexity
+    # that patchelf has to do.
     new_interp = 'i' * MAX_INTERP_LEN
-    patch_elf(prog, interpreter=new_interp)
+    new_rpath = 'r' * MAX_RPATH_LEN
+    patch_elf(prog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
 
 
     # TODO: Work on a copy
