@@ -25,12 +25,19 @@
 #endif
 
 #define Elf_Ehdr    Elf64_Ehdr
+#define Elf_Phdr    Elf64_Phdr
 #define Elf_Shdr    Elf64_Shdr
 
 
 /* Our "home" directory, where the archive is extracted */
 static const char *m_homedir;
 
+
+static inline void *
+ptr_add(void *p, size_t off)
+{
+    return ((uint8_t *)p) + off;
+}
 
 static inline const void *
 cptr_add(const void *p, size_t off)
@@ -45,6 +52,26 @@ elf_is_valid(const Elf_Ehdr *ehdr)
         && (ehdr->e_ident[EI_MAG1] == ELFMAG1)
         && (ehdr->e_ident[EI_MAG2] == ELFMAG2)
         && (ehdr->e_ident[EI_MAG3] == ELFMAG3);
+}
+
+static Elf_Phdr *
+elf_get_proghdr_by_type(Elf_Ehdr *ehdr, unsigned int ptype)
+{
+    /* Pointer to the program header table */
+    Elf_Phdr *phdr_table = ptr_add(ehdr, ehdr->e_phoff);
+
+    /* Sanity check on size of Elf_Phdr */
+    if (ehdr->e_phentsize != sizeof(Elf_Phdr))
+        error(2, 0, "ELF file disagrees with program header size: %d != %zd",
+            ehdr->e_phentsize, sizeof(Elf_Phdr));
+
+    for (int i=0; i < ehdr->e_phnum; i++) {
+        Elf_Phdr *ph = &phdr_table[i];
+
+        if (ph->p_type == ptype)
+            return ph;
+    }
+    return NULL;
 }
 
 static const Elf_Shdr *
@@ -162,6 +189,40 @@ extract_archive(void)
     map = NULL;
 }
 
+static void
+set_interp(const char *prog_path, const char *new_interp)
+{
+    /* mmap the prog */
+    struct map *map = mmap_file(prog_path, false);
+
+    Elf_Ehdr *ehdr = map->map;
+    if (!elf_is_valid(ehdr))
+        error(2, 0, "Invalid ELF header");
+
+    /* Find the interpreter string */
+    Elf_Phdr *ph = elf_get_proghdr_by_type(ehdr, PT_INTERP);
+    if (!ph)
+        error(2, 0, "Failed to find PT_INTERP header");
+
+    /* Make sure it is NUL terminated */
+    char *interp = ptr_add(ehdr, ph->p_offset);
+    size_t interp_size = ph->p_filesz;
+
+    if (interp[interp_size - 1] != '\0')
+        error(2, 0, "Current INTERP not NUL terminated");
+
+    debug_printf("Current program interpreter: \"%s\"\n", interp);
+
+    if (strlen(new_interp) > interp_size - 1)
+        error(2, 0, "Current INTERP too small");
+
+    strcpy(interp, new_interp);
+    debug_printf("Set new interpreter: \"%s\"\n", new_interp);
+
+    unmap_file(map);
+    map = NULL;
+}
+
 static char *
 create_tmpdir(void)
 {
@@ -199,6 +260,12 @@ make_argv(int orig_argc, char **orig_argv)
 static void
 run_app(int argc, char **argv)
 {
+    char *prog_path = path_join(m_homedir, PROG_FILENAME);
+
+    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
+    set_interp(prog_path, interp_path);
+    free(interp_path);
+
     char **new_argv = make_argv(argc, argv);
 
     debug_printf("New argv:\n");
