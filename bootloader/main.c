@@ -234,19 +234,16 @@ create_tmpdir(void)
 }
 
 static char **
-make_argv(int orig_argc, char **orig_argv)
+make_argv(int orig_argc, char **orig_argv, char *argv0)
 {
     /**
      * Generate an argv to execute the user app:
      * ./.staticx.interp --library-path . ./.staticx.prog */
-    int len = 1 + 2 + 1 + (orig_argc-1) + 1;
+    int len = 1 + (orig_argc-1) + 1;
     char **argv = calloc(len, sizeof(char*));
 
     int w = 0;
-    argv[w++] = path_join(m_homedir, INTERP_FILENAME);
-    argv[w++] = "--library-path";
-    argv[w++] = strdup(m_homedir);
-    argv[w++] = path_join(m_homedir, PROG_FILENAME);
+    argv[w++] = argv0;
 
     for (int i=1; i < orig_argc; i++) {
         argv[w++] = orig_argv[i];
@@ -266,7 +263,7 @@ run_app(int argc, char **argv)
     set_interp(prog_path, interp_path);
     free(interp_path);
 
-    char **new_argv = make_argv(argc, argv);
+    char **new_argv = make_argv(argc, argv, prog_path);
 
     debug_printf("New argv:\n");
     for (int i=0; ; i++) {
