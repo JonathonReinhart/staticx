@@ -9,6 +9,7 @@ from tempfile import NamedTemporaryFile
 import os
 import re
 import logging
+from itertools import chain
 
 from .errors import *
 from .utils import *
@@ -101,7 +102,7 @@ def make_symlink_TarInfo(name, target):
     return t
 
 
-def generate_archive(prog, interp):
+def generate_archive(prog, interp, extra_libs=[]):
     logging.info("Program interpreter: " + interp)
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
@@ -113,7 +114,7 @@ def generate_archive(prog, interp):
         tar.add(prog, arcname=arcname)
 
         # Add all of the libraries
-        for lib in get_shobj_deps(prog):
+        for lib in chain(get_shobj_deps(prog), extra_libs):
             if lib.startswith('linux-vdso.so'):
                 continue
 
@@ -152,7 +153,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def generate(prog, output, bootloader=None):
+def generate(prog, output, libs=[], bootloader=None):
     """Main API: Generate a staticx executable
 
     Parameters:
@@ -182,7 +183,7 @@ def generate(prog, output, bootloader=None):
     # TODO: Work on a copy
     # Starting from the bootloader, append archive
     shutil.copy2(bootloader, output)
-    with generate_archive(prog, orig_interp) as ar:
+    with generate_archive(prog, orig_interp, libs) as ar:
         elf_add_section(output, ARCHIVE_SECTION, ar.name)
 
 
