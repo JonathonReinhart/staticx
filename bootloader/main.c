@@ -27,6 +27,7 @@
 #define Elf_Ehdr    Elf64_Ehdr
 #define Elf_Phdr    Elf64_Phdr
 #define Elf_Shdr    Elf64_Shdr
+#define Elf_Dyn     Elf64_Dyn
 
 
 /* Our "home" directory, where the archive is extracted */
@@ -100,7 +101,7 @@ elf_get_section(Elf_Ehdr *ehdr, const char *lookup_name, Elf64_Word lookup_type)
         const char *sh_name = strtab + sh->sh_name;
 
         debug_printf("[%d] %s type=0x%lX  offset=0x%lX\n",
-                i, sh_name, sh->sh_type, sh->sh_offset);
+                i, sh_name, (unsigned long)sh->sh_type, sh->sh_offset);
 
         /* Look up by name */
         if (lookup_name) {
@@ -122,6 +123,15 @@ elf_get_section_by_name(Elf_Ehdr *ehdr, const char *lookup_name)
 {
     return elf_get_section(ehdr, lookup_name, SHT_NOT_USED);
 }
+
+#if 0
+static Elf_Shdr *
+elf_get_section_by_type(Elf_Ehdr *ehdr, unsigned long lookup_type)
+{
+    return elf_get_section(ehdr, NULL, lookup_type);
+}
+#endif
+
 
 static int
 write_all(int fd, const void *buf, size_t sz)
@@ -208,15 +218,8 @@ extract_archive(void)
 }
 
 static void
-set_interp(const char *prog_path, const char *new_interp)
+set_interp(Elf_Ehdr *ehdr, const char *new_interp)
 {
-    /* mmap the prog */
-    struct map *map = mmap_file(prog_path, false);
-
-    Elf_Ehdr *ehdr = map->map;
-    if (!elf_is_valid(ehdr))
-        error(2, 0, "Invalid ELF header");
-
     /* Find the interpreter string */
     Elf_Phdr *ph = elf_get_proghdr_by_type(ehdr, PT_INTERP);
     if (!ph)
@@ -236,6 +239,103 @@ set_interp(const char *prog_path, const char *new_interp)
 
     strcpy(interp, new_interp);
     debug_printf("Set new interpreter: \"%s\"\n", new_interp);
+}
+
+static void
+set_rpath(Elf_Ehdr *ehdr, const char *new_rpath)
+{
+    /* Find the dynamic section */
+    Elf_Shdr *dyn_sh = elf_get_section_by_name(ehdr, ".dynamic");
+    if (!dyn_sh)
+        error(2, 0, "Failed to find .dynamic section");
+
+    /* Base and size of dynamic table */
+    Elf_Dyn *dyn_table = ptr_add(ehdr, dyn_sh->sh_offset);
+    size_t ndyn = dyn_sh->sh_size / sizeof(Elf_Dyn);
+
+
+    /* Find the dynamic string section */
+    /* Technically I think we should use DT_STRTAB, DT_STRSZ, but those are
+     * *addresses*, and not file offsets */
+    Elf_Shdr *dynstr_sh = elf_get_section_by_name(ehdr, ".dynstr");
+    if (!dynstr_sh)
+        error(2, 0, "Failed to find .dynamic section");
+
+
+    /* Setup pointer to dynamic string table */
+    char *dynstrtab = ptr_add(ehdr, dynstr_sh->sh_offset);
+    size_t dynstrsz = dynstr_sh->sh_size;
+    debug_printf("Dynamic string table: offset=0x%lX size=0x%lX\n",
+            dynstr_sh->sh_offset, dynstrsz);
+
+    /* Find needed dynamic tags */
+#if 0
+    Elf_Dyn *dt_strtab = NULL;  /* DT_STRTAB */
+    Elf_Dyn *dt_strsz  = NULL;  /* DT_STRSZ */
+#endif
+    Elf_Dyn *dt_rpath  = NULL;  /* DT_RPATH */
+    debug_printf("Dynamic tags:\n");
+    for (size_t i = 0; i < ndyn; i++) {
+        Elf_Dyn *dt = &dyn_table[i];
+        debug_printf("0x%lX (%ld): 0x%lX\n", dt->d_tag, dt->d_tag, dt->d_un.d_val);
+
+        switch (dt->d_tag) {
+            case DT_NULL:
+                goto dyn_done;
+#if 0
+            case DT_STRTAB:
+                dt_strtab = dt;
+                break;
+            case DT_STRSZ:
+                dt_strsz = dt;
+                break;
+#endif
+            case DT_RPATH:
+                dt_rpath = dt;
+                break;
+        }
+    }
+dyn_done:
+
+#if 0
+    if (!dt_strtab)
+        error(2, 0, "Couldn't find DT_STRTAB tag");
+    if (!dt_strsz)
+        error(2, 0, "Couldn't find DT_STRSZ tag");
+#endif
+    if (!dt_rpath)
+        error(2, 0, "Couldn't find DT_RPATH tag");
+
+
+    /* Find RPATH */
+    if (dt_rpath->d_un.d_val > dynstrsz)
+        error(2, 0, "RPATH outside of dynamic strtab!");
+    char *rpath = ptr_add(dynstrtab, dt_rpath->d_un.d_val);
+
+    debug_printf("Current RPATH (0x%lX):\n", dt_rpath->d_un.d_val);
+    debug_printf("\"%s\"\n", rpath);
+
+    /* Set new RPATH */
+    if (strlen(new_rpath) > strlen(rpath))
+        error(2, 0, "Current RPATH too small");
+
+    strcpy(rpath, new_rpath);
+    debug_printf("Set new RPATH: \"%s\"\n", new_rpath);
+}
+
+
+static void
+patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_rpath)
+{
+    /* mmap the prog */
+    struct map *map = mmap_file(prog_path, false);
+
+    Elf_Ehdr *ehdr = map->map;
+    if (!elf_is_valid(ehdr))
+        error(2, 0, "Invalid ELF header");
+
+    set_interp(ehdr, new_interp);
+    set_rpath(ehdr, new_rpath);
 
     unmap_file(map);
     map = NULL;
@@ -278,7 +378,8 @@ run_app(int argc, char **argv)
     char *prog_path = path_join(m_homedir, PROG_FILENAME);
 
     char *interp_path = path_join(m_homedir, INTERP_FILENAME);
-    set_interp(prog_path, interp_path);
+    const char *new_rpath = m_homedir;
+    patch_prog_paths(prog_path, interp_path, new_rpath);
     free(interp_path);
 
     char **new_argv = make_argv(argc, argv, prog_path);
