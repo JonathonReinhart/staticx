@@ -11,10 +11,14 @@ import re
 import logging
 
 from .errors import *
+from .utils import *
 
 ARCHIVE_SECTION = ".staticx.archive"
 INTERP_FILENAME = ".staticx.interp"
 PROG_FILENAME   = ".staticx.prog"
+
+MAX_INTERP_LEN = 256
+MAX_RPATH_LEN = 256
 
 def get_shobj_deps(path):
     try:
@@ -66,6 +70,24 @@ def elf_add_section(elfpath, secname, secfilename):
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath])
 
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
+    args = ['patchelf']
+    if interpreter:
+        args += ['--set-interpreter', interpreter]
+    if rpath:
+        args += ['--set-rpath', rpath]
+    if force_rpath:
+        args.append('--force-rpath')
+    args.append(path)
+
+    logging.debug("Running " + str(args))
+    try:
+        output = subprocess.check_call(args)
+    except FileNotFoundError:
+        raise MissingToolError('patchelf', 'patchelf')
+    except subprocess.CalledProcessError as e:
+        raise ToolError('patchelf')
+
 
 def get_symlink_target(path):
     dirpath = os.path.dirname(os.path.abspath(path))
@@ -79,8 +101,7 @@ def make_symlink_TarInfo(name, target):
     return t
 
 
-def generate_archive(prog):
-    interp = get_prog_interp(prog)
+def generate_archive(prog, interp):
     logging.info("Program interpreter: " + interp)
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
@@ -122,6 +143,14 @@ def _locate_bootloader():
         raise InternalError("bootloader not found at {}".format(blpath))
     return blpath
 
+def _copy_to_tempfile(srcpath, **kwargs):
+    fdst = NamedTemporaryFile(**kwargs)
+    with open(srcpath, 'rb') as fsrc:
+        shutil.copyfileobj(fsrc, fdst)
+
+    fdst.flush()
+    return fdst
+
 
 def generate(prog, output, bootloader=None):
     """Main API: Generate a staticx executable
@@ -134,7 +163,27 @@ def generate(prog, output, bootloader=None):
     if not bootloader:
         bootloader = _locate_bootloader()
 
-    shutil.copy2(bootloader, output)
+    # First, learn things about the original program
+    orig_interp = get_prog_interp(prog)
 
-    with generate_archive(prog) as ar:
+    # Now modify a copy of the user prog
+    with _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False) as tmpf:
+        prog = tmpf.name
+        make_executable(prog)
+
+    # Set long dummy INTERP and RPATH in the executable to allow plenty of space
+    # for bootloader to patch them at runtime, without the reording complexity
+    # that patchelf has to do.
+    new_interp = 'i' * MAX_INTERP_LEN
+    new_rpath = 'r' * MAX_RPATH_LEN
+    patch_elf(prog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
+
+
+    # TODO: Work on a copy
+    # Starting from the bootloader, append archive
+    shutil.copy2(bootloader, output)
+    with generate_archive(prog, orig_interp) as ar:
         elf_add_section(output, ARCHIVE_SECTION, ar.name)
+
+
+    # TODO: Delete temp files

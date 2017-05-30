@@ -7,7 +7,12 @@ env.Append(
 
 bootloader = env.Program(
     target = 'bootloader',
-    source = ['main.c'],
+    source = [
+        'error.c',
+        'main.c',
+        'mmap.c',
+        'util.c',
+    ],
     LIBS = ['tar'],
 )
 

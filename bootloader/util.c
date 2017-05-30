@@ -1,0 +1,60 @@
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include "util.h"
+
+#define MAX_READLINK_ATTEMPT    10
+
+char *
+readlinka(const char *path)
+{
+    char *buf = NULL;
+    struct stat st;
+    size_t bufsz;
+    int i;
+
+    errno = 0;
+
+    for (i = 0; i < MAX_READLINK_ATTEMPT; i++) {
+        /* Determine size of buf contents */
+        if (lstat(path, &st) < 0) {
+            goto fail;
+        }
+
+        /* Allocate buffer */
+        bufsz = st.st_size + 1;
+        buf = malloc(bufsz);
+        if (buf == NULL) {
+            errno = ENOMEM;
+            goto fail;
+        }
+
+        /* Read link into buffer */
+        ssize_t r = readlink(path, buf, bufsz);
+        if (r < 0) {
+            goto fail;
+        }
+
+        /* Check to see if symlink increased in size between
+         * lstat() and readlink() */
+        if (r > st.st_size) {
+            free(buf);
+            buf = NULL;
+            continue;   /* retry */
+        }
+
+        /* NUL terminate and return */
+        buf[r] = '\0';
+        return buf;
+    }
+
+    errno = EAGAIN;
+
+fail:
+    if (buf) {
+        free(buf);
+        buf = NULL;
+    }
+    return NULL;
+}

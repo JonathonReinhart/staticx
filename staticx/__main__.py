@@ -1,6 +1,7 @@
 from __future__ import print_function
 import argparse
 import sys
+import logging
 
 from .api import generate
 from .errors import Error
@@ -16,12 +17,18 @@ def parse_args():
     ap.add_argument('-V', '--version', action='version',
             version = '%(prog)s ' + __version__)
 
+    ap.add_argument('--loglevel', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+            default='WARNING',
+            help = 'Set the logging level (default: %(default)s)')
+
     ap.add_argument('--bootloader',
             help = argparse.SUPPRESS)
     return ap.parse_args()
 
 def main():
     args = parse_args()
+    logging.basicConfig(level=args.loglevel)
+
     try:
         generate(args.prog, args.output, args.bootloader)
     except Error as e:
