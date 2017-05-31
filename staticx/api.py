@@ -102,8 +102,11 @@ def make_symlink_TarInfo(name, target):
     return t
 
 
-def generate_archive(prog, interp, extra_libs=[]):
+def generate_archive(prog, interp, extra_libs=None):
     logging.info("Program interpreter: " + interp)
+
+    if extra_libs is None:
+        extra_libs = []
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     with tarfile.open(fileobj=f, mode='w') as tar:
@@ -153,7 +156,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def generate(prog, output, libs=[], bootloader=None):
+def generate(prog, output, libs=None, bootloader=None):
     """Main API: Generate a staticx executable
 
     Parameters:
