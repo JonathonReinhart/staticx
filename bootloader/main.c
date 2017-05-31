@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <libtar.h>
+#include <sys/wait.h>
 #include "error.h"
 #include "mmap.h"
 
@@ -341,6 +342,17 @@ patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_
     map = NULL;
 }
 
+static void
+patch_app(const char *prog_path)
+{
+    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
+    const char *new_rpath = m_homedir;
+
+    patch_prog_paths(prog_path, interp_path, new_rpath);
+
+    free(interp_path);
+}
+
 static char *
 create_tmpdir(void)
 {
@@ -356,7 +368,7 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
 {
     /**
      * Generate an argv to execute the user app:
-     * ./.staticx.interp --library-path . ./.staticx.prog */
+     */
     int len = 1 + (orig_argc-1) + 1;
     char **argv = calloc(len, sizeof(char*));
 
@@ -372,16 +384,15 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
     return argv;
 }
 
-static void
-run_app(int argc, char **argv)
+/**
+ * Run the user application in a child process.
+ *
+ * Returns the child exit status
+ */
+static int
+run_app(int argc, char **argv, char *prog_path)
 {
-    char *prog_path = path_join(m_homedir, PROG_FILENAME);
-
-    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
-    const char *new_rpath = m_homedir;
-    patch_prog_paths(prog_path, interp_path, new_rpath);
-    free(interp_path);
-
+    /* Generate argv for child app */
     char **new_argv = make_argv(argc, argv, prog_path);
 
     debug_printf("New argv:\n");
@@ -392,9 +403,46 @@ run_app(int argc, char **argv)
         debug_printf("[%d] = \"%s\"\n", i, a);
     }
 
-    errno = 0;
-    execv(new_argv[0], new_argv);
-    error(3, errno, "Failed to execv() %s", new_argv[0]);
+    /* Create new process */
+    pid_t child_pid = fork();
+    if (child_pid < 0)
+        error(2, errno, "Failed to fork child process");
+
+
+    if (child_pid == 0) {
+        /*** Child ***/
+        debug_printf("child: Born\n");
+
+        execv(new_argv[0], new_argv);
+
+        fprintf(stderr, "Failed to execv() %s: %m\n", new_argv[0]);
+        _exit(3);
+    }
+
+    /*** Parent ***/
+    int wstatus;
+    if (waitpid(child_pid, &wstatus, 0) < 0)
+        error(2, errno, "Failed to wait for child process %ld", child_pid);
+
+    /* Did child exit normally? */
+    if (WIFEXITED(wstatus)) {
+        int code = WEXITSTATUS(wstatus);
+        debug_printf("Child exited with status %d\n", code);
+        return code;
+    }
+
+    /* Did child exit due to signal? */
+    if (WIFSIGNALED(wstatus)) {
+        int sig = WTERMSIG(wstatus);
+        debug_printf("Child terminated due to signal %d\n", sig);
+
+        /* Send the same signal to ourselves */
+        raise(sig);
+    }
+
+    /* Unexpected case! */
+    error(2, 0, "Child exited for unknown reason! (wstatus == %d)", wstatus);
+    _exit(2);
 }
 
 int
@@ -405,7 +453,12 @@ main(int argc, char **argv)
 
     extract_archive();
 
-    run_app(argc, argv);
+    char *prog_path = path_join(m_homedir, PROG_FILENAME);
 
-    return 119;
+    patch_app(prog_path);
+
+    int child_exit = run_app(argc, argv, prog_path);
+
+    free(prog_path);
+    return child_exit;
 }
