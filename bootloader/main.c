@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include "error.h"
 #include "mmap.h"
+#include "util.h"
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
@@ -458,6 +459,13 @@ main(int argc, char **argv)
     patch_app(prog_path);
 
     int child_exit = run_app(argc, argv, prog_path);
+
+    /* Cleanup */
+    debug_printf("Removing temp dir %s\n", m_homedir);
+    if (remove_tree(m_homedir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_homedir);
+    }
+    m_homedir = NULL;
 
     free(prog_path);
     return child_exit;
