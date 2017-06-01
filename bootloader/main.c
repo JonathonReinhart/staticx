@@ -422,8 +422,11 @@ run_app(int argc, char **argv, char *prog_path)
 
     /*** Parent ***/
     int wstatus;
-    if (waitpid(child_pid, &wstatus, 0) < 0)
+    while (waitpid(child_pid, &wstatus, 0) < 0) {
+        if (errno == EINTR)
+            continue;
         error(2, errno, "Failed to wait for child process %ld", child_pid);
+    }
 
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {
