@@ -153,6 +153,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
         shutil.copyfileobj(fsrc, fdst)
 
     fdst.flush()
+    shutil.copystat(srcpath, fdst.name)
     return fdst
 
 
@@ -173,8 +174,6 @@ def generate(prog, output, libs=None, bootloader=None):
     # Now modify a copy of the user prog
     tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
     try:
-        make_executable(tmpprog)
-
         # Set long dummy INTERP and RPATH in the executable to allow plenty of space
         # for bootloader to patch them at runtime, without the reording complexity
         # that patchelf has to do.
