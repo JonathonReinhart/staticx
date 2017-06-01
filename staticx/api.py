@@ -121,16 +121,21 @@ def generate_archive(prog, interp, extra_libs=None):
             if lib.startswith('linux-vdso.so'):
                 continue
 
-            arcname = os.path.basename(lib)
-            logging.info("    Adding {} as {}".format(lib, arcname))
-            tar.add(lib, arcname=arcname)
+            # using a temp library name to walk the link list, mainly to preserve the original name for later.
+            linklib = lib
 
-            if os.path.islink(lib):
-                reallib = get_symlink_target(lib)
-                arcname = os.path.basename(reallib)
-                logging.info("    Adding {} as {}".format(reallib, arcname))
-                tar.add(reallib, arcname=arcname)
-                # TODO: Recursively handle symlinks
+            # 'recursively' step through any symbolic links, generating local links inside the archive
+            while os.path.islink(linklib):
+                arcname = os.path.basename(linklib)
+                linklib = get_symlink_target(linklib)
+                logging.info("    Adding Symlink {} => {}".format(arcname, os.path.basename(linklib)))
+                # add a symlink.  at this point the target probably doesn't exist, but that doesn't matter yet
+                tar.addfile(make_symlink_TarInfo(arcname, os.path.basename(linklib)))
+
+            # left with a real file at this point, add it to the archive.
+            arcname = os.path.basename(linklib)
+            logging.info("    Adding {} as {}".format(linklib, arcname))
+            tar.add(linklib, arcname=arcname)
 
             # Add special symlink for interpreter
             if lib == interp:
