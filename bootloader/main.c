@@ -385,6 +385,39 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
     return argv;
 }
 
+static pid_t child_pid;
+
+static void sig_handler(int signum)
+{
+    /* Forward received signal to child */
+    debug_printf("Forwarding signal %d to child %d\n", signum, child_pid);
+    kill(child_pid, signum);
+}
+
+static void
+setup_sig_handler(int signum)
+{
+    struct sigaction sa = {
+        .sa_handler = sig_handler,
+    };
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(signum, &sa, NULL) < 0)
+        error(2, errno, "Error establishing handler for signal %d", signum);
+}
+
+static void
+restore_sig_handler(int signum)
+{
+    struct sigaction sa = {
+        .sa_handler = SIG_DFL,
+    };
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(signum, &sa, NULL) < 0)
+        error(2, errno, "Error restoring handler for signal %d", signum);
+}
+
 /**
  * Run the user application in a child process.
  *
@@ -405,7 +438,7 @@ run_app(int argc, char **argv, char *prog_path)
     }
 
     /* Create new process */
-    pid_t child_pid = fork();
+    child_pid = fork();
     if (child_pid < 0)
         error(2, errno, "Failed to fork child process");
 
@@ -421,12 +454,25 @@ run_app(int argc, char **argv, char *prog_path)
     }
 
     /*** Parent ***/
+
+    /* Forward terminating signals to child */
+    setup_sig_handler(SIGINT);
+    setup_sig_handler(SIGTERM);
+    /* SIGKILL can't be caught */
+
+
+    /* Wait for child to exit */
     int wstatus;
     while (waitpid(child_pid, &wstatus, 0) < 0) {
         if (errno == EINTR)
             continue;
         error(2, errno, "Failed to wait for child process %ld", child_pid);
     }
+    child_pid = 0;
+
+    /* Restore signal handlers */
+    restore_sig_handler(SIGINT);
+    restore_sig_handler(SIGTERM);
 
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {
