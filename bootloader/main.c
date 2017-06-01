@@ -421,7 +421,7 @@ restore_sig_handler(int signum)
 /**
  * Run the user application in a child process.
  *
- * Returns the child exit status
+ * Returns the child wait status
  */
 static int
 run_app(int argc, char **argv, char *prog_path)
@@ -474,6 +474,38 @@ run_app(int argc, char **argv, char *prog_path)
     restore_sig_handler(SIGINT);
     restore_sig_handler(SIGTERM);
 
+    return wstatus;
+}
+
+int
+main(int argc, char **argv)
+{
+    /* Create temporary directory where archive will be extracted */
+    m_homedir = create_tmpdir();
+    debug_printf("Home dir: %s\n", m_homedir);
+
+    /* Extract the archive embedded in this program */
+    extract_archive();
+
+    /* Get path to user application inside temp dir */
+    char *prog_path = path_join(m_homedir, PROG_FILENAME);
+
+    /* Patch the user application ELF to run in the temp dir */
+    patch_app(prog_path);
+
+    /* Run the user application */
+    int wstatus = run_app(argc, argv, prog_path);
+
+    free(prog_path);
+    prog_path = NULL;
+
+    /* Cleanup */
+    debug_printf("Removing temp dir %s\n", m_homedir);
+    if (remove_tree(m_homedir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_homedir);
+    }
+    m_homedir = NULL;
+
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {
         int code = WEXITSTATUS(wstatus);
@@ -492,30 +524,6 @@ run_app(int argc, char **argv, char *prog_path)
 
     /* Unexpected case! */
     error(2, 0, "Child exited for unknown reason! (wstatus == %d)", wstatus);
-    _exit(2);
-}
 
-int
-main(int argc, char **argv)
-{
-    m_homedir = create_tmpdir();
-    debug_printf("Home dir: %s\n", m_homedir);
-
-    extract_archive();
-
-    char *prog_path = path_join(m_homedir, PROG_FILENAME);
-
-    patch_app(prog_path);
-
-    int child_exit = run_app(argc, argv, prog_path);
-
-    /* Cleanup */
-    debug_printf("Removing temp dir %s\n", m_homedir);
-    if (remove_tree(m_homedir) < 0) {
-        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_homedir);
-    }
-    m_homedir = NULL;
-
-    free(prog_path);
-    return child_exit;
+    return 2;   // Make GCC happy
 }
