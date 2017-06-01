@@ -181,12 +181,19 @@ def generate(prog, output, libs=None, bootloader=None):
         new_rpath = 'r' * MAX_RPATH_LEN
         patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
 
+        # Work on a temp copy of the bootloader
+        tmpoutput = _copy_to_tempfile(bootloader, prefix='staticx-output-', delete=False).name
 
-        # TODO: Work on a copy
         # Starting from the bootloader, append archive
-        shutil.copy2(bootloader, output)
         with generate_archive(tmpprog, orig_interp, libs) as ar:
-            elf_add_section(output, ARCHIVE_SECTION, ar.name)
+            elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
+
+        # Move the temporary output file to its final place
+        shutil.move(tmpoutput, output)
+        tmpoutput = None
 
     finally:
         os.remove(tmpprog)
+
+        if tmpoutput:
+            os.remove(tmpoutput)
