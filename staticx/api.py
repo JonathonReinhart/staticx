@@ -24,7 +24,7 @@ MAX_RPATH_LEN = 256
 def get_shobj_deps(path):
     try:
         output = subprocess.check_output(['ldd', path])
-    except FileNotFoundError:
+    except OSError:
         raise MissingToolError('ldd', 'binutils')
     except subprocess.CalledProcessError as e:
         raise ToolError('ldd')
@@ -50,7 +50,7 @@ def readelf(path, *args):
     args = ['readelf'] + list(args) + [path]
     try:
         output = subprocess.check_output(args)
-    except FileNotFoundError:
+    except OSError:
         raise MissingToolError('readelf', 'binutils')
     except subprocess.CalledProcessError as e:
         raise ToolError('readelf')
@@ -84,7 +84,7 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     logging.debug("Running " + str(args))
     try:
         output = subprocess.check_call(args)
-    except FileNotFoundError:
+    except OSError:
         raise MissingToolError('patchelf', 'patchelf')
     except subprocess.CalledProcessError as e:
         raise ToolError('patchelf')
@@ -170,6 +170,9 @@ def generate(prog, output, libs=None, bootloader=None):
 
     # First, learn things about the original program
     orig_interp = get_prog_interp(prog)
+
+    # set tmpoutput to None, so as not to confuse python during an error where the output dir isn't set
+    tmpoutput = None
 
     # Now modify a copy of the user prog
     tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
