@@ -153,6 +153,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
         shutil.copyfileobj(fsrc, fdst)
 
     fdst.flush()
+    shutil.copystat(srcpath, fdst.name)
     return fdst
 
 
@@ -171,23 +172,28 @@ def generate(prog, output, libs=None, bootloader=None):
     orig_interp = get_prog_interp(prog)
 
     # Now modify a copy of the user prog
-    with _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False) as tmpf:
-        prog = tmpf.name
-        make_executable(prog)
+    tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
+    try:
+        # Set long dummy INTERP and RPATH in the executable to allow plenty of space
+        # for bootloader to patch them at runtime, without the reording complexity
+        # that patchelf has to do.
+        new_interp = 'i' * MAX_INTERP_LEN
+        new_rpath = 'r' * MAX_RPATH_LEN
+        patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
 
-    # Set long dummy INTERP and RPATH in the executable to allow plenty of space
-    # for bootloader to patch them at runtime, without the reording complexity
-    # that patchelf has to do.
-    new_interp = 'i' * MAX_INTERP_LEN
-    new_rpath = 'r' * MAX_RPATH_LEN
-    patch_elf(prog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
+        # Work on a temp copy of the bootloader
+        tmpoutput = _copy_to_tempfile(bootloader, prefix='staticx-output-', delete=False).name
 
+        # Starting from the bootloader, append archive
+        with generate_archive(tmpprog, orig_interp, libs) as ar:
+            elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
-    # TODO: Work on a copy
-    # Starting from the bootloader, append archive
-    shutil.copy2(bootloader, output)
-    with generate_archive(prog, orig_interp, libs) as ar:
-        elf_add_section(output, ARCHIVE_SECTION, ar.name)
+        # Move the temporary output file to its final place
+        shutil.move(tmpoutput, output)
+        tmpoutput = None
 
+    finally:
+        os.remove(tmpprog)
 
-    # TODO: Delete temp files
+        if tmpoutput:
+            os.remove(tmpoutput)
