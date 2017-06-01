@@ -9,8 +9,10 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <libtar.h>
+#include <sys/wait.h>
 #include "error.h"
 #include "mmap.h"
+#include "util.h"
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
@@ -341,6 +343,17 @@ patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_
     map = NULL;
 }
 
+static void
+patch_app(const char *prog_path)
+{
+    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
+    const char *new_rpath = m_homedir;
+
+    patch_prog_paths(prog_path, interp_path, new_rpath);
+
+    free(interp_path);
+}
+
 static char *
 create_tmpdir(void)
 {
@@ -356,7 +369,7 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
 {
     /**
      * Generate an argv to execute the user app:
-     * ./.staticx.interp --library-path . ./.staticx.prog */
+     */
     int len = 1 + (orig_argc-1) + 1;
     char **argv = calloc(len, sizeof(char*));
 
@@ -372,16 +385,48 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
     return argv;
 }
 
-static void
-run_app(int argc, char **argv)
+static pid_t child_pid;
+
+static void sig_handler(int signum)
 {
-    char *prog_path = path_join(m_homedir, PROG_FILENAME);
+    /* Forward received signal to child */
+    debug_printf("Forwarding signal %d to child %d\n", signum, child_pid);
+    kill(child_pid, signum);
+}
 
-    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
-    const char *new_rpath = m_homedir;
-    patch_prog_paths(prog_path, interp_path, new_rpath);
-    free(interp_path);
+static void
+setup_sig_handler(int signum)
+{
+    struct sigaction sa = {
+        .sa_handler = sig_handler,
+    };
+    sigemptyset(&sa.sa_mask);
 
+    if (sigaction(signum, &sa, NULL) < 0)
+        error(2, errno, "Error establishing handler for signal %d", signum);
+}
+
+static void
+restore_sig_handler(int signum)
+{
+    struct sigaction sa = {
+        .sa_handler = SIG_DFL,
+    };
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(signum, &sa, NULL) < 0)
+        error(2, errno, "Error restoring handler for signal %d", signum);
+}
+
+/**
+ * Run the user application in a child process.
+ *
+ * Returns the child wait status
+ */
+static int
+run_app(int argc, char **argv, char *prog_path)
+{
+    /* Generate argv for child app */
     char **new_argv = make_argv(argc, argv, prog_path);
 
     debug_printf("New argv:\n");
@@ -392,20 +437,93 @@ run_app(int argc, char **argv)
         debug_printf("[%d] = \"%s\"\n", i, a);
     }
 
-    errno = 0;
-    execv(new_argv[0], new_argv);
-    error(3, errno, "Failed to execv() %s", new_argv[0]);
+    /* Create new process */
+    child_pid = fork();
+    if (child_pid < 0)
+        error(2, errno, "Failed to fork child process");
+
+
+    if (child_pid == 0) {
+        /*** Child ***/
+        debug_printf("child: Born\n");
+
+        execv(new_argv[0], new_argv);
+
+        fprintf(stderr, "Failed to execv() %s: %m\n", new_argv[0]);
+        _exit(3);
+    }
+
+    /*** Parent ***/
+
+    /* Forward terminating signals to child */
+    setup_sig_handler(SIGINT);
+    setup_sig_handler(SIGTERM);
+    /* SIGKILL can't be caught */
+
+
+    /* Wait for child to exit */
+    int wstatus;
+    while (waitpid(child_pid, &wstatus, 0) < 0) {
+        if (errno == EINTR)
+            continue;
+        error(2, errno, "Failed to wait for child process %ld", child_pid);
+    }
+    child_pid = 0;
+
+    /* Restore signal handlers */
+    restore_sig_handler(SIGINT);
+    restore_sig_handler(SIGTERM);
+
+    return wstatus;
 }
 
 int
 main(int argc, char **argv)
 {
+    /* Create temporary directory where archive will be extracted */
     m_homedir = create_tmpdir();
     debug_printf("Home dir: %s\n", m_homedir);
 
+    /* Extract the archive embedded in this program */
     extract_archive();
 
-    run_app(argc, argv);
+    /* Get path to user application inside temp dir */
+    char *prog_path = path_join(m_homedir, PROG_FILENAME);
 
-    return 119;
+    /* Patch the user application ELF to run in the temp dir */
+    patch_app(prog_path);
+
+    /* Run the user application */
+    int wstatus = run_app(argc, argv, prog_path);
+
+    free(prog_path);
+    prog_path = NULL;
+
+    /* Cleanup */
+    debug_printf("Removing temp dir %s\n", m_homedir);
+    if (remove_tree(m_homedir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_homedir);
+    }
+    m_homedir = NULL;
+
+    /* Did child exit normally? */
+    if (WIFEXITED(wstatus)) {
+        int code = WEXITSTATUS(wstatus);
+        debug_printf("Child exited with status %d\n", code);
+        return code;
+    }
+
+    /* Did child exit due to signal? */
+    if (WIFSIGNALED(wstatus)) {
+        int sig = WTERMSIG(wstatus);
+        debug_printf("Child terminated due to signal %d\n", sig);
+
+        /* Send the same signal to ourselves */
+        raise(sig);
+    }
+
+    /* Unexpected case! */
+    error(2, 0, "Child exited for unknown reason! (wstatus == %d)", wstatus);
+
+    return 2;   // Make GCC happy
 }
