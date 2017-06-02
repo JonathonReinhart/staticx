@@ -2,8 +2,8 @@ import os
 
 env = Environment(
     CCFLAGS = [
+        '-std=gnu99',
         '-Wall', '-Werror',
-        '-fdiagnostics-color',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
     ],
     CPPPATH = ['#libtar'],
