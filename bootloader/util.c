@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 500
 #include <stdlib.h>
 #include <stdio.h>          /* for remove(3) */
 #include <unistd.h>
