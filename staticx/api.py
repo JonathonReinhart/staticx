@@ -89,6 +89,52 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     except subprocess.CalledProcessError as e:
         raise ToolError('patchelf')
 
+# locates a library based on the provided base file name.  uses ldconfig -p to accomplish this.  if the file 
+#   is not found, the starting base name is returned. 
+def locateLibrary(libbasename):
+    try:
+        output = subprocess.check_output(['ldconfig','-p'])
+    except subprocess.CalledProcessError as e:
+        raise ToolError('ldconfig')
+    
+    pat = re.compile('\s*{}.* => (.+)'.format(libbasename))
+    for line in output.decode('ascii').splitlines():
+        m = pat.match(line)
+        if m:
+            return m.group(1)
+
+    return libbasename
+
+# checks the file at the location provided for an indication that it is a pyinstaller created exe.  
+#   Pyinstaller created executables have additional library requirements (libpthread, libm)
+def is_pyinstall_exe (path):
+    # use readelf -SW to list the section headers. Searching the results in reverse since the section we want
+    #   is usually near the end of the list of headers.
+    for line in reversed(readelf(path,'-S','-W')):
+        if line.find('pydata') != -1:
+            return True
+
+    return False
+
+# Adds pyinstaller required libs if they're not already in the list.  if the list is empty, a new one is 
+#   created.
+def add_pyinstall_libs(liblist):
+    if liblist is None:
+        liblist = []
+
+    pyi_libs = ['libpthread.so.0', 'libm.so.6']
+
+    for curlib in liblist:
+        bn = os.path.basename(curlib)
+        if bn in pyi_libs:
+            pyi_libs.remove(bn)
+
+    for lib in pyi_libs:
+        liblist.append(locateLibrary(lib))
+
+    return liblist
+
+
 
 def get_symlink_target(path):
     dirpath = os.path.dirname(os.path.abspath(path))
@@ -171,6 +217,18 @@ def generate(prog, output, libs=None, bootloader=None):
     # First, learn things about the original program
     orig_interp = get_prog_interp(prog)
 
+<<<<<<< HEAD
+=======
+    # Check for pyinstaller exe, adding additional libs typically required for pyinstalled apps that don't
+    #   normally get pulled in (friends of libc, for instance)
+    #   More robust solution may be to perform a deep scan of internal library depencencies
+    if is_pyinstall_exe(prog):
+        libs = add_pyinstall_libs(libs)
+
+    # set tmpoutput to None, so as not to confuse python during an error where the output dir isn't set
+    tmpoutput = None
+
+>>>>>>> d4c7706... Examine input app for signs of pyinstaller -- auto add libs
     # Now modify a copy of the user prog
     tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
     try:
