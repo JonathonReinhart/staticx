@@ -185,11 +185,9 @@ def generate(prog, output, libs=None, bootloader=None):
     # First, learn things about the original program
     orig_interp = get_prog_interp(prog)
 
-    # set tmpoutput to None, so as not to confuse python during an error where the output dir isn't set
-    tmpoutput = None
-
     # Now modify a copy of the user prog
     tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
+    tmpoutput = None
     try:
         # Set long dummy INTERP and RPATH in the executable to allow plenty of space
         # for bootloader to patch them at runtime, without the reording complexity
