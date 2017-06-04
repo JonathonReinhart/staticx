@@ -9,6 +9,7 @@ from tempfile import NamedTemporaryFile
 import os
 import re
 import logging
+import errno
 from itertools import chain
 
 from .errors import *
@@ -21,13 +22,31 @@ PROG_FILENAME   = ".staticx.prog"
 MAX_INTERP_LEN = 256
 MAX_RPATH_LEN = 256
 
+class ExternTool(object):
+    def __init__(self, cmd, os_pkg):
+        self.cmd = cmd
+        self.os_pkg = os_pkg
+
+    def run(self, *args):
+        args = list(args)
+        args.insert(0, self.cmd)
+        try:
+            logging.debug("Running " + str(args))
+            return subprocess.check_output(args)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                raise MissingToolError(self.cmd, self.os_pkg)
+            raise
+        except subprocess.CalledProcessError as e:
+            raise ToolError(self.cmd)
+
+tool_ldd        = ExternTool('ldd', 'binutils')
+tool_readelf    = ExternTool('readelf', 'binutils')
+tool_objcopy    = ExternTool('objcopy', 'binutils')
+tool_patchelf   = ExternTool('patchelf', 'patchelf')
+
 def get_shobj_deps(path):
-    try:
-        output = subprocess.check_output(['ldd', path])
-    except OSError:
-        raise MissingToolError('ldd', 'binutils')
-    except subprocess.CalledProcessError as e:
-        raise ToolError('ldd')
+    output = tool_ldd.run(path)
 
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
@@ -47,13 +66,9 @@ def get_shobj_deps(path):
 
 
 def readelf(path, *args):
-    args = ['readelf'] + list(args) + [path]
-    try:
-        output = subprocess.check_output(args)
-    except OSError:
-        raise MissingToolError('readelf', 'binutils')
-    except subprocess.CalledProcessError as e:
-        raise ToolError('readelf')
+    args = list(args)
+    args.append(path)
+    output = tool_readelf.run(*args)
     return output.decode('ascii').splitlines()
 
 def get_prog_interp(path):
@@ -67,12 +82,12 @@ def get_prog_interp(path):
     raise InvalidInputError("{}: not a dynamic executable".format(path))
 
 def elf_add_section(elfpath, secname, secfilename):
-    subprocess.check_call(['objcopy',
+    tool_objcopy.run(
         '--add-section', '{}={}'.format(secname, secfilename),
-        elfpath])
+        elfpath)
 
 def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
-    args = ['patchelf']
+    args = []
     if interpreter:
         args += ['--set-interpreter', interpreter]
     if rpath:
@@ -81,13 +96,7 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args.append('--force-rpath')
     args.append(path)
 
-    logging.debug("Running " + str(args))
-    try:
-        output = subprocess.check_call(args)
-    except OSError:
-        raise MissingToolError('patchelf', 'patchelf')
-    except subprocess.CalledProcessError as e:
-        raise ToolError('patchelf')
+    tool_patchelf.run(*args)
 
 
 def get_symlink_target(path):
