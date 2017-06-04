@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Compatibility fixes for older versions of Python and GCC
+- Handle multiple levels of library symlinks ([#18])
+
+
 ## [0.2.0] - 2017-05-31
 ### Changed
 - Work on temporary file while building application ([#12])
@@ -17,3 +23,4 @@ Initial release
 
 [#9]: https://github.com/JonathonReinhart/staticx/pull/9
 [#12]: https://github.com/JonathonReinhart/staticx/pull/12
+[#18]: https://github.com/JonathonReinhart/staticx/pull/18
