@@ -1,4 +1,4 @@
-StaticX
+StaticX [![Build Status](https://travis-ci.org/JonathonReinhart/staticx.svg?branch=master)](https://travis-ci.org/JonathonReinhart/staticx)
 =======
 Bundle dynamic executables with their library dependencies so they can be run
 anywhere, just like a static executable.
