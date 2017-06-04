@@ -1,0 +1,40 @@
+dist: trusty
+sudo: required
+serivces:
+  - docker
+
+language: python
+python:
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.5-dev" # 3.5 development branch
+  - "nightly" # currently points to 3.6-dev
+
+matrix:
+  allow_failures:
+    - python: "nightly"
+
+addons:
+  apt:
+    packages:
+      - musl
+      - musl-dev
+      - musl-tools
+
+env:
+  global:
+    - CC=musl-gcc
+
+before_script:
+  - pip install wheel
+
+script:
+  - python setup.py bdist_wheel
+  - pip install dist/staticx-*-py2.py3-none-any.whl
+
+  - staticx --version
+  - staticx $(which date) date.staticx
+  - ./date.staticx
