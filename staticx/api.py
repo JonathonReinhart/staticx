@@ -48,6 +48,14 @@ def get_shobj_deps(path):
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
     pat = re.compile('\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
+    ignore_list = 'linux-vdso.so'
+
+    def ignore(p):
+        for name in ignore_list:
+            if libpath.startswith(name):
+                return True
+        return False
+
     for line in output.decode('ascii').splitlines():
         m = pat.match(line)
         if not m:
@@ -57,6 +65,9 @@ def get_shobj_deps(path):
         baseaddr = int(m.group(3), 16)
 
         libpath = libpath or libname
+
+        if ignore(libpath):
+            continue
         yield libpath
 
 
@@ -132,12 +143,9 @@ def process_pyinstaller_archive(ar, prog):
             with open(tmppath, 'wb') as f:
                 f.write(data)
 
-            # TODO: De-duplicate this code with generate_archive()
+            # Add any missing libraries to our archive
             for libpath in get_shobj_deps(tmppath):
                 lib = os.path.basename(libpath)
-
-                if lib.startswith('linux-vdso.so'):
-                    continue
 
                 if lib in ar.libraries:
                     logging.debug("{} already in staticx archive".format(lib))
@@ -165,11 +173,8 @@ def generate_archive(prog, interp, extra_libs=None):
         ar.add_interp_symlink(interp)
 
         # Add all of the libraries
-        for lib in chain(get_shobj_deps(prog), extra_libs):
-            if lib.startswith('linux-vdso.so'):
-                continue
-
-            ar.add_library(lib)
+        for libpath in chain(get_shobj_deps(prog), extra_libs):
+            ar.add_library(libpath)
 
 
         process_pyinstaller_archive(ar, prog)
