@@ -24,3 +24,16 @@ class MissingToolError(Error):
 class InvalidInputError(Error):
     """Input provided by the user is invalid"""
     pass
+
+
+
+class ArchiveError(Error):
+    """Base type for exceptions raised from archive.py"""
+    pass
+
+class LibExistsError(ArchiveError):
+    """Given library already exists in archive"""
+    def __init__(self, lib):
+        super(LibExistsError, self).__init__(
+                "Library '{}' already exists in archive".format(lib))
+        self.lib = lib

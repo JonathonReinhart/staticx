@@ -15,6 +15,7 @@ python:
 
 matrix:
   allow_failures:
+    - python: "3.2"     # https://github.com/pyinstaller/pyinstaller/issues/2639
     - python: "nightly"
 
 addons:
@@ -28,9 +29,6 @@ env:
   global:
     - CC=musl-gcc
 
-before_script:
-  - pip install wheel
-
 script:
   - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
@@ -38,3 +36,6 @@ script:
   - staticx --version
   - staticx $(which date) date.staticx
   - ./date.staticx
+
+  # Run PyInstaller test
+  - test/pyinstall/run_test.sh

@@ -3,9 +3,8 @@
 # https://github.com/JonathonReinhart/staticx
 #
 import subprocess
-import tarfile
 import shutil
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 import os
 import re
 import logging
@@ -14,13 +13,9 @@ from itertools import chain
 
 from .errors import *
 from .utils import *
+from .archive import SxArchive
+from .constants import *
 
-ARCHIVE_SECTION = ".staticx.archive"
-INTERP_FILENAME = ".staticx.interp"
-PROG_FILENAME   = ".staticx.prog"
-
-MAX_INTERP_LEN = 256
-MAX_RPATH_LEN = 256
 
 class ExternTool(object):
     def __init__(self, cmd, os_pkg):
@@ -53,6 +48,14 @@ def get_shobj_deps(path):
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
     pat = re.compile('\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
+    ignore_list = 'linux-vdso.so'
+
+    def ignore(p):
+        for name in ignore_list:
+            if libpath.startswith(name):
+                return True
+        return False
+
     for line in output.decode('ascii').splitlines():
         m = pat.match(line)
         if not m:
@@ -62,6 +65,9 @@ def get_shobj_deps(path):
         baseaddr = int(m.group(3), 16)
 
         libpath = libpath or libname
+
+        if ignore(libpath):
+            continue
         yield libpath
 
 
@@ -99,16 +105,62 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     tool_patchelf.run(*args)
 
 
-def get_symlink_target(path):
-    dirpath = os.path.dirname(os.path.abspath(path))
-    return os.path.join(dirpath, os.readlink(path))
+def process_pyinstaller_archive(ar, prog):
+    # See utils/cliutils/archive_viewer.py
 
-def make_symlink_TarInfo(name, target):
-    t = tarfile.TarInfo()
-    t.type = tarfile.SYMTYPE
-    t.name = name
-    t.linkname = target
-    return t
+    # If PyInstaller is not installed, do nothing
+    try:
+        from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
+    except ImportError:
+        return
+
+    # Attempt to open the program as PyInstaller archive
+    try:
+        pyi_ar = CArchiveReader(prog)
+    except:
+        # Silence all PyInstaller exceptions here
+        return
+    logging.info("Opened PyInstaller archive!")
+
+    # Create a temporary directory
+    # TODO PY3: Use tempfile.TemporaryDirectory and cleanup()
+    tmpdir = mkdtemp(prefix='staticx-pyi-')
+
+    try:
+        # Process the archive, looking at all shared libs
+        for n, item in enumerate(pyi_ar.toc.data):
+            (dpos, dlen, ulen, flag, typcd, name) = item
+
+            # Only process binary files
+            # See xformdict in PyInstaller.building.api.PKG
+            if typcd != 'b':
+                continue
+
+            # Extract it to a temporary location
+            x, data = pyi_ar.extract(n)
+            tmppath = os.path.join(tmpdir, name)
+            logging.debug("Extracting to {}".format(tmppath))
+            with open(tmppath, 'wb') as f:
+                f.write(data)
+
+            # Silence "you do not have execution permission" warning from ldd
+            make_executable(tmppath)
+
+            # Add any missing libraries to our archive
+            for libpath in get_shobj_deps(tmppath):
+                lib = os.path.basename(libpath)
+
+                if lib in ar.libraries:
+                    logging.debug("{} already in staticx archive".format(lib))
+                    continue
+
+                if pyi_ar.toc.find(lib) != -1:
+                    logging.debug("{} already in pyinstaller archive".format(lib))
+                    continue
+
+                ar.add_library(libpath)
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 def generate_archive(prog, interp, extra_libs=None):
@@ -118,37 +170,17 @@ def generate_archive(prog, interp, extra_libs=None):
         extra_libs = []
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-    with tarfile.open(fileobj=f, mode='w') as tar:
+    with SxArchive(fileobj=f, mode='w') as ar:
 
-        # Add the program
-        arcname = PROG_FILENAME
-        logging.info("Adding {} as {}".format(prog, arcname))
-        tar.add(prog, arcname=arcname)
+        ar.add_program(prog)
+        ar.add_interp_symlink(interp)
 
         # Add all of the libraries
-        for lib in chain(get_shobj_deps(prog), extra_libs):
-            if lib.startswith('linux-vdso.so'):
-                continue
+        for libpath in chain(get_shobj_deps(prog), extra_libs):
+            ar.add_library(libpath)
 
-            # using a temp library name to walk the link list, mainly to preserve the original name for later.
-            linklib = lib
 
-            # 'recursively' step through any symbolic links, generating local links inside the archive
-            while os.path.islink(linklib):
-                arcname = os.path.basename(linklib)
-                linklib = get_symlink_target(linklib)
-                logging.info("    Adding Symlink {} => {}".format(arcname, os.path.basename(linklib)))
-                # add a symlink.  at this point the target probably doesn't exist, but that doesn't matter yet
-                tar.addfile(make_symlink_TarInfo(arcname, os.path.basename(linklib)))
-
-            # left with a real file at this point, add it to the archive.
-            arcname = os.path.basename(linklib)
-            logging.info("    Adding {} as {}".format(linklib, arcname))
-            tar.add(linklib, arcname=arcname)
-
-            # Add special symlink for interpreter
-            if lib == interp:
-                tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, os.path.basename(lib)))
+        process_pyinstaller_archive(ar, prog)
 
     f.flush()
     return f
