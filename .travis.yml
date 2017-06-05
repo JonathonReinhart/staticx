@@ -28,9 +28,6 @@ env:
   global:
     - CC=musl-gcc
 
-before_script:
-  - pip install wheel
-
 script:
   - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl

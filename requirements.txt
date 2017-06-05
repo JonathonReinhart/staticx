@@ -1,1 +1,2 @@
 patchelf-wrapper
+wheel
