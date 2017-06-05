@@ -1,2 +1,4 @@
 patchelf-wrapper
+pyinstaller
+scuba
 wheel
