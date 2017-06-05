@@ -143,6 +143,9 @@ def process_pyinstaller_archive(ar, prog):
             with open(tmppath, 'wb') as f:
                 f.write(data)
 
+            # Silence "you do not have execution permission" warning from ldd
+            make_executable(tmppath)
+
             # Add any missing libraries to our archive
             for libpath in get_shobj_deps(tmppath):
                 lib = os.path.basename(libpath)
