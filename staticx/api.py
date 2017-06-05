@@ -3,7 +3,6 @@
 # https://github.com/JonathonReinhart/staticx
 #
 import subprocess
-import tarfile
 import shutil
 from tempfile import NamedTemporaryFile
 import os
@@ -14,13 +13,9 @@ from itertools import chain
 
 from .errors import *
 from .utils import *
+from .archive import SxArchive
+from .constants import *
 
-ARCHIVE_SECTION = ".staticx.archive"
-INTERP_FILENAME = ".staticx.interp"
-PROG_FILENAME   = ".staticx.prog"
-
-MAX_INTERP_LEN = 256
-MAX_RPATH_LEN = 256
 
 class ExternTool(object):
     def __init__(self, cmd, os_pkg):
@@ -99,18 +94,6 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     tool_patchelf.run(*args)
 
 
-def get_symlink_target(path):
-    dirpath = os.path.dirname(os.path.abspath(path))
-    return os.path.join(dirpath, os.readlink(path))
-
-def make_symlink_TarInfo(name, target):
-    t = tarfile.TarInfo()
-    t.type = tarfile.SYMTYPE
-    t.name = name
-    t.linkname = target
-    return t
-
-
 def generate_archive(prog, interp, extra_libs=None):
     logging.info("Program interpreter: " + interp)
 
@@ -118,37 +101,17 @@ def generate_archive(prog, interp, extra_libs=None):
         extra_libs = []
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-    with tarfile.open(fileobj=f, mode='w') as tar:
+    with SxArchive(fileobj=f, mode='w') as ar:
 
-        # Add the program
-        arcname = PROG_FILENAME
-        logging.info("Adding {} as {}".format(prog, arcname))
-        tar.add(prog, arcname=arcname)
+        ar.add_program(prog)
+        ar.add_interp_symlink(interp)
 
         # Add all of the libraries
         for lib in chain(get_shobj_deps(prog), extra_libs):
             if lib.startswith('linux-vdso.so'):
                 continue
 
-            # using a temp library name to walk the link list, mainly to preserve the original name for later.
-            linklib = lib
-
-            # 'recursively' step through any symbolic links, generating local links inside the archive
-            while os.path.islink(linklib):
-                arcname = os.path.basename(linklib)
-                linklib = get_symlink_target(linklib)
-                logging.info("    Adding Symlink {} => {}".format(arcname, os.path.basename(linklib)))
-                # add a symlink.  at this point the target probably doesn't exist, but that doesn't matter yet
-                tar.addfile(make_symlink_TarInfo(arcname, os.path.basename(linklib)))
-
-            # left with a real file at this point, add it to the archive.
-            arcname = os.path.basename(linklib)
-            logging.info("    Adding {} as {}".format(linklib, arcname))
-            tar.add(linklib, arcname=arcname)
-
-            # Add special symlink for interpreter
-            if lib == interp:
-                tar.addfile(make_symlink_TarInfo(INTERP_FILENAME, os.path.basename(lib)))
+            ar.add_library(lib)
 
     f.flush()
     return f
