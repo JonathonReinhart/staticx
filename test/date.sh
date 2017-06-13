@@ -16,5 +16,7 @@ staticx $(which date) $outfile
 echo -e "\nRunning staticx executable"
 $outfile
 
-echo -e "\nRunning staticx executable under CentOS 5"
-scuba --image centos:5 $outfile
+if [ -n "$TEST_DOCKER_IMAGE" ]; then
+    echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
+    scuba --image $TEST_DOCKER_IMAGE $outfile
+fi

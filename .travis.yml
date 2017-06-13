@@ -5,6 +5,9 @@ serivces:
 
 language: python
 env:
+  global:
+    - TEST_DOCKER_IMAGE=centos:5
+  matrix:
   - CC=musl-gcc     # Default to musl libc
 matrix:
   include:
@@ -29,6 +32,9 @@ addons:
       - musl
       - musl-dev
       - musl-tools
+
+before_script:
+  - docker pull $TEST_DOCKER_IMAGE
 
 script:
   # Build and install a wheel
