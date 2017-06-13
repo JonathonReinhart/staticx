@@ -4,16 +4,25 @@ serivces:
   - docker
 
 language: python
-python:
-  - "2.7"
-  - "3.2"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.5-dev" # 3.5 development branch
-  - "nightly" # currently points to 3.6-dev
-
+env:
+  global:
+    - TEST_DOCKER_IMAGE=centos:5
+  matrix:
+  - CC=musl-gcc     # Default to musl libc
 matrix:
+  include:
+    - python: "2.7"
+    - python: "3.2"
+    - python: "3.3"
+    - python: "3.4"
+    - python: "3.5"
+
+    # Test using glibc
+    - python: "3.5"
+      env: CC=
+
+    - python: "3.5-dev" # 3.5 development branch
+    - python: "nightly" # currently points to 3.6-dev
   allow_failures:
     - python: "nightly"
 
@@ -24,17 +33,17 @@ addons:
       - musl-dev
       - musl-tools
 
-env:
-  global:
-    - CC=musl-gcc
+before_script:
+  - docker pull $TEST_DOCKER_IMAGE
 
 script:
+  # Build and install a wheel
   - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
-
   - staticx --version
-  - staticx $(which date) date.staticx
-  - ./date.staticx
+
+  # Run test against system executable
+  - test/date.sh
 
   # Run PyInstaller test
   - test/pyinstall/run_test.sh

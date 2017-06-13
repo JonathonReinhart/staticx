@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+outfile=./dist/app.staticx
 
 # Only run if PyInstaller is installed
 # By gracefully failing here, we can control which versions of Python this test
@@ -25,12 +26,14 @@ echo -e "\nPyInstalled application run:"
 
 # Make a staticx executable from it
 echo -e "\nMaking staticx executable:"
-staticx ./dist/app ./dist/app.staticx
+staticx ./dist/app $outfile
 
 # Run that executable
 echo -e "\nRunning staticx executable"
-./dist/app.staticx
+$outfile
 
 # Run it under an old distro
-echo -e "\nRunning staticx executable under CentOS 5"
-scuba --image centos:5 ./dist/app.staticx
+if [ -n "$TEST_DOCKER_IMAGE" ]; then
+    echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
+    scuba --image $TEST_DOCKER_IMAGE $outfile
+fi
