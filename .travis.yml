@@ -29,12 +29,13 @@ env:
     - CC=musl-gcc
 
 script:
+  # Build and install a wheel
   - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
-
   - staticx --version
-  - staticx $(which date) date.staticx
-  - ./date.staticx
+
+  # Run test against system executable
+  - test/date.sh
 
   # Run PyInstaller test
   - test/pyinstall/run_test.sh
