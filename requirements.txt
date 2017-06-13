@@ -1,4 +1,4 @@
 patchelf-wrapper
-pyinstaller
+pyinstaller; (python_version == '2.7') or (python_version >= '3.3' and python_version <= '3.5')
 scuba
 wheel
