@@ -74,7 +74,13 @@ int
 remove_tree(const char *pathname)
 {
     int max_open_fd = 20;
-    int flags = FTW_DEPTH | FTW_MOUNT | FTW_PHYS;
+
+    /**
+     * Musl libc < 1.0.0 had a bug where FTW_MOUNT flag prevented walking any
+     * directories at all. We don't really need it, so just leave it off.
+     * See https://github.com/JonathonReinhart/staticx/issues/25
+     */
+    int flags = FTW_DEPTH | /* FTW_MOUNT | */ FTW_PHYS;
 
     errno = 0;
     return nftw(pathname, remove_tree_fn, max_open_fd, flags);
