@@ -8,8 +8,8 @@ env = Environment(
     ],
     CPPPATH = ['#libtar'],
 
-    BUILD_ROOT = '#build',
-    LIBDIR = '#build/lib',
+    BUILD_ROOT = '#scons_build',
+    LIBDIR = '$BUILD_ROOT/lib',
     LIBPATH = '$LIBDIR'
 )
 
