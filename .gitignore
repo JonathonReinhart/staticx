@@ -1,3 +1,7 @@
 /build/
 .sconsign.dblite
 *.pyc
+
+# Setup.py stuff
+/dist/
+*.egg-info
