@@ -32,11 +32,6 @@ class build_py_hook(build_py):
     pass
 cmdclass_hooks['build_py'] = build_py_hook
 
-@make_first
-class sdist_hook(sdist):
-    pass
-cmdclass_hooks['sdist'] = sdist_hook
-
 try:
     from wheel.bdist_wheel import bdist_wheel
 except ImportError:
