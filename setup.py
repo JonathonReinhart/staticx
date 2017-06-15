@@ -32,17 +32,6 @@ class build_py_hook(build_py):
     pass
 cmdclass_hooks['build_py'] = build_py_hook
 
-try:
-    from wheel.bdist_wheel import bdist_wheel
-except ImportError:
-    bdist_wheel = None
-
-if bdist_wheel:
-    @make_first
-    class bdist_wheel_hook(bdist_wheel):
-        pass
-    cmdclass_hooks['bdist_wheel'] = bdist_wheel_hook
-
 
 
 setup(
