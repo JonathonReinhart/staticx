@@ -2,47 +2,29 @@
 # Derived from https://github.com/JonathonReinhart/scuba
 from __future__ import print_function
 import staticx.version
-from setuptools import setup
-from setuptools.command.build_py import build_py
-from setuptools.command.sdist import sdist
+from setuptools import setup, Command
+from distutils.command.build import build
 import os.path
 from subprocess import check_call
 
 
-def make_first(command_subclass):
-    """A decorator for classes subclassing one of the setuptools commands.
+class build_bootloader(Command):
+    description = "Build staticx bootloader binary"
 
-    It modifies the run() method to run make first
-    """
-    # https://blog.niteoweb.com/setuptools-run-custom-code-in-setup-py/
-    orig_run = command_subclass.run
-
-    def modified_run(self):
-        check_call(['scons'])
-        orig_run(self)
-
-    command_subclass.run = modified_run
-    return command_subclass
-
-
-cmdclass_hooks = {}
-
-@make_first
-class build_py_hook(build_py):
-    pass
-cmdclass_hooks['build_py'] = build_py_hook
-
-try:
-    from wheel.bdist_wheel import bdist_wheel
-except ImportError:
-    bdist_wheel = None
-
-if bdist_wheel:
-    @make_first
-    class bdist_wheel_hook(bdist_wheel):
+    user_options = []
+    def initialize_options(self):
         pass
-    cmdclass_hooks['bdist_wheel'] = bdist_wheel_hook
+    def finalize_options(self):
+        pass
 
+    def run(self):
+        check_call(['scons'])
+
+
+class build_hook(build):
+    def run(self):
+        self.run_command('build_bootloader')
+        build.run(self)
 
 
 setup(
@@ -68,6 +50,13 @@ setup(
             'bootloader',
         ],
     },
+
+    # Ugh.
+    # https://github.com/JonathonReinhart/staticx/issues/22
+    # https://github.com/JonathonReinhart/scuba/issues/77
+    # https://github.com/pypa/setuptools/issues/1064
+    include_package_data = True,
+
     zip_safe = False,   # http://stackoverflow.com/q/24642788/119527
     entry_points = {
         'console_scripts': [
@@ -79,5 +68,9 @@ setup(
 
     # http://stackoverflow.com/questions/17806485
     # http://stackoverflow.com/questions/21915469
-    cmdclass = cmdclass_hooks,
+    # PyInstaller setup.py
+    cmdclass = {
+        'build_bootloader': build_bootloader,
+        'build':            build_hook,
+    },
 )
