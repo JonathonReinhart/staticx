@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.2] - 2017-06-15
+### Fixed
+- Fixed PyPI bdists not including bootloader ([#32])
+
+
 ## [0.3.1] - 2017-06-14
 ### Fixed
 - Work around `FTW_MOUNT` bug in musl<1.0.0 ([#30])
@@ -26,7 +31,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/scuba/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/JonathonReinhart/staticx/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/JonathonReinhart/staticx/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/JonathonReinhart/staticx/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JonathonReinhart/staticx/compare/v0.1.0...v0.2.0
@@ -36,3 +42,4 @@ Initial release
 [#18]: https://github.com/JonathonReinhart/staticx/pull/18
 [#21]: https://github.com/JonathonReinhart/staticx/pull/21
 [#30]: https://github.com/JonathonReinhart/staticx/pull/30
+[#32]: https://github.com/JonathonReinhart/staticx/pull/32
