@@ -50,6 +50,13 @@ setup(
             'bootloader',
         ],
     },
+
+    # Ugh.
+    # https://github.com/JonathonReinhart/staticx/issues/22
+    # https://github.com/JonathonReinhart/scuba/issues/77
+    # https://github.com/pypa/setuptools/issues/1064
+    include_package_data = True,
+
     zip_safe = False,   # http://stackoverflow.com/q/24642788/119527
     entry_points = {
         'console_scripts': [
