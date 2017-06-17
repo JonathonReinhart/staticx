@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import re
 import logging
 import errno
@@ -10,18 +11,25 @@ class ExternTool(object):
         self.cmd = cmd
         self.os_pkg = os_pkg
 
-    def run(self, *args):
+    def __wrap(self, func, args, **kwargs):
         args = list(args)
         args.insert(0, self.cmd)
         try:
             logging.debug("Running " + str(args))
-            return subprocess.check_output(args)
+            return func(args, **kwargs)
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise MissingToolError(self.cmd, self.os_pkg)
             raise
         except subprocess.CalledProcessError as e:
             raise ToolError(self.cmd)
+
+    def run(self, *args):
+        return self.__wrap(subprocess.check_output, args)
+
+    def Popen(self, args, **kwargs):
+        return self.__wrap(subprocess.Popen, args, **kwargs)
+
 
 tool_ldd        = ExternTool('ldd', 'binutils')
 tool_readelf    = ExternTool('readelf', 'binutils')
@@ -90,4 +98,8 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args.append('--force-rpath')
     args.append(path)
 
-    tool_patchelf.run(*args)
+    p = tool_patchelf.Popen(args, stderr=subprocess.PIPE)
+    for line in p.stderr:
+        if 'working around a Linux kernel bug by creating a hole' in line:
+            continue
+        sys.stderr.write(line)
