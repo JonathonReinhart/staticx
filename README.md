@@ -1,9 +1,12 @@
-StaticX [![Build Status](https://travis-ci.org/JonathonReinhart/staticx.svg?branch=master)](https://travis-ci.org/JonathonReinhart/staticx)
+StaticX [![Build Status](https://travis-ci.org/JonathonReinhart/staticx.svg?branch=master)](https://travis-ci.org/JonathonReinhart/staticx) [![PyPI](https://img.shields.io/pypi/v/staticx.svg)](https://pypi.python.org/pypi/staticx)
 =======
 Bundle dynamic executables with their library dependencies so they can be run
 anywhere, just like a static executable.
 
 ## Requirements
+StaticX currently works only with Linux 64-bit dynamic executables.
+
+
 The following external tools need to be installed to run StaticX:
 - `ldd` - Part of GNU C Library
 - `readelf` - Part of binutils
@@ -19,13 +22,18 @@ The following additional tools must be installed to build StaticX from source:
 
 ## Installation
 
-*StaticX is not yet available on PyPi.*
+### From PyPI
+StaticX is [avaiable on PyPI](https://pypi.python.org/pypi/staticx).
+These packages are built on Travis CI and include a bootloader built with
+musl-libc.
 
 You can install using Pip.
 StaticX is compatible with Python 2 (`pip`) or Python 3 (`pip3`):
 ```
-sudo pip3 install https://github.com/JonathonReinhart/staticx/archive/master.zip
+sudo pip3 install staticx
 ```
+
+### From source
 
 If you have musl libc installed, you can use it to build the staticx
 bootloader, resulting in smaller, better binaries. Simply set the `CC`
