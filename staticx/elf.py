@@ -99,7 +99,12 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args.append(path)
 
     p = tool_patchelf.Popen(args, stderr=subprocess.PIPE)
-    for line in p.stderr:
+    stdout, stderr = p.communicate()
+
+    for line in stderr.splitlines(True):
         if 'working around a Linux kernel bug by creating a hole' in line:
             continue
         sys.stderr.write(line)
+
+    if p.returncode != 0:
+        raise ToolError('patchelf')
