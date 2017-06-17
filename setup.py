@@ -2,7 +2,7 @@
 # Derived from https://github.com/JonathonReinhart/scuba
 from __future__ import print_function
 import staticx.version
-from setuptools import setup, Command
+from setuptools import setup, Command, find_packages
 from distutils.command.build import build
 import os.path
 from subprocess import check_call
@@ -44,7 +44,7 @@ setup(
     author = 'Jonathon Reinhart',
     author_email = 'jonathon.reinhart@gmail.com',
     url = 'https://github.com/JonathonReinhart/staticx',
-    packages = ['staticx'],
+    packages = find_packages(),
     package_data = {
         'staticx': [
             'bootloader',
