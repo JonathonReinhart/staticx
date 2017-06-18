@@ -7,34 +7,57 @@ import errno
 from .errors import *
 
 class ExternTool(object):
-    def __init__(self, cmd, os_pkg):
+    def __init__(self, cmd, os_pkg, stderr_ignore=[]):
         self.cmd = cmd
         self.os_pkg = os_pkg
+        self.capture_stdout = True
+        self.stderr_ignore = stderr_ignore
 
-    def __wrap(self, func, args, **kwargs):
+    def __should_ignore(self, line):
+        for ignore in self.stderr_ignore:
+            if ignore in line:
+                return True
+        return False
+
+    def run(self, *args):
         args = list(args)
         args.insert(0, self.cmd)
+
+        kw = dict(stderr=subprocess.PIPE)
+        if self.capture_stdout:
+            kw['stdout'] = subprocess.PIPE
+
+        logging.debug("Running " + str(args))
         try:
-            logging.debug("Running " + str(args))
-            return func(args, **kwargs)
+            p = subprocess.Popen(args, **kw)
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise MissingToolError(self.cmd, self.os_pkg)
             raise
-        except subprocess.CalledProcessError as e:
-            raise ToolError(self.cmd)
 
-    def run(self, *args):
-        return self.__wrap(subprocess.check_output, args)
+        stdout, stderr = p.communicate()
 
-    def Popen(self, args, **kwargs):
-        return self.__wrap(subprocess.Popen, args, **kwargs)
+        # Hide ignored lines from stderr
+        for line in stderr.splitlines(True):
+            if self.__should_ignore(line):
+                continue
+            sys.stderr.write(line)
+
+        if p.returncode != 0:
+            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, p.returncode))
+
+        return stdout
+
+
 
 
 tool_ldd        = ExternTool('ldd', 'binutils')
 tool_readelf    = ExternTool('readelf', 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
-tool_patchelf   = ExternTool('patchelf', 'patchelf')
+tool_patchelf   = ExternTool('patchelf', 'patchelf',
+                    stderr_ignore = [
+                        'working around a Linux kernel bug by creating a hole',
+                    ])
 
 def get_shobj_deps(path):
     output = tool_ldd.run(path)
@@ -98,8 +121,4 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args.append('--force-rpath')
     args.append(path)
 
-    p = tool_patchelf.Popen(args, stderr=subprocess.PIPE)
-    for line in p.stderr:
-        if 'working around a Linux kernel bug by creating a hole' in line:
-            continue
-        sys.stderr.write(line)
+    tool_patchelf.run(*args)
