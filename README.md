@@ -61,6 +61,10 @@ staticx -l /path/to/fancy/library /path/to/exe /path/to/output
 ```
 
 
+## License
+This software is released under the GPLv2, with an exception allowing the
+bootloader to be distributed. See [LICENSE.txt](LICENSE.txt) for more details.
+
 
 [patchelf]: https://nixos.org/patchelf.html
 [musl-libc]: https://www.musl-libc.org/
