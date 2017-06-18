@@ -25,8 +25,8 @@ echo -e "\nPyInstalled application run:"
 ./dist/app
 
 # Make a staticx executable from it
-echo -e "\nMaking staticx executable:"
-staticx ./dist/app $outfile
+echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS):"
+staticx $STATICX_FLAGS ./dist/app $outfile
 
 # Run that executable
 echo -e "\nRunning staticx executable"
