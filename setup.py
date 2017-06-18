@@ -35,7 +35,7 @@ setup(
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
         'Topic :: Software Development :: Build Tools',
