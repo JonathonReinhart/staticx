@@ -12,15 +12,23 @@ PROJPATH = dirname(PACKAGEPATH)
 # Base version, which will be augmented with Git information
 __version__ = '0.3.2'
 
+def git_describe():
+    # Get the version from the local Git repository
+    subprocess.check_call(['git', 'update-index', '-q', '--refresh'], cwd=PROJPATH)
+    desc = subprocess.check_output(['git', 'describe', '--long', '--dirty', '--tag'], cwd=PROJPATH).strip()
+
+    tag, commits, rev = desc.split('-', 2)
+    tag = tag.lstrip('v')
+
+    return tag, commits, rev
+
+
 def get_repo_version():
     gitdir = normpath(join(PROJPATH, '.git'))
-    if exists(gitdir):
-        # Get the version from the local Git repository
-        subprocess.check_call(['git', 'update-index', '-q', '--refresh'], cwd=PROJPATH)
-        desc = subprocess.check_output(['git', 'describe', '--long', '--dirty', '--tag'], cwd=PROJPATH).strip()
 
-        tag, commits, rev = desc.split('-', 2)
-        tag = tag.lstrip('v')
+    # Get version from git repository
+    if exists(gitdir):
+        tag, commits, rev = git_describe()
 
         # Ensure the base version matches the Git tag
         if tag != __version__:
