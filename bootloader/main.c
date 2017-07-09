@@ -13,6 +13,7 @@
 #include "error.h"
 #include "mmap.h"
 #include "util.h"
+#include "xz.h"
 
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
@@ -159,6 +160,133 @@ path_join(const char *p1, const char *p2)
     return result;
 }
 
+/******************************************************************************/
+/*** TODO: Move to own c file */
+
+
+/**
+ * libtar is weird and uses an integer as the 'context' for its tartype_t
+ * function pointers, so we can't use a void * to refer to a dynamic structure.
+ * That's not a big deal, since we only care about a single instance anyway.
+ * So we'll use a "fake" file descriptor number whose value doesn't matter
+ * because it will never be passed to any system calls. We do this just to keep
+ * libtar in check.
+ */
+#define XZ_FAKE_FD   42
+
+#define XZ_BUFSIZ       1<<20       /* 1 MiB */
+#define XZ_DICT_MAX     8<<20       /* 8 MiB */
+
+static int m_tarxz_fd = -1;
+static struct xz_dec *m_xzdec = NULL;
+static struct xz_buf m_xzbuf;
+static uint8_t m_inbuf[XZ_BUFSIZ];
+
+static const char * xzret_to_str(enum xz_ret r)
+{
+    switch (r) {
+        case XZ_OK:                 return "XZ_OK";
+        case XZ_STREAM_END:         return "XZ_STREAM_END";
+        case XZ_UNSUPPORTED_CHECK:  return "XZ_UNSUPPORTED_CHECK";
+        case XZ_MEM_ERROR:          return "XZ_MEM_ERROR";
+        case XZ_MEMLIMIT_ERROR:     return "XZ_MEMLIMIT_ERROR";
+        case XZ_FORMAT_ERROR:       return "XZ_FORMAT_ERROR";
+        case XZ_OPTIONS_ERROR:      return "XZ_OPTIONS_ERROR";
+        case XZ_DATA_ERROR:         return "XZ_DATA_ERROR";
+        case XZ_BUF_ERROR:          return "XZ_BUF_ERROR";
+        default:                    return "XZ_??????";
+    }
+}
+
+static int xz_open(const char *pathname, int oflags, ...)
+{
+    m_xzdec = xz_dec_init(XZ_DYNALLOC, XZ_DICT_MAX);
+    if (!m_xzdec) {
+        error(2, 0, "Failed to initialize xz decoder");
+        return -1;
+    }
+
+    m_tarxz_fd = open(pathname, O_RDONLY);
+    if (m_tarxz_fd < 0) {
+        error(2, errno, "Failed to open tar path for reading: %s", pathname);
+        return -1;
+    }
+
+    m_xzbuf = (typeof(m_xzbuf)) {
+        .in      = m_inbuf,
+        /* Other fields initialized to zero */
+    };
+
+    return XZ_FAKE_FD;
+}
+
+static int xz_close(int fd)
+{
+    if (fd != XZ_FAKE_FD) {
+        debug_printf("Unexpected fd %d\n", fd);
+        return -1;
+    }
+
+    if (m_tarxz_fd != -1) {
+        close(m_tarxz_fd);
+        m_tarxz_fd = -1;
+    }
+
+    if (m_xzdec) {
+        xz_dec_end(m_xzdec);
+        m_xzdec = NULL;
+    }
+
+    return 0;
+}
+
+static ssize_t xz_read(int fd, void * const buf, size_t const len)
+{
+    /* Decompress into given output buffer */
+    m_xzbuf.out      = buf;
+    m_xzbuf.out_pos  = 0;
+    m_xzbuf.out_size = len;
+
+    /* Always attempt to fill the given output buffer */
+    while (m_xzbuf.out_pos != m_xzbuf.out_size) {
+
+        /* Fill input buffer if necessary */
+        if (m_xzbuf.in_pos == m_xzbuf.in_size) {
+            ssize_t nread = read(m_tarxz_fd, m_inbuf, sizeof(m_inbuf));
+            if (nread < 0) {
+                error(2, errno, "Failed to read from tar fd %d\n", m_tarxz_fd);
+                return -1;
+            }
+
+            m_xzbuf.in_pos  = 0;
+            m_xzbuf.in_size = nread;
+        }
+
+        /* Run! */
+        enum xz_ret xr = xz_dec_run(m_xzdec, &m_xzbuf);
+        switch (xr) {
+            case XZ_OK:
+                continue;
+
+            case XZ_STREAM_END:
+                /* Return 0 to indicate EOF */
+                return 0;
+
+            default:
+                error(2, 0, "xz_dec_run returned %s (%d)\n", xzret_to_str(xr), xr);
+                return -1;
+        }
+    }
+
+    return len;
+}
+
+static tartype_t xztype = {
+    .openfunc   = xz_open,
+    .closefunc  = xz_close,
+    .readfunc   = xz_read,
+};
+
 static void
 extract_archive(void)
 {
@@ -177,7 +305,7 @@ extract_archive(void)
     /* TODO: Extract from memory instead of dumping out tar file */
 
     /* Write out the tarball */
-    char *tarpath = path_join(m_homedir, "archive.tar");
+    char *tarpath = path_join(m_homedir, "archive.tar.xz");
     debug_printf("Tar path: %s\n", tarpath);
 
     int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
@@ -193,13 +321,12 @@ extract_archive(void)
     if (close(tarfd))
         error(2, errno, "Error on tar file close: %s", tarpath);
 
-    /* Extract the tarball */
-    /* TODO: Open using gztype
+    /* Extract the tarball
      * See https://github.com/tklauser/libtar/blob/master/libtar/libtar.c
      */
     TAR *t;
     errno = 0;
-    if (tar_open(&t, tarpath, NULL, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
+    if (tar_open(&t, tarpath, &xztype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
         error(2, errno, "tar_open() failed for %s", tarpath);
 
     /* XXX Why is it so hard for people to use 'const'? */
@@ -480,6 +607,8 @@ run_app(int argc, char **argv, char *prog_path)
 int
 main(int argc, char **argv)
 {
+    xz_crc32_init();
+
     /* Create temporary directory where archive will be extracted */
     m_homedir = create_tmpdir();
     debug_printf("Home dir: %s\n", m_homedir);
