@@ -4,9 +4,11 @@ from __future__ import print_function
 import staticx.version
 from setuptools import setup, Command, find_packages
 from distutils.command.build import build
-import os.path
+import os
 from subprocess import check_call
 
+################################################################################
+# Commands / hooks
 
 class build_bootloader(Command):
     description = "Build staticx bootloader binary"
@@ -26,10 +28,27 @@ class build_hook(build):
         self.run_command('build_bootloader')
         build.run(self)
 
+################################################################################
+# Dynamic versioning
+
+def get_version():
+
+    # Travis builds
+    # If we're not building for a tag, then append the build number
+    build_num = os.getenv('TRAVIS_BUILD_NUMBER')
+    build_tag = os.getenv('TRAVIS_TAG')
+    if (not build_tag) and (build_num != None):
+        return '{}.{}'.format(staticx.version.BASE_VERSION, build_num)
+
+    return staticx.version.__version__
+
+
+
+################################################################################
 
 setup(
     name = 'staticx',
-    version = staticx.version.__version__,
+    version = get_version(),
     description = 'Build static self-extracting app from dynamic executable',
     classifiers = [
         'Development Status :: 3 - Alpha',
