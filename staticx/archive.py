@@ -24,6 +24,11 @@ class SxArchive(object):
             # Use CRC32 instead of CRC64 (FORMAT_XZ default)
             # Otherwise, enable XZ_USE_CRC64 in libxz/xz_config.h
             check = lzma.CHECK_CRC32,
+
+            filters = [
+                dict(id=lzma.FILTER_X86),
+                dict(id=lzma.FILTER_LZMA2)
+            ],
         )
         self.tar = tarfile.open(fileobj=self.xzf, mode=mode)
         self._added_libs = []
