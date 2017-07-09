@@ -6,7 +6,10 @@ env = Environment(
         '-Wall', '-Werror',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
     ],
-    CPPPATH = ['#libtar'],
+    CPPPATH = [
+        '#libtar',
+        '#libxz',
+    ],
 
     BUILD_ROOT = '#scons_build',
     LIBDIR = '$BUILD_ROOT/lib',
@@ -29,6 +32,14 @@ libtar = env.SConscript(
     exports = dict(env=env.Clone()),
 )
 env.Install('$LIBDIR', libtar)
+
+libxz = env.SConscript(
+    dirs = 'libxz',
+    variant_dir = env.subst('$BUILD_ROOT/libxz'),
+    duplicate = False,
+    exports = dict(env=env.Clone()),
+)
+env.Install('$LIBDIR', libxz)
 
 bl = env.SConscript(
     dirs = 'bootloader',

@@ -13,7 +13,10 @@ bootloader = env.Program(
         'mmap.c',
         'util.c',
     ],
-    LIBS = ['tar'],
+    LIBS = [
+        'tar',
+        'xz',
+    ],
 )
 
 Return('bootloader')
