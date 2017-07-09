@@ -56,7 +56,7 @@ tool_readelf    = ExternTool('readelf', 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
-                        'working around a Linux kernel bug by creating a hole',
+                        b'working around a Linux kernel bug by creating a hole',
                     ])
 
 def get_shobj_deps(path):
