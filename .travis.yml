@@ -32,6 +32,7 @@ addons:
       - musl
       - musl-dev
       - musl-tools
+      - liblzma-dev
 
 before_script:
   - docker pull $TEST_DOCKER_IMAGE
