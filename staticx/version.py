@@ -19,7 +19,9 @@ git_archive_rev = "$Format:%h$"
 def git_describe():
     # Get the version from the local Git repository
     subprocess.check_call(['git', 'update-index', '-q', '--refresh'], cwd=PROJPATH)
-    desc = subprocess.check_output(['git', 'describe', '--long', '--dirty', '--tag'], cwd=PROJPATH).strip()
+
+    desc = subprocess.check_output(['git', 'describe', '--long', '--dirty', '--tag'], cwd=PROJPATH)
+    desc = desc.decode('utf-8').strip()
 
     tag, commits, rev = desc.split('-', 2)
     tag = tag.lstrip('v')
