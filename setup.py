@@ -59,7 +59,8 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Topic :: Software Development :: Build Tools',
     ],
-    license = 'MIT',
+    license = 'GPL v2 with special exception allowing StaticX to build and'
+              ' distribute non-free programs',
     author = 'Jonathon Reinhart',
     author_email = 'jonathon.reinhart@gmail.com',
     url = 'https://github.com/JonathonReinhart/staticx',
