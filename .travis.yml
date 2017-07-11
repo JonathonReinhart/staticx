@@ -8,7 +8,7 @@ env:
   global:
     - TEST_DOCKER_IMAGE=centos:5
   matrix:
-  - CC=musl-gcc     # Default to musl libc
+  - BOOTLOADER_CC=musl-gcc     # Default to musl libc
 matrix:
   include:
     - python: "2.7"
@@ -19,7 +19,7 @@ matrix:
 
     # Test using glibc
     - python: "3.5"
-      env: CC=
+      env: BOOTLOADER_CC=
 
     - python: "3.5-dev" # 3.5 development branch
     - python: "nightly" # currently points to 3.6-dev
@@ -38,7 +38,7 @@ before_script:
 
 script:
   # Build and install a wheel
-  - python setup.py bdist_wheel
+  - CC=${BOOTLOADER_CC} python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
   - staticx --version
 
