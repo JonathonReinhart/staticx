@@ -9,6 +9,8 @@ bootloader = env.Program(
     target = 'bootloader',
     source = [
         'error.c',
+        'elfutil.c',
+        'extract.c',
         'main.c',
         'mmap.c',
         'util.c',

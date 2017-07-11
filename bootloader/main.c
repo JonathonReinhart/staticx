@@ -8,132 +8,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <elf.h>
-#include <libtar.h>
 #include <sys/wait.h>
+#include "xz.h"
 #include "error.h"
 #include "mmap.h"
 #include "util.h"
-#include "xz.h"
-
-#define ARCHIVE_SECTION         ".staticx.archive"
-#define INTERP_FILENAME         ".staticx.interp"
-#define PROG_FILENAME           ".staticx.prog"
-
-#ifdef DEBUG
-#define debug_printf(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
-#define TAR_DEBUG_OPTIONS		(TAR_VERBOSE)
-#else
-#define debug_printf(fmt, ...)
-#define TAR_DEBUG_OPTIONS		0
-#endif
-
-#define Elf_Ehdr    Elf64_Ehdr
-#define Elf_Phdr    Elf64_Phdr
-#define Elf_Shdr    Elf64_Shdr
-#define Elf_Dyn     Elf64_Dyn
+#include "common.h"
+#include "extract.h"
+#include "elfutil.h"
 
 
 /* Our "home" directory, where the archive is extracted */
 static const char *m_homedir;
-
-
-static inline void *
-ptr_add(void *p, size_t off)
-{
-    return ((uint8_t *)p) + off;
-}
-
-static inline const void *
-cptr_add(const void *p, size_t off)
-{
-    return ((const uint8_t *)p) + off;
-}
-
-static bool
-elf_is_valid(const Elf_Ehdr *ehdr)
-{
-    return (ehdr->e_ident[EI_MAG0] == ELFMAG0)
-        && (ehdr->e_ident[EI_MAG1] == ELFMAG1)
-        && (ehdr->e_ident[EI_MAG2] == ELFMAG2)
-        && (ehdr->e_ident[EI_MAG3] == ELFMAG3);
-}
-
-static Elf_Phdr *
-elf_get_proghdr_by_type(Elf_Ehdr *ehdr, unsigned int ptype)
-{
-    /* Pointer to the program header table */
-    Elf_Phdr *phdr_table = ptr_add(ehdr, ehdr->e_phoff);
-
-    /* Sanity check on size of Elf_Phdr */
-    if (ehdr->e_phentsize != sizeof(Elf_Phdr))
-        error(2, 0, "ELF file disagrees with program header size: %d != %zd",
-            ehdr->e_phentsize, sizeof(Elf_Phdr));
-
-    for (int i=0; i < ehdr->e_phnum; i++) {
-        Elf_Phdr *ph = &phdr_table[i];
-
-        if (ph->p_type == ptype)
-            return ph;
-    }
-    return NULL;
-}
-
-#define SHT_NOT_USED    (SHT_HIUSER + 1)
-
-static Elf_Shdr *
-elf_get_section(Elf_Ehdr *ehdr, const char *lookup_name, Elf64_Word lookup_type)
-{
-    /* Pointer to the section header table */
-    Elf_Shdr *shdr_table = ptr_add(ehdr, ehdr->e_shoff);
-
-    /* Pointer to the string table section header */
-    Elf_Shdr *sh_strtab = &shdr_table[ehdr->e_shstrndx];
-
-    /* Pointer to the string table data */
-    char *strtab = ptr_add(ehdr, sh_strtab->sh_offset);
-
-    /* Sanity check on size of Elf_Shdr */
-    if (ehdr->e_shentsize != sizeof(Elf_Shdr))
-        error(2, 0, "ELF file disagrees with section size: %d != %zd",
-            ehdr->e_shentsize, sizeof(Elf_Shdr));
-
-    /* Iterate sections */
-    debug_printf("Sections:\n");
-    for (int i=0; i < ehdr->e_shnum; i++) {
-        Elf_Shdr *sh = &shdr_table[i];
-        const char *sh_name = strtab + sh->sh_name;
-
-        debug_printf("[%d] %s type=0x%lX  offset=0x%lX\n",
-                i, sh_name, (unsigned long)sh->sh_type, sh->sh_offset);
-
-        /* Look up by name */
-        if (lookup_name) {
-            if (strcmp(sh_name, lookup_name) == 0)
-                return sh;
-        }
-
-        /* Look up by type */
-        if (lookup_type != SHT_NOT_USED) {
-            if (sh->sh_type == lookup_type)
-                return sh;
-        }
-    }
-    return NULL;
-}
-
-static Elf_Shdr *
-elf_get_section_by_name(Elf_Ehdr *ehdr, const char *lookup_name)
-{
-    return elf_get_section(ehdr, lookup_name, SHT_NOT_USED);
-}
-
-#if 0
-static Elf_Shdr *
-elf_get_section_by_type(Elf_Ehdr *ehdr, unsigned long lookup_type)
-{
-    return elf_get_section(ehdr, NULL, lookup_type);
-}
-#endif
 
 static char *
 path_join(const char *p1, const char *p2)
@@ -145,144 +31,6 @@ path_join(const char *p1, const char *p2)
 }
 
 /******************************************************************************/
-/*** TODO: Move to own c file */
-
-
-/**
- * libtar is weird and uses an integer as the 'context' for its tartype_t
- * function pointers, so we can't use a void * to refer to a dynamic structure.
- * That's not a big deal, since we only care about a single instance anyway.
- * So we'll use a "fake" file descriptor number whose value doesn't matter
- * because it will never be passed to any system calls. We do this just to keep
- * libtar in check.
- */
-#define XZ_FAKE_FD   42
-
-#define XZ_DICT_MAX     8<<20       /* 8 MiB */
-
-static struct xz_dec *m_xzdec = NULL;
-static struct xz_buf m_xzbuf;
-
-static const char * xzret_to_str(enum xz_ret r)
-{
-    switch (r) {
-        case XZ_OK:                 return "XZ_OK";
-        case XZ_STREAM_END:         return "XZ_STREAM_END";
-        case XZ_UNSUPPORTED_CHECK:  return "XZ_UNSUPPORTED_CHECK";
-        case XZ_MEM_ERROR:          return "XZ_MEM_ERROR";
-        case XZ_MEMLIMIT_ERROR:     return "XZ_MEMLIMIT_ERROR";
-        case XZ_FORMAT_ERROR:       return "XZ_FORMAT_ERROR";
-        case XZ_OPTIONS_ERROR:      return "XZ_OPTIONS_ERROR";
-        case XZ_DATA_ERROR:         return "XZ_DATA_ERROR";
-        case XZ_BUF_ERROR:          return "XZ_BUF_ERROR";
-        default:                    return "XZ_??????";
-    }
-}
-
-static int xz_open(const char *pathname, int oflags, ...)
-{
-    m_xzdec = xz_dec_init(XZ_DYNALLOC, XZ_DICT_MAX);
-    if (!m_xzdec) {
-        error(2, 0, "Failed to initialize xz decoder");
-        return -1;
-    }
-
-    return XZ_FAKE_FD;
-}
-
-static int xz_close(int fd)
-{
-    if (fd != XZ_FAKE_FD) {
-        debug_printf("Unexpected fd %d\n", fd);
-        return -1;
-    }
-
-    if (m_xzdec) {
-        xz_dec_end(m_xzdec);
-        m_xzdec = NULL;
-    }
-
-    return 0;
-}
-
-static ssize_t xz_read(int fd, void * const buf, size_t const len)
-{
-    /* Decompress into given output buffer */
-    m_xzbuf.out      = buf;
-    m_xzbuf.out_pos  = 0;
-    m_xzbuf.out_size = len;
-
-    /* Always attempt to fill the given output buffer */
-    while (m_xzbuf.out_pos != m_xzbuf.out_size) {
-
-        /* Run! */
-        enum xz_ret xr = xz_dec_run(m_xzdec, &m_xzbuf);
-        switch (xr) {
-            case XZ_OK:
-                continue;
-
-            case XZ_STREAM_END:
-                /* Return 0 to indicate EOF */
-                return 0;
-
-            default:
-                error(2, 0, "xz_dec_run returned %s (%d)\n", xzret_to_str(xr), xr);
-                return -1;
-        }
-    }
-
-    return len;
-}
-
-static tartype_t xztype = {
-    .openfunc   = xz_open,
-    .closefunc  = xz_close,
-    .readfunc   = xz_read,
-};
-
-static void
-extract_archive(void)
-{
-    /* mmap this ELF file */
-    struct map *map = mmap_file("/proc/self/exe", true);
-
-    /* Find the .staticx.archive section */
-    Elf_Ehdr *ehdr = map->map;
-    if (!elf_is_valid(ehdr))
-        error(2, 0, "Invalid ELF header");
-
-    const Elf_Shdr *shdr = elf_get_section_by_name(ehdr, ARCHIVE_SECTION);
-    if (!shdr)
-        error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
-
-
-    size_t tarxz_size = shdr->sh_size;
-    const void *tarxz_data = cptr_add(ehdr, shdr->sh_offset);
-
-    m_xzbuf = (typeof(m_xzbuf)) {
-        .in      = tarxz_data,
-        .in_pos  = 0,
-        .in_size = tarxz_size,
-        /* Other fields initialized to zero */
-    };
-
-    TAR *t;
-    errno = 0;
-    if (tar_open(&t, "", &xztype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
-        error(2, errno, "tar_open() failed");
-
-    /* XXX Why is it so hard for people to use 'const'? */
-    if (tar_extract_all(t, (char*)m_homedir) != 0)
-        error(2, errno, "tar_extract_all() failed");
-
-    if (tar_close(t) != 0)
-        error(2, errno, "tar_close() failed");
-    t = NULL;
-    debug_printf("Successfully extracted archive to %s\n", m_homedir);
-
-    unmap_file(map);
-    map = NULL;
-}
 
 static void
 set_interp(Elf_Ehdr *ehdr, const char *new_interp)
@@ -552,7 +300,7 @@ main(int argc, char **argv)
     debug_printf("Home dir: %s\n", m_homedir);
 
     /* Extract the archive embedded in this program */
-    extract_archive();
+    extract_archive(m_homedir);
 
     /* Get path to user application inside temp dir */
     char *prog_path = path_join(m_homedir, PROG_FILENAME);
