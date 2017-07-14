@@ -8,147 +8,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <elf.h>
-#include <libtar.h>
 #include <sys/wait.h>
+#include "xz.h"
 #include "error.h"
 #include "mmap.h"
 #include "util.h"
-
-#define ARCHIVE_SECTION         ".staticx.archive"
-#define INTERP_FILENAME         ".staticx.interp"
-#define PROG_FILENAME           ".staticx.prog"
-
-#ifdef DEBUG
-#define debug_printf(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
-#define TAR_DEBUG_OPTIONS		(TAR_VERBOSE)
-#else
-#define debug_printf(fmt, ...)
-#define TAR_DEBUG_OPTIONS		0
-#endif
-
-#define Elf_Ehdr    Elf64_Ehdr
-#define Elf_Phdr    Elf64_Phdr
-#define Elf_Shdr    Elf64_Shdr
-#define Elf_Dyn     Elf64_Dyn
+#include "common.h"
+#include "extract.h"
+#include "elfutil.h"
 
 
 /* Our "home" directory, where the archive is extracted */
 static const char *m_homedir;
-
-
-static inline void *
-ptr_add(void *p, size_t off)
-{
-    return ((uint8_t *)p) + off;
-}
-
-static inline const void *
-cptr_add(const void *p, size_t off)
-{
-    return ((const uint8_t *)p) + off;
-}
-
-static bool
-elf_is_valid(const Elf_Ehdr *ehdr)
-{
-    return (ehdr->e_ident[EI_MAG0] == ELFMAG0)
-        && (ehdr->e_ident[EI_MAG1] == ELFMAG1)
-        && (ehdr->e_ident[EI_MAG2] == ELFMAG2)
-        && (ehdr->e_ident[EI_MAG3] == ELFMAG3);
-}
-
-static Elf_Phdr *
-elf_get_proghdr_by_type(Elf_Ehdr *ehdr, unsigned int ptype)
-{
-    /* Pointer to the program header table */
-    Elf_Phdr *phdr_table = ptr_add(ehdr, ehdr->e_phoff);
-
-    /* Sanity check on size of Elf_Phdr */
-    if (ehdr->e_phentsize != sizeof(Elf_Phdr))
-        error(2, 0, "ELF file disagrees with program header size: %d != %zd",
-            ehdr->e_phentsize, sizeof(Elf_Phdr));
-
-    for (int i=0; i < ehdr->e_phnum; i++) {
-        Elf_Phdr *ph = &phdr_table[i];
-
-        if (ph->p_type == ptype)
-            return ph;
-    }
-    return NULL;
-}
-
-#define SHT_NOT_USED    (SHT_HIUSER + 1)
-
-static Elf_Shdr *
-elf_get_section(Elf_Ehdr *ehdr, const char *lookup_name, Elf64_Word lookup_type)
-{
-    /* Pointer to the section header table */
-    Elf_Shdr *shdr_table = ptr_add(ehdr, ehdr->e_shoff);
-
-    /* Pointer to the string table section header */
-    Elf_Shdr *sh_strtab = &shdr_table[ehdr->e_shstrndx];
-
-    /* Pointer to the string table data */
-    char *strtab = ptr_add(ehdr, sh_strtab->sh_offset);
-
-    /* Sanity check on size of Elf_Shdr */
-    if (ehdr->e_shentsize != sizeof(Elf_Shdr))
-        error(2, 0, "ELF file disagrees with section size: %d != %zd",
-            ehdr->e_shentsize, sizeof(Elf_Shdr));
-
-    /* Iterate sections */
-    debug_printf("Sections:\n");
-    for (int i=0; i < ehdr->e_shnum; i++) {
-        Elf_Shdr *sh = &shdr_table[i];
-        const char *sh_name = strtab + sh->sh_name;
-
-        debug_printf("[%d] %s type=0x%lX  offset=0x%lX\n",
-                i, sh_name, (unsigned long)sh->sh_type, sh->sh_offset);
-
-        /* Look up by name */
-        if (lookup_name) {
-            if (strcmp(sh_name, lookup_name) == 0)
-                return sh;
-        }
-
-        /* Look up by type */
-        if (lookup_type != SHT_NOT_USED) {
-            if (sh->sh_type == lookup_type)
-                return sh;
-        }
-    }
-    return NULL;
-}
-
-static Elf_Shdr *
-elf_get_section_by_name(Elf_Ehdr *ehdr, const char *lookup_name)
-{
-    return elf_get_section(ehdr, lookup_name, SHT_NOT_USED);
-}
-
-#if 0
-static Elf_Shdr *
-elf_get_section_by_type(Elf_Ehdr *ehdr, unsigned long lookup_type)
-{
-    return elf_get_section(ehdr, NULL, lookup_type);
-}
-#endif
-
-
-static int
-write_all(int fd, const void *buf, size_t sz)
-{
-    const uint8_t *p = buf;
-    while (sz) {
-        ssize_t written = write(fd, p, sz);
-        if (written == -1)
-            return -1;
-
-        p += written;
-        sz -= written;
-    }
-    return 0;
-}
 
 static char *
 path_join(const char *p1, const char *p2)
@@ -159,65 +30,7 @@ path_join(const char *p1, const char *p2)
     return result;
 }
 
-static void
-extract_archive(void)
-{
-    /* mmap this ELF file */
-    struct map *map = mmap_file("/proc/self/exe", true);
-
-    /* Find the .staticx.archive section */
-    Elf_Ehdr *ehdr = map->map;
-    if (!elf_is_valid(ehdr))
-        error(2, 0, "Invalid ELF header");
-
-    const Elf_Shdr *shdr = elf_get_section_by_name(ehdr, ARCHIVE_SECTION);
-    if (!shdr)
-        error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
-
-    /* TODO: Extract from memory instead of dumping out tar file */
-
-    /* Write out the tarball */
-    char *tarpath = path_join(m_homedir, "archive.tar");
-    debug_printf("Tar path: %s\n", tarpath);
-
-    int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
-    if (tarfd < 0)
-        error(2, errno, "Failed to open tar path: %s", tarpath);
-
-    size_t tar_size = shdr->sh_size;
-    const void *tar_data = cptr_add(ehdr, shdr->sh_offset);
-
-    if (write_all(tarfd, tar_data, tar_size))
-        error(2, errno, "Failed to write tar file: %s", tarpath);
-
-    if (close(tarfd))
-        error(2, errno, "Error on tar file close: %s", tarpath);
-
-    /* Extract the tarball */
-    /* TODO: Open using gztype
-     * See https://github.com/tklauser/libtar/blob/master/libtar/libtar.c
-     */
-    TAR *t;
-    errno = 0;
-    if (tar_open(&t, tarpath, NULL, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
-        error(2, errno, "tar_open() failed for %s", tarpath);
-
-    /* XXX Why is it so hard for people to use 'const'? */
-    if (tar_extract_all(t, (char*)m_homedir) != 0)
-        error(2, errno, "tar_extract_all() failed for %s", tarpath);
-
-    if (tar_close(t) != 0)
-        error(2, errno, "tar_close() failed for %s", tarpath);
-    t = NULL;
-    debug_printf("Successfully extracted archive to %s\n", m_homedir);
-
-
-    free(tarpath);
-    tarpath = NULL;
-
-    unmap_file(map);
-    map = NULL;
-}
+/******************************************************************************/
 
 static void
 set_interp(Elf_Ehdr *ehdr, const char *new_interp)
@@ -480,12 +293,14 @@ run_app(int argc, char **argv, char *prog_path)
 int
 main(int argc, char **argv)
 {
+    xz_crc32_init();
+
     /* Create temporary directory where archive will be extracted */
     m_homedir = create_tmpdir();
     debug_printf("Home dir: %s\n", m_homedir);
 
     /* Extract the archive embedded in this program */
-    extract_archive();
+    extract_archive(m_homedir);
 
     /* Get path to user application inside temp dir */
     char *prog_path = path_join(m_homedir, PROG_FILENAME);

@@ -1,0 +1,13 @@
+Import('env')
+
+libxz = env.StaticLibrary(
+    target = 'xz',
+    source = [
+        'xz_crc32.c',
+        'xz_dec_lzma2.c',
+        'xz_dec_stream.c',
+        'xz_dec_bcj.c',
+    ]
+)
+
+Return('libxz')

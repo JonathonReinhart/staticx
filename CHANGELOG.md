@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Compress archive with LZMA (plus x86 BCJ filter) ([#46])
+
+
 ## [0.3.2] - 2017-06-15
 ### Fixed
 - Fixed PyPI bdists not including bootloader ([#32])
@@ -43,3 +48,4 @@ Initial release
 [#21]: https://github.com/JonathonReinhart/staticx/pull/21
 [#30]: https://github.com/JonathonReinhart/staticx/pull/30
 [#32]: https://github.com/JonathonReinhart/staticx/pull/32
+[#46]: https://github.com/JonathonReinhart/staticx/pull/46
