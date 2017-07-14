@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.4.0] - 2016-07-13
 ### Added
 - Compress archive with LZMA (plus x86 BCJ filter) ([#46])
 
@@ -36,7 +36,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/JonathonReinhart/staticx/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/JonathonReinhart/staticx/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/JonathonReinhart/staticx/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/JonathonReinhart/staticx/compare/v0.2.0...v0.3.0
