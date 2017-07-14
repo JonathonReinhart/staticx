@@ -24,7 +24,7 @@ The following additional tools must be installed to build StaticX from source:
 
 ### From PyPI
 StaticX is [avaiable on PyPI](https://pypi.python.org/pypi/staticx).
-These packages are built on Travis CI and include a bootloader built with
+The wheels are built on Travis CI and include a bootloader built with
 musl-libc.
 
 You can install using Pip.
@@ -32,6 +32,10 @@ StaticX is compatible with Python 2 (`pip`) or Python 3 (`pip3`):
 ```
 sudo pip3 install staticx
 ```
+
+*Note:* Python < 3.3 requires the
+[`backports.lzma`](https://pypi.python.org/pypi/backports.lzma) package to be
+installed. (See [#45][#45] for details.)
 
 ### From source
 
@@ -68,3 +72,4 @@ bootloader to be distributed. See [LICENSE.txt](LICENSE.txt) for more details.
 
 [patchelf]: https://nixos.org/patchelf.html
 [musl-libc]: https://www.musl-libc.org/
+[#45]: https://github.com/JonathonReinhart/staticx/issues/45
