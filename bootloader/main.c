@@ -135,22 +135,6 @@ elf_get_section_by_type(Elf_Ehdr *ehdr, unsigned long lookup_type)
 }
 #endif
 
-
-static int
-write_all(int fd, const void *buf, size_t sz)
-{
-    const uint8_t *p = buf;
-    while (sz) {
-        ssize_t written = write(fd, p, sz);
-        if (written == -1)
-            return -1;
-
-        p += written;
-        sz -= written;
-    }
-    return 0;
-}
-
 static char *
 path_join(const char *p1, const char *p2)
 {
@@ -174,13 +158,10 @@ path_join(const char *p1, const char *p2)
  */
 #define XZ_FAKE_FD   42
 
-#define XZ_BUFSIZ       1<<20       /* 1 MiB */
 #define XZ_DICT_MAX     8<<20       /* 8 MiB */
 
-static int m_tarxz_fd = -1;
 static struct xz_dec *m_xzdec = NULL;
 static struct xz_buf m_xzbuf;
-static uint8_t m_inbuf[XZ_BUFSIZ];
 
 static const char * xzret_to_str(enum xz_ret r)
 {
@@ -206,17 +187,6 @@ static int xz_open(const char *pathname, int oflags, ...)
         return -1;
     }
 
-    m_tarxz_fd = open(pathname, O_RDONLY);
-    if (m_tarxz_fd < 0) {
-        error(2, errno, "Failed to open tar path for reading: %s", pathname);
-        return -1;
-    }
-
-    m_xzbuf = (typeof(m_xzbuf)) {
-        .in      = m_inbuf,
-        /* Other fields initialized to zero */
-    };
-
     return XZ_FAKE_FD;
 }
 
@@ -225,11 +195,6 @@ static int xz_close(int fd)
     if (fd != XZ_FAKE_FD) {
         debug_printf("Unexpected fd %d\n", fd);
         return -1;
-    }
-
-    if (m_tarxz_fd != -1) {
-        close(m_tarxz_fd);
-        m_tarxz_fd = -1;
     }
 
     if (m_xzdec) {
@@ -249,18 +214,6 @@ static ssize_t xz_read(int fd, void * const buf, size_t const len)
 
     /* Always attempt to fill the given output buffer */
     while (m_xzbuf.out_pos != m_xzbuf.out_size) {
-
-        /* Fill input buffer if necessary */
-        if (m_xzbuf.in_pos == m_xzbuf.in_size) {
-            ssize_t nread = read(m_tarxz_fd, m_inbuf, sizeof(m_inbuf));
-            if (nread < 0) {
-                error(2, errno, "Failed to read from tar fd %d\n", m_tarxz_fd);
-                return -1;
-            }
-
-            m_xzbuf.in_pos  = 0;
-            m_xzbuf.in_size = nread;
-        }
 
         /* Run! */
         enum xz_ret xr = xz_dec_run(m_xzdec, &m_xzbuf);
@@ -302,45 +255,30 @@ extract_archive(void)
     if (!shdr)
         error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
 
-    /* TODO: Extract from memory instead of dumping out tar file */
 
-    /* Write out the tarball */
-    char *tarpath = path_join(m_homedir, "archive.tar.xz");
-    debug_printf("Tar path: %s\n", tarpath);
+    size_t tarxz_size = shdr->sh_size;
+    const void *tarxz_data = cptr_add(ehdr, shdr->sh_offset);
 
-    int tarfd = open(tarpath, O_CREAT|O_WRONLY, 0400);
-    if (tarfd < 0)
-        error(2, errno, "Failed to open tar path: %s", tarpath);
+    m_xzbuf = (typeof(m_xzbuf)) {
+        .in      = tarxz_data,
+        .in_pos  = 0,
+        .in_size = tarxz_size,
+        /* Other fields initialized to zero */
+    };
 
-    size_t tar_size = shdr->sh_size;
-    const void *tar_data = cptr_add(ehdr, shdr->sh_offset);
-
-    if (write_all(tarfd, tar_data, tar_size))
-        error(2, errno, "Failed to write tar file: %s", tarpath);
-
-    if (close(tarfd))
-        error(2, errno, "Error on tar file close: %s", tarpath);
-
-    /* Extract the tarball
-     * See https://github.com/tklauser/libtar/blob/master/libtar/libtar.c
-     */
     TAR *t;
     errno = 0;
-    if (tar_open(&t, tarpath, &xztype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
-        error(2, errno, "tar_open() failed for %s", tarpath);
+    if (tar_open(&t, "", &xztype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
+        error(2, errno, "tar_open() failed");
 
     /* XXX Why is it so hard for people to use 'const'? */
     if (tar_extract_all(t, (char*)m_homedir) != 0)
-        error(2, errno, "tar_extract_all() failed for %s", tarpath);
+        error(2, errno, "tar_extract_all() failed");
 
     if (tar_close(t) != 0)
-        error(2, errno, "tar_close() failed for %s", tarpath);
+        error(2, errno, "tar_close() failed");
     t = NULL;
     debug_printf("Successfully extracted archive to %s\n", m_homedir);
-
-
-    free(tarpath);
-    tarpath = NULL;
 
     unmap_file(map);
     map = NULL;
