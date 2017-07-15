@@ -25,6 +25,7 @@ def git_describe():
 
     tag, commits, rev = desc.split('-', 2)
     tag = tag.lstrip('v')
+    commits = int(commits)
 
     return tag, commits, rev
 
@@ -39,6 +40,10 @@ def get_version():
         # Ensure the base version matches the Git tag
         if tag != BASE_VERSION:
             raise Exception('Git revision different from base version')
+
+        # No local version if we're on a tag
+        if commits == 0 and not rev.endswith('dirty'):
+            return BASE_VERSION
 
         return '{}+{}-{}'.format(BASE_VERSION, commits, rev)
 
