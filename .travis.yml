@@ -61,6 +61,7 @@ deploy:
     password:
       secure: "3XzW3vsUh4UmHgoJasxnXAv9+ZBnOn5pSO9avNyUCAn1XqzjZoJ3dztzyJ8Do/GNcsbEAdTdiwfCSNBj0Z+ASeGCkxqkXD3bqSCHD1mJVe5RcpNHJ2ZfME6KuE7wl0mMSoz8NAC2xvBls/AYUFT5y1aLmzwSurCo+e7InY9np/1iBrdc0BiKJkK+bZ02r8lJB9OeAG3rsd3cQugX4h9Znbq10L18U/LY1yFAGZEZS3c38yjDkUSvujXQxssJF0XBbKncalm2YXnvbH3yNeE6L7HMDtMIIyJZgrc5cUxV5Dkxtny8u51ciOYf017yFyo19F48mGy5pTLnPeANG8Ipu+eEUlfZAJAH5VUix5wxKLSwnqqemyvQzj/YKEVmg9JzLZRZ+Meq2YQiESWEJbAxPPr3GzRmRuG9Pa3Uu5KE/h2I9H/oqCJbtdHJQKR92OXDuRIXvqABeUIsZpONBSrFUDj3PJHMnyyD5CGxLCgDww9lmnl8fN49rOSgpzd2JMxkEOXK9+J8GBZWfRoyijQrKC/lfuNFHQIOTk5ZQxiIuvpoGn5N3xvP2C35tGMmPL+fSQV/Jb7SKt2Xdi/fCts6zLEnU431glsgXPS1vzBtdLLj1tVDJPuGQBlcpaMNBf/2JB9NC9bvtuyksdbeSU2KfF2LslNFK+rasQqnO41ce4U="
     distributions: "sdist bdist_wheel"
+    skip_cleanup: true
     on:
       branch: master
       tags: false
@@ -73,6 +74,7 @@ deploy:
     password:
       secure: "FJMDJTi1zHOO33SXhzsF7si7VtTi0LIPaVLRlbhmgaBjPXyLKn6ULYG1kQFn49Svu3J7+5tQOpMfi4xBJbHep1dDQb3lIm2IZI9aZ6wkxI0coH0xFihhO1/VuQodnFjda6N92wWICDpC2iKDKI4fppeJbp6FprCKH9JElFIxdoLRgpxiHOJvHpzk/pQRWQbR/2MU7MhDNvRh19/Uy9DkAUnOJl4csM6h4rAukEB+JwK8zo9g/W/DytpksVaBsgG0gpM31icxwoDpTjzY1aAfN8BxJ9olD09rSpuM/rs+twQPjWHuhGO4jY4ofc4Iwc0y2xqM+5b/s+prNgxBa13naro55euTKlaqoX4nkrCJcGfU6zYuGQ/iqmO7NjtGbiUpE4UCa0B9lm5NXwifM3xBZMvhRajZ/Mpb7MsKmm4avkA0FUHADubdjwLlg6Xkg9hqG+NnVvQEApeuDUkNAV2rpAnUBOjcubIggB+VpVSK8ToUKNGyUtrP2ePJd/HQ3dUzNZgXB2RjgfGFVnXxltVOuC5gqiW4/KYJ8GnSTszTDchzJogCkNUzuarDm+JSAqjzw/6qjEk2kx5BLiPW6jWeSCES+0ZaLwA9jy9MbJDUq4eHFhgrhQCqBQ9oqPQS+Q8GPH8xXS6KN2vFAsB3WSADGwK0zeKJ/yBHtfObVtwBO9M="
     distributions: "sdist bdist_wheel"
+    skip_cleanup: true
     on:
       branch: master
       tags: true
