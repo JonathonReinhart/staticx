@@ -61,6 +61,7 @@ tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
                         'working around a Linux kernel bug by creating a hole',
                     ])
+tool_strip      = ExternTool('strip', 'binutils')
 
 def get_shobj_deps(path):
     output = tool_ldd.run(path)
@@ -125,3 +126,6 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args.append(path)
 
     tool_patchelf.run(*args)
+
+def strip_elf(path):
+    tool_strip.run(path)
