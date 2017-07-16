@@ -10,9 +10,36 @@ except (ImportError, AttributeError):
     # Python < 3.3
     from backports import lzma
 
+from .bcjfilter import get_bcj_filter_arch
 from .utils import get_symlink_target
 from .constants import *
 from .errors import *
+
+
+def get_bcj_filter():
+    arch = get_bcj_filter_arch()
+    if not arch:
+        return None, ''
+
+    # Get the lzma module constant name and value
+    filt_name = 'FILTER_' + arch
+    filt = getattr(lzma, filt_name)
+
+    return filt, filt_name
+
+
+def get_xz_filters():
+    filters = []
+
+    # Get a BCJ filter for the current architecture
+    bcj_filter, bcj_filter_name = get_bcj_filter()
+    if bcj_filter:
+        logging.info("Using XZ BCJ filter {}".format(bcj_filter_name))
+        filters.append(dict(id=bcj_filter))
+
+    # The last filter in the chain must be a compression filter.
+    filters.append(dict(id=lzma.FILTER_LZMA2))
+    return filters
 
 class SxArchive(object):
     def __init__(self, fileobj, mode):
@@ -25,10 +52,7 @@ class SxArchive(object):
             # Otherwise, enable XZ_USE_CRC64 in libxz/xz_config.h
             check = lzma.CHECK_CRC32,
 
-            filters = [
-                dict(id=lzma.FILTER_X86),
-                dict(id=lzma.FILTER_LZMA2)
-            ],
+            filters = get_xz_filters(),
         )
         self.tar = tarfile.open(fileobj=self.xzf, mode=mode)
         self._added_libs = []
