@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Raise error if given output path is a directory ([#52])
+- Dynamically select XZ BCJ filter ([#54])
 
 
 ## [0.4.1] - 2017-07-15
@@ -65,3 +66,4 @@ Initial release
 [#39]: https://github.com/JonathonReinhart/staticx/pull/39
 [#46]: https://github.com/JonathonReinhart/staticx/pull/46
 [#52]: https://github.com/JonathonReinhart/staticx/pull/52
+[#54]: https://github.com/JonathonReinhart/staticx/pull/54
