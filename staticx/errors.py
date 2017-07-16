@@ -37,3 +37,11 @@ class LibExistsError(ArchiveError):
         super(LibExistsError, self).__init__(
                 "Library '{}' already exists in archive".format(lib))
         self.lib = lib
+
+
+class DirectoryExistsError(Error):
+    """A given directory already exists"""
+    def __init__(self, path):
+        super(DirectoryExistsError, self).__init__(
+                "{}: is a directory".format(path))
+        self.path = path

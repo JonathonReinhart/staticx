@@ -114,7 +114,7 @@ def generate(prog, output, libs=None, bootloader=None, strip=False):
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
         # Move the temporary output file to its final place
-        shutil.move(tmpoutput, output)
+        move_file(tmpoutput, output)
         tmpoutput = None
 
     finally:
