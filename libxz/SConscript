@@ -1,5 +1,13 @@
 Import('env')
 
+from staticx.bcjfilter import get_bcj_filter_arch
+
+# Enable the BCJ filter appropriate for this platform
+bcj_filter_arch = get_bcj_filter_arch()
+if bcj_filter_arch:
+    xz_dec_macro = 'XZ_DEC_' + bcj_filter_arch
+    env.Append(CPPDEFINES = {xz_dec_macro: 1})
+
 libxz = env.StaticLibrary(
     target = 'xz',
     source = [
