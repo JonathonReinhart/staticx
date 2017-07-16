@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.5.0] - 2017-07-16
 ### Added
 - Added `--strip` option to strip binaries while adding to archive ([#39])
 
@@ -49,7 +49,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/JonathonReinhart/staticx/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/JonathonReinhart/staticx/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/JonathonReinhart/staticx/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/JonathonReinhart/staticx/compare/v0.3.1...v0.3.2
