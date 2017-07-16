@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Added `--strip` option to strip binaries while adding to archive ([#39])
+
 ## [0.4.1] - 2017-07-15
 ### Fixed
 - Fixes for release builds deployed to PyPI
@@ -54,4 +58,5 @@ Initial release
 [#21]: https://github.com/JonathonReinhart/staticx/pull/21
 [#30]: https://github.com/JonathonReinhart/staticx/pull/30
 [#32]: https://github.com/JonathonReinhart/staticx/pull/32
+[#39]: https://github.com/JonathonReinhart/staticx/pull/39
 [#46]: https://github.com/JonathonReinhart/staticx/pull/46
