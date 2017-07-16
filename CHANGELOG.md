@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Added `--strip` option to strip binaries while adding to archive ([#39])
 
+### Changed
+- Raise error if given output path is a directory ([#52])
+
+
 ## [0.4.1] - 2017-07-15
 ### Fixed
 - Fixes for release builds deployed to PyPI
@@ -60,3 +64,4 @@ Initial release
 [#32]: https://github.com/JonathonReinhart/staticx/pull/32
 [#39]: https://github.com/JonathonReinhart/staticx/pull/39
 [#46]: https://github.com/JonathonReinhart/staticx/pull/46
+[#52]: https://github.com/JonathonReinhart/staticx/pull/52
