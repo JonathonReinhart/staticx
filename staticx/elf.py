@@ -7,11 +7,12 @@ import errno
 from .errors import *
 
 class ExternTool(object):
-    def __init__(self, cmd, os_pkg, stderr_ignore=[]):
+    def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
         self.cmd = cmd
         self.os_pkg = os_pkg
         self.capture_stdout = True
         self.stderr_ignore = stderr_ignore
+        self.encoding = encoding
 
     def __should_ignore(self, line):
         for ignore in self.stderr_ignore:
@@ -36,6 +37,8 @@ class ExternTool(object):
             raise
 
         stdout, stderr = p.communicate()
+        stdout = stdout.decode(self.encoding)
+        stderr = stderr.decode(self.encoding)
 
         # Hide ignored lines from stderr
         for line in stderr.splitlines(True):
@@ -56,8 +59,9 @@ tool_readelf    = ExternTool('readelf', 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
-                        b'working around a Linux kernel bug by creating a hole',
+                        'working around a Linux kernel bug by creating a hole',
                     ])
+tool_strip      = ExternTool('strip', 'binutils')
 
 def get_shobj_deps(path):
     output = tool_ldd.run(path)
@@ -75,7 +79,7 @@ def get_shobj_deps(path):
                 return True
         return False
 
-    for line in output.decode('ascii').splitlines():
+    for line in output.splitlines():
         m = pat.match(line)
         if not m:
             raise ToolError('ldd', "Unexpected line in ldd output: " + line)
@@ -94,7 +98,7 @@ def readelf(path, *args):
     args = list(args)
     args.append(path)
     output = tool_readelf.run(*args)
-    return output.decode('ascii').splitlines()
+    return output.splitlines()
 
 def get_prog_interp(path):
     # Example:
@@ -122,3 +126,6 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args.append(path)
 
     tool_patchelf.run(*args)
+
+def strip_elf(path):
+    tool_strip.run(path)

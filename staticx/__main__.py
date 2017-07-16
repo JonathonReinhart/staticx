@@ -19,6 +19,8 @@ def parse_args():
     # Operational options
     ap.add_argument('-l', dest='libs', action='append',
             help = 'Add additional libraries (absolute paths)')
+    ap.add_argument('--strip', action='store_true',
+            help = 'Strip binaries before adding to archive (reduces size)')
 
     # Special / output-related options
     ap.add_argument('-V', '--version', action='version',
@@ -39,7 +41,9 @@ def main():
     try:
         generate(args.prog, args.output,
                 libs = args.libs,
-                bootloader = args.bootloader)
+                bootloader = args.bootloader,
+                strip = args.strip,
+                )
     except Error as e:
         print("staticx: " + str(e))
         sys.exit(2)

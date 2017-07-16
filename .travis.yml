@@ -53,6 +53,9 @@ script:
   # Run PyInstaller test
   - test/pyinstall/run_test.sh
 
+  # Run PyInstaller test, stripping
+  - STATICX_FLAGS='--strip' test/pyinstall/run_test.sh
+
 
 deploy:
   # See this blog post for an excellent description
