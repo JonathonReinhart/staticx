@@ -120,14 +120,27 @@ def strip_elf(path):
 ################################################################################
 # Using pyelftools
 
+class ELFCloser(object):
+    def __init__(self, path, mode):
+        self.f = open(path, mode)
+        self.elf = ELFFile(self.f)
+
+    def __enter__(self):
+        return self.elf
+
+    def __exit__(self, *exc_info):
+        self.f.close()
+
+def _open_elf(path, mode='rb'):
+    return ELFCloser(path, mode)
+
+
 def get_machine(path):
-    with open(path, 'rb') as f:
-        elf = ELFFile(f)
+    with _open_elf(path) as elf:
         return elf['e_machine']
 
 def get_prog_interp(path):
-    with open(path, 'rb') as f:
-        elf = ELFFile(f)
+    with _open_elf(path) as elf:
         for seg in elf.iter_segments():
             # Amazingly, this is slightly faster than
             # if isinstance(seg, InterpSegment):
