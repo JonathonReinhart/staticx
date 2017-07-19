@@ -3,3 +3,4 @@ pyinstaller; (python_version == '2.7') or (python_version >= '3.3' and python_ve
 scuba
 wheel
 backports.lzma; (python_version < '3.3')
+pyelftools

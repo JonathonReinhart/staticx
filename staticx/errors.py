@@ -25,6 +25,8 @@ class InvalidInputError(Error):
     """Input provided by the user is invalid"""
     pass
 
+class FormatMismatchError(Error):
+    pass
 
 
 class ArchiveError(Error):

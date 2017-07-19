@@ -84,6 +84,7 @@ setup(
         ]
     },
     install_requires = [
+        'pyelftools',
     ],
 
     # http://stackoverflow.com/questions/17806485

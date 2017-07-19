@@ -4,6 +4,9 @@ import re
 import logging
 import errno
 
+from elftools.elf.elffile import ELFFile
+from elftools.common.exceptions import ELFError
+
 from .errors import *
 
 class ExternTool(object):
@@ -55,7 +58,6 @@ class ExternTool(object):
 
 
 tool_ldd        = ExternTool('ldd', 'binutils')
-tool_readelf    = ExternTool('readelf', 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
@@ -94,21 +96,6 @@ def get_shobj_deps(path):
         yield libpath
 
 
-def readelf(path, *args):
-    args = list(args)
-    args.append(path)
-    output = tool_readelf.run(*args)
-    return output.splitlines()
-
-def get_prog_interp(path):
-    # Example:
-    #      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
-    pat = re.compile('\s*\[Requesting program interpreter: ([\w./-]+)\]')
-    for line in readelf(path, '-l', '-W'):
-        m = pat.match(line)
-        if m:
-            return m.group(1)
-    raise InvalidInputError("{}: not a dynamic executable".format(path))
 
 def elf_add_section(elfpath, secname, secfilename):
     tool_objcopy.run(
@@ -129,3 +116,43 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
 
 def strip_elf(path):
     tool_strip.run(path)
+
+
+################################################################################
+# Using pyelftools
+
+class ELFCloser(object):
+    def __init__(self, path, mode):
+        self.f = open(path, mode)
+        self.elf = ELFFile(self.f)
+
+    def __enter__(self):
+        return self.elf
+
+    def __exit__(self, *exc_info):
+        self.f.close()
+
+def _open_elf(path, mode='rb'):
+    try:
+        return ELFCloser(path, mode)
+    except ELFError as e:
+        raise InvalidInputError("Invalid ELF image: {}".format(e))
+
+
+def get_machine(path):
+    with _open_elf(path) as elf:
+        return elf['e_machine']
+
+def get_prog_interp(path):
+    with _open_elf(path) as elf:
+        for seg in elf.iter_segments():
+            # Amazingly, this is slightly faster than
+            # if isinstance(seg, InterpSegment):
+            try:
+                return seg.get_interp_name()
+            except AttributeError:
+                continue
+        else:
+            raise InvalidInputError("{}: not a dynamic executable "
+                                    "(no interp segment)".format(path))
+

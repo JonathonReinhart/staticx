@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Detect if user app is a different machine type than the bootloader ([#56])
+
+
 ## [0.5.0] - 2017-07-16
 ### Added
 - Added `--strip` option to strip binaries while adding to archive ([#39])
@@ -68,3 +73,4 @@ Initial release
 [#46]: https://github.com/JonathonReinhart/staticx/pull/46
 [#52]: https://github.com/JonathonReinhart/staticx/pull/52
 [#54]: https://github.com/JonathonReinhart/staticx/pull/54
+[#56]: https://github.com/JonathonReinhart/staticx/pull/56
