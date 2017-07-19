@@ -4,6 +4,8 @@ import re
 import logging
 import errno
 
+from elftools.elf.elffile import ELFFile
+
 from .errors import *
 
 class ExternTool(object):
@@ -129,3 +131,9 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
 
 def strip_elf(path):
     tool_strip.run(path)
+
+
+def get_machine(path):
+    with open(path, 'rb') as f:
+        elf = ELFFile(f)
+        return elf['e_machine']

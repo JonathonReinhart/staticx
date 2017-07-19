@@ -58,6 +58,16 @@ def _locate_bootloader():
         raise InternalError("bootloader not found at {}".format(blpath))
     return blpath
 
+
+def _check_bootloader_compat(bootloader, prog):
+    """Verify the bootloader machine matches that of the user program"""
+    bldr_mach = get_machine(bootloader)
+    prog_mach = get_machine(prog)
+    if bldr_mach != prog_mach:
+        raise FormatMismatchError("Bootloader machine ({}) doesn't match "
+                "program machine ({})".format(bldr_mach, prog_mach))
+
+
 def _copy_to_tempfile(srcpath, **kwargs):
     fdst = NamedTemporaryFile(**kwargs)
     with open(srcpath, 'rb') as fsrc:
@@ -80,6 +90,8 @@ def generate(prog, output, libs=None, bootloader=None, strip=False):
     """
     if not bootloader:
         bootloader = _locate_bootloader()
+    _check_bootloader_compat(bootloader, prog)
+
 
     tmpdir = mkdtemp(prefix='staticx-archive-')
 
