@@ -5,6 +5,7 @@ import logging
 import errno
 
 from elftools.elf.elffile import ELFFile
+from elftools.common.exceptions import ELFError
 
 from .errors import *
 
@@ -132,7 +133,10 @@ class ELFCloser(object):
         self.f.close()
 
 def _open_elf(path, mode='rb'):
-    return ELFCloser(path, mode)
+    try:
+        return ELFCloser(path, mode)
+    except ELFError as e:
+        raise InvalidInputError("Invalid ELF image: {}".format(e))
 
 
 def get_machine(path):
