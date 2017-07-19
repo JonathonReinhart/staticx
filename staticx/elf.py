@@ -57,7 +57,6 @@ class ExternTool(object):
 
 
 tool_ldd        = ExternTool('ldd', 'binutils')
-tool_readelf    = ExternTool('readelf', 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
@@ -96,21 +95,6 @@ def get_shobj_deps(path):
         yield libpath
 
 
-def readelf(path, *args):
-    args = list(args)
-    args.append(path)
-    output = tool_readelf.run(*args)
-    return output.splitlines()
-
-def get_prog_interp(path):
-    # Example:
-    #      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
-    pat = re.compile('\s*\[Requesting program interpreter: ([\w./-]+)\]')
-    for line in readelf(path, '-l', '-W'):
-        m = pat.match(line)
-        if m:
-            return m.group(1)
-    raise InvalidInputError("{}: not a dynamic executable".format(path))
 
 def elf_add_section(elfpath, secname, secfilename):
     tool_objcopy.run(
@@ -133,7 +117,25 @@ def strip_elf(path):
     tool_strip.run(path)
 
 
+################################################################################
+# Using pyelftools
+
 def get_machine(path):
     with open(path, 'rb') as f:
         elf = ELFFile(f)
         return elf['e_machine']
+
+def get_prog_interp(path):
+    with open(path, 'rb') as f:
+        elf = ELFFile(f)
+        for seg in elf.iter_segments():
+            # Amazingly, this is slightly faster than
+            # if isinstance(seg, InterpSegment):
+            try:
+                return seg.get_interp_name()
+            except AttributeError:
+                continue
+        else:
+            raise InvalidInputError("{}: not a dynamic executable "
+                                    "(no interp segment)".format(path))
+
