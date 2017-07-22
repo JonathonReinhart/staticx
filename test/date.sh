@@ -10,8 +10,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 echo -e "\nRunning 'date':"
 date
 
-echo -e "\nMaking staticx executable:"
-staticx $(which date) $outfile
+echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS):"
+staticx $STATICX_FLAGS $(which date) $outfile
 
 echo -e "\nRunning staticx executable"
 $outfile
