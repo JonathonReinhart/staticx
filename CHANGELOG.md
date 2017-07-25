@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- Add `--no-compress` option to store archive uncompressed ([#58])
+
 ### Changed
 - Detect if user app is a different machine type than the bootloader ([#56])
 
@@ -74,3 +77,4 @@ Initial release
 [#52]: https://github.com/JonathonReinhart/staticx/pull/52
 [#54]: https://github.com/JonathonReinhart/staticx/pull/54
 [#56]: https://github.com/JonathonReinhart/staticx/pull/56
+[#58]: https://github.com/JonathonReinhart/staticx/pull/58
