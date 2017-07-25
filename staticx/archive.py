@@ -42,19 +42,25 @@ def get_xz_filters():
     return filters
 
 class SxArchive(object):
-    def __init__(self, fileobj, mode):
-        self.xzf = lzma.open(
-            filename = fileobj,
-            mode = mode,
-            format = lzma.FORMAT_XZ,
+    def __init__(self, fileobj, mode, compress):
+        self.xzf = None
 
-            # Use CRC32 instead of CRC64 (FORMAT_XZ default)
-            # Otherwise, enable XZ_USE_CRC64 in libxz/xz_config.h
-            check = lzma.CHECK_CRC32,
+        if compress:
+            self.xzf = lzma.open(
+                filename = fileobj,
+                mode = mode,
+                format = lzma.FORMAT_XZ,
 
-            filters = get_xz_filters(),
-        )
-        self.tar = tarfile.open(fileobj=self.xzf, mode=mode)
+                # Use CRC32 instead of CRC64 (FORMAT_XZ default)
+                # Otherwise, enable XZ_USE_CRC64 in libxz/xz_config.h
+                check = lzma.CHECK_CRC32,
+
+                filters = get_xz_filters(),
+            )
+
+            fileobj = self.xzf
+
+        self.tar = tarfile.open(fileobj=fileobj, mode=mode)
         self._added_libs = []
 
     def __enter__(self):
@@ -62,7 +68,8 @@ class SxArchive(object):
 
     def __exit__(self, *excinfo):
         self.tar.close()
-        self.xzf.close()
+        if self.xzf:
+            self.xzf.close()
 
 
     @property

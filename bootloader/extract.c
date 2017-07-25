@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <libtar.h>
 #include <fcntl.h>
+#include <string.h>
 #include "common.h"
 #include "elfutil.h"
 #include "error.h"
@@ -22,6 +23,8 @@
 #define XZ_DICT_MAX     8<<20       /* 8 MiB */
 
 static struct xz_dec *m_xzdec = NULL;
+
+/* This is used by both the xztype and memtype tar handlers */
 static struct xz_buf m_xzbuf;
 
 static const char * xzret_to_str(enum xz_ret r)
@@ -101,6 +104,61 @@ static tartype_t xztype = {
     .readfunc   = xz_read,
 };
 
+static bool is_xz_file(const char *buf, size_t len)
+{
+    /* https://tukaani.org/xz/xz-file-format.txt */
+    static const uint8_t HEADER_MAGIC[6] = { 0xFD, '7', 'z', 'X', 'Z', 0x00 };
+
+    if (len < sizeof(HEADER_MAGIC))
+        return false;
+
+    return memcmp(buf, HEADER_MAGIC, sizeof(HEADER_MAGIC)) == 0;
+}
+
+/*******************************************************************************/
+
+static int mem_open(const char *pathname, int oflags, ...)
+{
+    return XZ_FAKE_FD;
+}
+
+static int mem_close(int fd)
+{
+    if (fd != XZ_FAKE_FD) {
+        debug_printf("Unexpected fd %d\n", fd);
+        return -1;
+    }
+
+    return 0;
+}
+
+static ssize_t mem_read(int fd, void * const buf, size_t len)
+{
+    if (fd != XZ_FAKE_FD) {
+        debug_printf("Unexpected fd %d\n", fd);
+        return -1;
+    }
+
+    const uint8_t *source = m_xzbuf.in + m_xzbuf.in_pos;
+
+    size_t ar_remain = m_xzbuf.in_size - m_xzbuf.in_pos;
+    if (len > ar_remain)
+        len = ar_remain;
+
+    memcpy(buf, source, len);
+    m_xzbuf.in_pos += len;
+
+    return len;
+}
+
+static tartype_t memtype = {
+    .openfunc   = mem_open,
+    .closefunc  = mem_close,
+    .readfunc   = mem_read,
+};
+
+/*******************************************************************************/
+
 void
 extract_archive(const char *dest_path)
 {
@@ -116,19 +174,24 @@ extract_archive(const char *dest_path)
     if (!shdr)
         error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
 
-    size_t tarxz_size = shdr->sh_size;
-    const void *tarxz_data = cptr_add(ehdr, shdr->sh_offset);
+    size_t ar_size = shdr->sh_size;
+    const void *ar_data = cptr_add(ehdr, shdr->sh_offset);
 
+    /* Determine if the archive is compressed */
+    tartype_t *tartype = is_xz_file(ar_data, ar_size) ? &xztype : &memtype;
+
+    /* Input buffer; used by xztype and memtype handlers */
     m_xzbuf = (typeof(m_xzbuf)) {
-        .in      = tarxz_data,
+        .in      = ar_data,
         .in_pos  = 0,
-        .in_size = tarxz_size,
+        .in_size = ar_size,
         /* Other fields initialized to zero */
     };
 
+    /* Open the tar file */
     TAR *t;
     errno = 0;
-    if (tar_open(&t, "", &xztype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
+    if (tar_open(&t, "", tartype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
         error(2, errno, "tar_open() failed");
 
     /* XXX Why is it so hard for people to use 'const'? */

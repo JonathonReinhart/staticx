@@ -16,14 +16,14 @@ from .archive import SxArchive
 from .constants import *
 from .hooks import run_hooks
 
-def generate_archive(prog, interp, tmpdir, extra_libs=None, strip=False):
+def generate_archive(prog, interp, tmpdir, extra_libs=None, strip=False, compress=True):
     logging.info("Program interpreter: " + interp)
 
     if extra_libs is None:
         extra_libs = []
 
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-    with SxArchive(fileobj=f, mode='w') as ar:
+    with SxArchive(fileobj=f, mode='w', compress=compress) as ar:
 
         ar.add_program(prog)
         ar.add_interp_symlink(interp)
@@ -78,7 +78,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def generate(prog, output, libs=None, bootloader=None, strip=False):
+def generate(prog, output, libs=None, bootloader=None, strip=False, compress=True):
     """Main API: Generate a staticx executable
 
     Parameters:
@@ -122,7 +122,7 @@ def generate(prog, output, libs=None, bootloader=None, strip=False):
             strip_elf(tmpoutput)
 
         # Starting from the bootloader, append archive
-        with generate_archive(tmpprog, orig_interp, tmpdir, libs, strip=strip) as ar:
+        with generate_archive(tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
         # Move the temporary output file to its final place

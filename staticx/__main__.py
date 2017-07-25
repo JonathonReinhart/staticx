@@ -21,6 +21,8 @@ def parse_args():
             help = 'Add additional libraries (absolute paths)')
     ap.add_argument('--strip', action='store_true',
             help = 'Strip binaries before adding to archive (reduces size)')
+    ap.add_argument('--no-compress', action='store_true',
+            help = "Don't compress the archive (increases size)")
 
     # Special / output-related options
     ap.add_argument('-V', '--version', action='version',
@@ -43,6 +45,7 @@ def main():
                 libs = args.libs,
                 bootloader = args.bootloader,
                 strip = args.strip,
+                compress = not args.no_compress,
                 )
     except Error as e:
         print("staticx: " + str(e))

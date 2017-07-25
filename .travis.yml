@@ -47,8 +47,11 @@ script:
   - pip install dist/staticx-*-py2.py3-none-any.whl
   - staticx --version
 
-  # Run test against system executable
+  # Run test (compressed) against system executable
   - test/date.sh
+
+  # Run test (uncompressed) against system executable
+  - STATICX_FLAGS='--no-compress' test/date.sh
 
   # Run PyInstaller test
   - test/pyinstall/run_test.sh
