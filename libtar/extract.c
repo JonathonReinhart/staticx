@@ -14,6 +14,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <utime.h>
