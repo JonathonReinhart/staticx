@@ -1,6 +1,6 @@
 patchelf-wrapper
-pyinstaller; (python_version == '2.7') or (python_version >= '3.3' and python_version <= '3.5')
+pyinstaller; (python_version <= '3.5')
 scuba
 wheel
-backports.lzma; (python_version < '3.3')
+backports.lzma; (python_version == '2.7')
 pyelftools
