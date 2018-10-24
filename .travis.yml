@@ -39,6 +39,11 @@ addons:
 install:
   # Unset CC before installing Python packages - see #44
   - env -u CC   pip install -r requirements.txt
+  - |
+    if [ "$TRAVIS_PYTHON_VERSION" == "3.7" ]; then
+      sudo apt-get update
+      sudo apt-get install scons
+    fi
 
 before_script:
   - docker pull $TEST_DOCKER_IMAGE
