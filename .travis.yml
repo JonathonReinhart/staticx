@@ -14,13 +14,17 @@ matrix:
     - python: "2.7"
     - python: "3.4"
     - python: "3.5"
+    - python: "3.6"
+    # Enable 3.7 without globally enabling dist: xenial for other build jobs
+    - python: "3.7"
+      dist: xenial
 
     # Test using glibc
     - python: "3.5"
       env: CC=
 
     - python: "3.5-dev" # 3.5 development branch
-    - python: "nightly" # currently points to 3.6-dev
+    - python: "nightly" # currently points to 3.7-alpha
   allow_failures:
     - python: "nightly"
 
