@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 sudo: required
 serivces:
   - docker
@@ -13,11 +13,10 @@ matrix:
   include:
     - python: "2.7"
     - python: "3.4"
+      dist: trusty
     - python: "3.5"
     - python: "3.6"
-    # Enable 3.7 without globally enabling dist: xenial for other build jobs
     - python: "3.7"
-      dist: xenial
 
     # Test using glibc
     - python: "3.5"
