@@ -4,7 +4,7 @@ import shutil
 import tempfile
 
 from ..elf import get_shobj_deps
-from ..utils import make_executable
+from ..utils import make_executable, mkdirs_for
 
 def process_pyinstaller_archive(ar, prog):
     # See utils/cliutils/archive_viewer.py
@@ -41,6 +41,7 @@ def process_pyinstaller_archive(ar, prog):
             x, data = pyi_ar.extract(n)
             tmppath = os.path.join(tmpdir, name)
             logging.debug("Extracting to {}".format(tmppath))
+            mkdirs_for(tmppath)
             with open(tmppath, 'wb') as f:
                 f.write(data)
 
