@@ -2,12 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.6.0] - 2018-11-13
 ### Added
 - Add `--no-compress` option to store archive uncompressed ([#58])
 
 ### Changed
 - Detect if user app is a different machine type than the bootloader ([#56])
+- Drop support for Python 3.2 and 3.3 ([#65])
+
+### Fixed
+- Use `<sys/sysmacros.h>` for makedev() ([#63])
+- Handle subdirectories when extracting Pyinstaller archives ([#69])
+- Handle shared objects with no dependencies ([#70])
 
 
 ## [0.5.0] - 2017-07-16
@@ -58,6 +64,7 @@ Initial release
 
 
 [Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...HEAD
+[0.6.0]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/JonathonReinhart/staticx/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/JonathonReinhart/staticx/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/JonathonReinhart/staticx/compare/v0.3.2...v0.4.0
@@ -78,3 +85,7 @@ Initial release
 [#54]: https://github.com/JonathonReinhart/staticx/pull/54
 [#56]: https://github.com/JonathonReinhart/staticx/pull/56
 [#58]: https://github.com/JonathonReinhart/staticx/pull/58
+[#63]: https://github.com/JonathonReinhart/staticx/pull/63
+[#65]: https://github.com/JonathonReinhart/staticx/pull/65
+[#69]: https://github.com/JonathonReinhart/staticx/pull/69
+[#70]: https://github.com/JonathonReinhart/staticx/pull/70
