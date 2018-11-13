@@ -84,6 +84,9 @@ def get_shobj_deps(path):
     for line in output.splitlines():
         m = pat.match(line)
         if not m:
+            # Some shared objs might have no DT_NEEDED tags (see issue #67)
+            if line == '\tstatically linked':
+                break
             raise ToolError('ldd', "Unexpected line in ldd output: " + line)
         libname  = m.group(1)
         libpath  = m.group(2)
