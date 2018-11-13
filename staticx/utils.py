@@ -1,4 +1,5 @@
 import os
+import errno
 import shutil
 from .errors import *
 
@@ -15,3 +16,18 @@ def move_file(src, dst):
     if os.path.isdir(dst):
         raise DirectoryExistsError(dst)
     shutil.move(src, dst)
+
+
+def mkdir_p(path):
+    # TODO Py2.7: Python 3 can simply use
+    # os.makedirs(path, exist_ok=True)
+    try:
+        os.makedirs(path)
+    except OSError as oe:
+        if oe.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+def mkdirs_for(filename):
+    mkdir_p(os.path.dirname(filename))
