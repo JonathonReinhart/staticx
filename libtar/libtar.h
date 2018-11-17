@@ -65,14 +65,12 @@ struct tar_header
 typedef int (*openfunc_t)(const char *, int, ...);
 typedef int (*closefunc_t)(int);
 typedef ssize_t (*readfunc_t)(int, void *, size_t);
-typedef ssize_t (*writefunc_t)(int, const void *, size_t);
 
 typedef struct
 {
 	openfunc_t openfunc;
 	closefunc_t closefunc;
 	readfunc_t readfunc;
-	writefunc_t writefunc;
 }
 tartype_t;
 
@@ -117,41 +115,14 @@ int tar_fd(TAR *t);
 /* close tarfile handle */
 int tar_close(TAR *t);
 
-
-/***** append.c ************************************************************/
-
-/* forward declaration to appease the compiler */
-struct tar_dev;
-
-/* cleanup function */
-void tar_dev_free(struct tar_dev *tdp);
-
-/* Appends a file to the tar archive.
- * Arguments:
- *    t        = TAR handle to append to
- *    realname = path of file to append
- *    savename = name to save the file under in the archive
- */
-int tar_append_file(TAR *t, const char *realname, const char *savename);
-
-/* write EOF indicator */
-int tar_append_eof(TAR *t);
-
-/* add file contents to a tarchive */
-int tar_append_regfile(TAR *t, const char *realname);
-
-
 /***** block.c *************************************************************/
 
-/* macros for reading/writing tarchive blocks */
+/* macros for reading tarchive blocks */
 #define tar_block_read(t, buf) \
 	(*((t)->type->readfunc))((t)->fd, (char *)(buf), T_BLOCKSIZE)
-#define tar_block_write(t, buf) \
-	(*((t)->type->writefunc))((t)->fd, (char *)(buf), T_BLOCKSIZE)
 
-/* read/write a header block */
+/* read a header block */
 int th_read(TAR *t);
-int th_write(TAR *t);
 
 
 /***** decode.c ************************************************************/
@@ -191,28 +162,6 @@ char *th_get_pathname(TAR *t);
 mode_t th_get_mode(TAR *t);
 uid_t th_get_uid(TAR *t);
 gid_t th_get_gid(TAR *t);
-
-
-/***** encode.c ************************************************************/
-
-/* encode file info in th_header */
-void th_set_type(TAR *t, mode_t mode);
-void th_set_path(TAR *t, const char *pathname);
-void th_set_link(TAR *t, const char *linkname);
-void th_set_device(TAR *t, dev_t device);
-void th_set_user(TAR *t, uid_t uid);
-void th_set_group(TAR *t, gid_t gid);
-void th_set_mode(TAR *t, mode_t fmode);
-#define th_set_mtime(t, fmtime) \
-	int_to_oct_nonull((fmtime), (t)->th_buf.mtime, 12)
-#define th_set_size(t, fsize) \
-	int_to_oct_nonull((fsize), (t)->th_buf.size, 12)
-
-/* encode everything at once (except the pathname and linkname) */
-void th_set_from_stat(TAR *t, struct stat *s);
-
-/* encode magic, version, and crc - must be done after everything else is set */
-void th_finish(TAR *t);
 
 
 /***** extract.c ***********************************************************/
@@ -287,9 +236,6 @@ void int_to_oct_nonull(int num, char *oct, size_t octlen);
 /* extract groups of files */
 int tar_extract_glob(TAR *t, char *globname, char *prefix);
 int tar_extract_all(TAR *t, char *prefix);
-
-/* add a whole tree of files */
-int tar_append_tree(TAR *t, char *realdir, char *savedir);
 
 
 #ifdef __cplusplus

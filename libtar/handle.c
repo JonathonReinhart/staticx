@@ -20,14 +20,18 @@
 
 const char libtar_version[] = PACKAGE_VERSION;
 
-static tartype_t default_type = { open, close, read, write };
-
+static tartype_t default_type = {
+	.openfunc = open,
+	.closefunc = close,
+	.readfunc = read,
+};
 
 static int
 tar_init(TAR **t, const char *pathname, tartype_t *type,
 	 int oflags, int mode, int options)
 {
-	if ((oflags & O_ACCMODE) == O_RDWR)
+	/* This libtar only supports read-only */
+	if ((oflags & O_ACCMODE) != O_RDONLY)
 	{
 		errno = EINVAL;
 		return -1;
@@ -42,11 +46,8 @@ tar_init(TAR **t, const char *pathname, tartype_t *type,
 	(*t)->type = (type ? type : &default_type);
 	(*t)->oflags = oflags;
 
-	if ((oflags & O_ACCMODE) == O_RDONLY)
-		(*t)->h = libtar_hash_new(256,
-					  (libtar_hashfunc_t)path_hashfunc);
-	else
-		(*t)->h = libtar_hash_new(16, (libtar_hashfunc_t)dev_hash);
+	(*t)->h = libtar_hash_new(256, (libtar_hashfunc_t)path_hashfunc);
+
 	if ((*t)->h == NULL)
 	{
 		free(*t);
@@ -111,9 +112,7 @@ tar_close(TAR *t)
 	i = (*(t->type->closefunc))(t->fd);
 
 	if (t->h != NULL)
-		libtar_hash_free(t->h, ((t->oflags & O_ACCMODE) == O_RDONLY
-					? free
-					: (libtar_freefunc_t)tar_dev_free));
+		libtar_hash_free(t->h, free);
 	free(t);
 
 	return i;
