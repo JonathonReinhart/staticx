@@ -32,13 +32,13 @@ th_finish(TAR *t)
 		 * systems:
 		 *      strncpy(t->th_buf.magic, "ustar  ", 8);
 		 */
-		strncpy(t->th_buf.magic, "ustar ", 6);
-		strncpy(t->th_buf.version, " ", 2);
+		memcpy(t->th_buf.magic, "ustar ", 6);
+		memcpy(t->th_buf.version, " ", 2);
 	}
 	else
 	{
-		strncpy(t->th_buf.version, TVERSION, TVERSLEN);
-		strncpy(t->th_buf.magic, TMAGIC, TMAGLEN);
+		memcpy(t->th_buf.magic, TMAGIC, TMAGLEN);
+		memcpy(t->th_buf.version, TVERSION, TVERSLEN);
 	}
 
 	int_to_oct(th_crc_calc(t), t->th_buf.chksum, 8);
