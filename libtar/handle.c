@@ -26,37 +26,42 @@ static tartype_t default_type = {
 	.readfunc = read,
 };
 
-static int
-tar_init(TAR **t, const char *pathname, tartype_t *type,
+static TAR *
+tar_init(const char *pathname, tartype_t *type,
 	 int oflags, int mode, int options)
 {
+	TAR *t;
+
 	/* This libtar only supports read-only */
 	if ((oflags & O_ACCMODE) != O_RDONLY)
 	{
 		errno = EINVAL;
-		return -1;
+		return NULL;
 	}
 
-	*t = (TAR *)calloc(1, sizeof(TAR));
-	if (*t == NULL)
-		return -1;
+	t = calloc(1, sizeof(*t));
+	if (t == NULL)
+	    return NULL;
 
-	(*t)->pathname = pathname;
-	(*t)->options = options;
-	(*t)->type = (type ? type : &default_type);
-	(*t)->oflags = oflags;
+	t->pathname = pathname;
+	t->options = options;
+	t->type = (type ? type : &default_type);
+	t->oflags = oflags;
 
-	return 0;
+	return t;
 }
 
 
 /* open a new tarfile handle */
-int
-tar_open(TAR **t, const char *pathname, tartype_t *type,
+TAR *
+tar_open(const char *pathname, tartype_t *type,
 	 int oflags, int mode, int options)
 {
-	if (tar_init(t, pathname, type, oflags, mode, options) == -1)
-		return -1;
+	TAR *t;
+
+	t = tar_init(pathname, type, oflags, mode, options);
+	if (t == NULL)
+		return NULL;
 
 	if ((options & TAR_NOOVERWRITE) && (oflags & O_CREAT))
 		oflags |= O_EXCL;
@@ -65,26 +70,29 @@ tar_open(TAR **t, const char *pathname, tartype_t *type,
 	oflags |= O_BINARY;
 #endif
 
-	(*t)->fd = (*((*t)->type->openfunc))(pathname, oflags, mode);
-	if ((*t)->fd == -1)
+	t->fd = t->type->openfunc(pathname, oflags, mode);
+	if (t->fd == -1)
 	{
-		free(*t);
-		return -1;
+		free(t);
+		return NULL;
 	}
 
-	return 0;
+	return t;
 }
 
 
-int
-tar_fdopen(TAR **t, int fd, const char *pathname, tartype_t *type,
+TAR *
+tar_fdopen(int fd, const char *pathname, tartype_t *type,
 	   int oflags, int mode, int options)
 {
-	if (tar_init(t, pathname, type, oflags, mode, options) == -1)
-		return -1;
+	TAR *t;
 
-	(*t)->fd = fd;
-	return 0;
+	t = tar_init(pathname, type, oflags, mode, options);
+	if (t == NULL)
+	    return NULL;
+
+	t->fd = fd;
+	return t;
 }
 
 

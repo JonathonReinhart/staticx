@@ -191,7 +191,8 @@ extract_archive(const char *dest_path)
     /* Open the tar file */
     TAR *t;
     errno = 0;
-    if (tar_open(&t, "", tartype, O_RDONLY, 0, TAR_DEBUG_OPTIONS) != 0)
+    t = tar_open("", tartype, O_RDONLY, 0, TAR_DEBUG_OPTIONS);
+    if (t == NULL)
         error(2, errno, "tar_open() failed");
 
     /* XXX Why is it so hard for people to use 'const'? */
