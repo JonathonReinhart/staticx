@@ -109,7 +109,7 @@ tar_close(TAR *t)
 {
 	int i;
 
-	i = (*(t->type->closefunc))(t->fd);
+	i = t->type->closefunc(t->fd);
 
 	free(t);
 

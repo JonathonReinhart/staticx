@@ -114,9 +114,10 @@ int tar_close(TAR *t);
 
 /***** block.c *************************************************************/
 
-/* macros for reading tarchive blocks */
-#define tar_block_read(t, buf) \
-	(*((t)->type->readfunc))((t)->fd, (char *)(buf), T_BLOCKSIZE)
+static inline ssize_t tar_block_read(TAR *t, void *buf)
+{
+	return t->type->readfunc(t->fd, buf, T_BLOCKSIZE);
+}
 
 /* read a header block */
 int th_read(TAR *t);
