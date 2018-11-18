@@ -20,7 +20,7 @@
 #include "compat.h"
 
 int
-tar_extract_all(TAR *t, char *prefix)
+tar_extract_all(TAR *t, const char *prefix)
 {
 	char *filename;
 	char buf[MAXPATHLEN];

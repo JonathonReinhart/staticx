@@ -216,7 +216,7 @@ void int_to_oct_nonull(int num, char *oct, size_t octlen);
 /***** wrapper.c **********************************************************/
 
 /* extract groups of files */
-int tar_extract_all(TAR *t, char *prefix);
+int tar_extract_all(TAR *t, const char *prefix);
 
 
 #ifdef __cplusplus
