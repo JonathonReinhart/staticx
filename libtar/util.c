@@ -19,52 +19,6 @@
 #include "compat.h"
 
 
-/* hashing function for pathnames */
-int
-path_hashfunc(char *key, int numbuckets)
-{
-	char buf[MAXPATHLEN];
-	char *p;
-
-	strcpy(buf, key);
-	p = basename(buf);
-
-	return (((unsigned int)p[0]) % numbuckets);
-}
-
-
-/* matching function for dev_t's */
-int
-dev_match(dev_t *dev1, dev_t *dev2)
-{
-	return !memcmp(dev1, dev2, sizeof(dev_t));
-}
-
-
-/* matching function for ino_t's */
-int
-ino_match(ino_t *ino1, ino_t *ino2)
-{
-	return !memcmp(ino1, ino2, sizeof(ino_t));
-}
-
-
-/* hashing function for dev_t's */
-int
-dev_hash(dev_t *dev)
-{
-	return *dev % 16;
-}
-
-
-/* hashing function for ino_t's */
-int
-ino_hash(ino_t *inode)
-{
-	return *inode % 256;
-}
-
-
 /*
 ** mkdirhier() - create all directories in a given path
 ** returns:

@@ -23,8 +23,6 @@ libtar = env.StaticLibrary(
         'wrapper.c',
         'compat/strlcpy.c',
         'compat/strmode.c',
-        'listhash/list.c',
-        'listhash/hash.c',
     ]
 )
 

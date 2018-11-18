@@ -17,8 +17,6 @@
 #include <sys/stat.h>
 #include <tar.h>
 
-#include "listhash/listhash.h"
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -82,7 +80,6 @@ typedef struct
 	int oflags;
 	int options;
 	struct tar_header th_buf;
-	libtar_hash_t *h;
 }
 TAR;
 
@@ -192,21 +189,6 @@ void th_print_long_ls(TAR *t);
 
 
 /***** util.c *************************************************************/
-
-/* hashing function for pathnames */
-int path_hashfunc(char *key, int numbuckets);
-
-/* matching function for dev_t's */
-int dev_match(dev_t *dev1, dev_t *dev2);
-
-/* matching function for ino_t's */
-int ino_match(ino_t *ino1, ino_t *ino2);
-
-/* hashing function for dev_t's */
-int dev_hash(dev_t *dev);
-
-/* hashing function for ino_t's */
-int ino_hash(ino_t *inode);
 
 /* create any necessary dirs */
 int mkdirhier(char *path);

@@ -46,14 +46,6 @@ tar_init(TAR **t, const char *pathname, tartype_t *type,
 	(*t)->type = (type ? type : &default_type);
 	(*t)->oflags = oflags;
 
-	(*t)->h = libtar_hash_new(256, (libtar_hashfunc_t)path_hashfunc);
-
-	if ((*t)->h == NULL)
-	{
-		free(*t);
-		return -1;
-	}
-
 	return 0;
 }
 
@@ -111,8 +103,6 @@ tar_close(TAR *t)
 
 	i = (*(t->type->closefunc))(t->fd);
 
-	if (t->h != NULL)
-		libtar_hash_free(t->h, free);
 	free(t);
 
 	return i;
