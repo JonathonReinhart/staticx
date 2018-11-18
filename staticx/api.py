@@ -16,7 +16,21 @@ from .archive import SxArchive
 from .constants import *
 from .hooks import run_hooks
 
-def generate_archive(prog, interp, tmpdir, extra_libs=None, strip=False, compress=True):
+def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True):
+    """ Generate a StaticX archive
+
+    Args:
+        orig_prog: Path to original user program
+        copied_prog: Path to user program which has been prepped
+        interp: Original program interpreter
+        tmpdir: Temporary directory to use for stripping libraries
+        extra_libs: Additional libraries to add to the archive
+        strip: Whether or not to strip libraries
+        compress: Whether or not to create a compressed archive
+
+    Returns:
+        A handle to the created file object
+    """
     logging.info("Program interpreter: " + interp)
 
     if extra_libs is None:
@@ -25,11 +39,11 @@ def generate_archive(prog, interp, tmpdir, extra_libs=None, strip=False, compres
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     with SxArchive(fileobj=f, mode='w', compress=compress) as ar:
 
-        ar.add_program(prog)
+        ar.add_program(copied_prog)
         ar.add_interp_symlink(interp)
 
         # Add all of the libraries
-        for libpath in chain(get_shobj_deps(prog), extra_libs):
+        for libpath in chain(get_shobj_deps(orig_prog), extra_libs):
             if strip:
                 # Copy the library to the temp dir before stripping
                 tmplib = os.path.join(tmpdir, basename(libpath))
@@ -45,7 +59,7 @@ def generate_archive(prog, interp, tmpdir, extra_libs=None, strip=False, compres
             # Add the library to the archive
             ar.add_library(libpath)
 
-        run_hooks(ar, prog)
+        run_hooks(ar, orig_prog)
 
     f.flush()
     return f
@@ -122,7 +136,7 @@ def generate(prog, output, libs=None, bootloader=None, strip=False, compress=Tru
             strip_elf(tmpoutput)
 
         # Starting from the bootloader, append archive
-        with generate_archive(tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
+        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
         # Move the temporary output file to its final place
