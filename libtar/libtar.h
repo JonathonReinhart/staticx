@@ -164,6 +164,9 @@ gid_t th_get_gid(TAR *t);
 
 /***** extract.c ***********************************************************/
 
+/* extract all files */
+int tar_extract_all(TAR *t, const char *prefix);
+
 /* sequentially extract next file from t */
 int tar_extract_file(TAR *t, char *realname);
 
@@ -209,12 +212,6 @@ int oct_to_int(char *oct);
 
 /* integer to string-octal conversion, no NULL */
 void int_to_oct_nonull(int num, char *oct, size_t octlen);
-
-
-/***** wrapper.c **********************************************************/
-
-/* extract groups of files */
-int tar_extract_all(TAR *t, const char *prefix);
 
 
 #ifdef __cplusplus
