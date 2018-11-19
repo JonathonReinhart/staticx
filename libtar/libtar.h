@@ -192,19 +192,19 @@ void th_print_long_ls(TAR *t);
 /***** util.c *************************************************************/
 
 /* create any necessary dirs */
-int mkdirhier(char *path);
+int mkdirhier(const char *path);
 
 /* calculate header checksum */
-int th_crc_calc(TAR *t);
+int th_crc_calc(const TAR *t);
 
 /* calculate a signed header checksum */
-int th_signed_crc_calc(TAR *t);
+int th_signed_crc_calc(const TAR *t);
 
 /* compare checksums in a forgiving way */
 #define th_crc_ok(t) (th_get_crc(t) == th_crc_calc(t) || th_get_crc(t) == th_signed_crc_calc(t))
 
 /* string-octal to integer conversion */
-int oct_to_int(char *oct);
+int oct_to_int(const char *oct);
 
 /* integer to NULL-terminated string-octal conversion */
 #define int_to_oct(num, oct, octlen) \
