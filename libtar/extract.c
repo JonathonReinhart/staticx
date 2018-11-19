@@ -42,13 +42,13 @@ static int mkdirs_for(const char *filename)
 }
 
 static int
-tar_set_file_perms(TAR *t, char *realname)
+tar_set_file_perms(TAR *t, const char *realname)
 {
 	mode_t mode;
 	uid_t uid;
 	gid_t gid;
 	struct utimbuf ut;
-	char *filename;
+	const char *filename;
 
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
@@ -100,7 +100,7 @@ tar_set_file_perms(TAR *t, char *realname)
 
 /* switchboard */
 int
-tar_extract_file(TAR *t, char *realname)
+tar_extract_file(TAR *t, const char *realname)
 {
 	int i;
 	char *lnp;
@@ -146,7 +146,7 @@ tar_extract_file(TAR *t, char *realname)
 
 	pathname_len = strlen(th_get_pathname(t)) + 1;
 	realname_len = strlen(realname) + 1;
-	lnp = (char *)calloc(1, pathname_len + realname_len);
+	lnp = calloc(1, pathname_len + realname_len);
 	if (lnp == NULL)
 		return -1;
 	strcpy(&lnp[0], th_get_pathname(t));
@@ -158,7 +158,7 @@ tar_extract_file(TAR *t, char *realname)
 
 /* extract regular file */
 int
-tar_extract_regfile(TAR *t, char *realname)
+tar_extract_regfile(TAR *t, const char *realname)
 {
 	mode_t mode;
 	size_t size;
@@ -167,7 +167,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	int fdout;
 	int i, k;
 	char buf[T_BLOCKSIZE];
-	char *filename;
+	const char *filename;
 
 #ifdef DEBUG
 	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
@@ -291,10 +291,10 @@ tar_skip_regfile(TAR *t)
 
 /* hardlink */
 int
-tar_extract_hardlink(TAR * t, char *realname)
+tar_extract_hardlink(TAR * t, const char *realname)
 {
-	char *filename;
-	char *linktgt = NULL;
+	const char *filename;
+	const char *linktgt = NULL;
 
 	if (!TH_ISLNK(t))
 	{
@@ -324,9 +324,9 @@ tar_extract_hardlink(TAR * t, char *realname)
 
 /* symlink */
 int
-tar_extract_symlink(TAR *t, char *realname)
+tar_extract_symlink(TAR *t, const char *realname)
 {
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISSYM(t))
 	{
@@ -359,11 +359,11 @@ tar_extract_symlink(TAR *t, char *realname)
 
 /* character device */
 int
-tar_extract_chardev(TAR *t, char *realname)
+tar_extract_chardev(TAR *t, const char *realname)
 {
 	mode_t mode;
 	unsigned long devmaj, devmin;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISCHR(t))
 	{
@@ -398,11 +398,11 @@ tar_extract_chardev(TAR *t, char *realname)
 
 /* block device */
 int
-tar_extract_blockdev(TAR *t, char *realname)
+tar_extract_blockdev(TAR *t, const char *realname)
 {
 	mode_t mode;
 	unsigned long devmaj, devmin;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISBLK(t))
 	{
@@ -437,10 +437,10 @@ tar_extract_blockdev(TAR *t, char *realname)
 
 /* directory */
 int
-tar_extract_dir(TAR *t, char *realname)
+tar_extract_dir(TAR *t, const char *realname)
 {
 	mode_t mode;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISDIR(t))
 	{
@@ -492,10 +492,10 @@ tar_extract_dir(TAR *t, char *realname)
 
 /* FIFO */
 int
-tar_extract_fifo(TAR *t, char *realname)
+tar_extract_fifo(TAR *t, const char *realname)
 {
 	mode_t mode;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISFIFO(t))
 	{
@@ -527,7 +527,7 @@ tar_extract_fifo(TAR *t, char *realname)
 int
 tar_extract_all(TAR *t, const char *prefix)
 {
-	char *filename;
+	const char *filename;
 	char buf[MAXPATHLEN];
 	int i;
 
