@@ -74,7 +74,6 @@ typedef struct
 {
 	tartype_t *type;
 	void *context;
-	int oflags;
 	int options;
 	struct tar_header th_buf;
 }
@@ -96,7 +95,7 @@ extern const char libtar_version[];
 
 
 /* make a tarfile handle */
-TAR *tar_new(void *context, tartype_t *type, int oflags, int options);
+TAR *tar_new(void *context, tartype_t *type, int options);
 
 /* close tarfile handle */
 int tar_close(TAR *t);

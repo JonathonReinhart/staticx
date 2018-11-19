@@ -20,60 +20,28 @@
 
 const char libtar_version[] = PACKAGE_VERSION;
 
-static inline int default_fd(void *context)
-{
-	return (int)(long)context;
-}
-
-static int default_close(void *context)
-{
-	int fd = default_fd(context);
-	return close(fd);
-}
-
-static ssize_t default_read(void *context, void * const buf, size_t len)
-{
-	int fd = default_fd(context);
-	return read(fd, buf, len);
-}
-
-static tartype_t default_type = {
-	.closefunc = default_close,
-	.readfunc = default_read,
-};
-
 static TAR *
-tar_init(tartype_t *type,
-	 int oflags, int mode, int options)
+tar_init(tartype_t *type, int mode, int options)
 {
 	TAR *t;
-
-	/* This libtar only supports read-only */
-	if ((oflags & O_ACCMODE) != O_RDONLY)
-	{
-		errno = EINVAL;
-		return NULL;
-	}
 
 	t = calloc(1, sizeof(*t));
 	if (t == NULL)
 		return NULL;
 
 	t->options = options;
-	t->type = (type ? type : &default_type);
-	t->oflags = oflags;
+	t->type = type;
 
 	return t;
 }
 
 TAR *
-tar_new(void *context, tartype_t *type,
-	   int oflags, int options)
+tar_new(void *context, tartype_t *type, int options)
 {
 	int mode = 0;
 	TAR *t;
 
-	t = tar_init(type, oflags, mode, options);
+	t = tar_init(type, mode, options);
 	if (t == NULL)
 		return NULL;
 

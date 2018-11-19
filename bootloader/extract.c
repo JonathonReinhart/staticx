@@ -188,7 +188,7 @@ extract_archive(const char *dest_path)
     /* Open the tar file */
     TAR *t;
     errno = 0;
-    t = tar_new(ctx, tartype, O_RDONLY, TAR_DEBUG_OPTIONS);
+    t = tar_new(ctx, tartype, TAR_DEBUG_OPTIONS);
     if (t == NULL)
         error(2, errno, "tar_open() failed");
 
