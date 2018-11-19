@@ -20,14 +20,30 @@
 
 const char libtar_version[] = PACKAGE_VERSION;
 
+static inline int default_fd(void *context)
+{
+	return (int)(long)context;
+}
+
+static int default_close(void *context)
+{
+	int fd = default_fd(context);
+	return close(fd);
+}
+
+static ssize_t default_read(void *context, void * const buf, size_t len)
+{
+	int fd = default_fd(context);
+	return read(fd, buf, len);
+}
+
 static tartype_t default_type = {
-	.openfunc = open,
-	.closefunc = close,
-	.readfunc = read,
+	.closefunc = default_close,
+	.readfunc = default_read,
 };
 
 static TAR *
-tar_init(const char *pathname, tartype_t *type,
+tar_init(tartype_t *type,
 	 int oflags, int mode, int options)
 {
 	TAR *t;
@@ -41,9 +57,8 @@ tar_init(const char *pathname, tartype_t *type,
 
 	t = calloc(1, sizeof(*t));
 	if (t == NULL)
-	    return NULL;
+		return NULL;
 
-	t->pathname = pathname;
 	t->options = options;
 	t->type = (type ? type : &default_type);
 	t->oflags = oflags;
@@ -51,55 +66,19 @@ tar_init(const char *pathname, tartype_t *type,
 	return t;
 }
 
-
-/* open a new tarfile handle */
 TAR *
-tar_open(const char *pathname, tartype_t *type,
-	 int oflags, int mode, int options)
+tar_new(void *context, tartype_t *type,
+	   int oflags, int options)
 {
+	int mode = 0;
 	TAR *t;
 
-	t = tar_init(pathname, type, oflags, mode, options);
+	t = tar_init(type, oflags, mode, options);
 	if (t == NULL)
 		return NULL;
 
-	if ((options & TAR_NOOVERWRITE) && (oflags & O_CREAT))
-		oflags |= O_EXCL;
-
-#ifdef O_BINARY
-	oflags |= O_BINARY;
-#endif
-
-	t->fd = t->type->openfunc(pathname, oflags, mode);
-	if (t->fd == -1)
-	{
-		free(t);
-		return NULL;
-	}
-
+	t->context = context;
 	return t;
-}
-
-
-TAR *
-tar_fdopen(int fd, const char *pathname, tartype_t *type,
-	   int oflags, int mode, int options)
-{
-	TAR *t;
-
-	t = tar_init(pathname, type, oflags, mode, options);
-	if (t == NULL)
-	    return NULL;
-
-	t->fd = fd;
-	return t;
-}
-
-
-int
-tar_fd(TAR *t)
-{
-	return t->fd;
 }
 
 
@@ -107,13 +86,13 @@ tar_fd(TAR *t)
 int
 tar_close(TAR *t)
 {
-	int i;
+	closefunc_t closefunc = t->type->closefunc;
+	int rc = 0;
 
-	i = t->type->closefunc(t->fd);
+	if (closefunc)
+		rc = closefunc(t->context);
 
 	free(t);
 
-	return i;
+	return rc;
 }
-
-

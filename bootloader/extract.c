@@ -2,6 +2,7 @@
 #include <libtar.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdlib.h>
 #include "common.h"
 #include "elfutil.h"
 #include "error.h"
@@ -9,23 +10,65 @@
 #include "mmap.h"
 #include "xz.h"
 
-
-/**
- * libtar is weird and uses an integer as the 'context' for its tartype_t
- * function pointers, so we can't use a void * to refer to a dynamic structure.
- * That's not a big deal, since we only care about a single instance anyway.
- * So we'll use a "fake" file descriptor number whose value doesn't matter
- * because it will never be passed to any system calls. We do this just to keep
- * libtar in check.
- */
-#define XZ_FAKE_FD   42
-
 #define XZ_DICT_MAX     8<<20       /* 8 MiB */
 
-static struct xz_dec *m_xzdec = NULL;
+/* Extraction context */
+struct exctx {
+    /* This is used by both the xztype and memtype tar handlers */
+    struct xz_buf buf;
 
-/* This is used by both the xztype and memtype tar handlers */
-static struct xz_buf m_xzbuf;
+    /* Used only for xz; NULL otherwise */
+    struct xz_dec *xzdec;
+};
+
+static struct exctx *
+exctx_new(const void *data, size_t datalen, bool xz)
+{
+    struct exctx *ctx;
+
+    /* Allocate context structure */
+    ctx = malloc(sizeof(*ctx));
+    if (!ctx) {
+        error(2, 0, "Failed to allocate exctx");
+        return NULL;
+    }
+
+    /* Initialize buffer descriptor */
+    {
+        struct xz_buf *b = &ctx->buf;
+
+        b->in = data;
+        b->in_pos = 0;
+        b->in_size = datalen;
+
+        b->out = NULL;
+        b->out_pos = 0;
+        b->out_size = 0;
+    }
+
+    /* Initialize XZ decoder */
+    if (xz) {
+        ctx->xzdec = xz_dec_init(XZ_DYNALLOC, XZ_DICT_MAX);
+        if (!ctx->xzdec) {
+            error(2, 0, "Failed to initialize xz decoder");
+            return NULL;
+        }
+    }
+
+    return ctx;
+}
+
+static int common_close(void *context)
+{
+    struct exctx *ctx = context;
+
+    if (ctx->xzdec) {
+        xz_dec_end(ctx->xzdec);
+    }
+
+    free(ctx);
+    return 0;
+}
 
 static const char * xzret_to_str(enum xz_ret r)
 {
@@ -43,44 +86,21 @@ static const char * xzret_to_str(enum xz_ret r)
     }
 }
 
-static int xz_open(const char *pathname, int oflags, ...)
+static ssize_t xz_read(void *context, void * const buf, size_t const len)
 {
-    m_xzdec = xz_dec_init(XZ_DYNALLOC, XZ_DICT_MAX);
-    if (!m_xzdec) {
-        error(2, 0, "Failed to initialize xz decoder");
-        return -1;
-    }
+    struct exctx *ctx = context;
+    struct xz_buf *b = &ctx->buf;
 
-    return XZ_FAKE_FD;
-}
-
-static int xz_close(int fd)
-{
-    if (fd != XZ_FAKE_FD) {
-        debug_printf("Unexpected fd %d\n", fd);
-        return -1;
-    }
-
-    if (m_xzdec) {
-        xz_dec_end(m_xzdec);
-        m_xzdec = NULL;
-    }
-
-    return 0;
-}
-
-static ssize_t xz_read(int fd, void * const buf, size_t const len)
-{
     /* Decompress into given output buffer */
-    m_xzbuf.out      = buf;
-    m_xzbuf.out_pos  = 0;
-    m_xzbuf.out_size = len;
+    b->out      = buf;
+    b->out_pos  = 0;
+    b->out_size = len;
 
     /* Always attempt to fill the given output buffer */
-    while (m_xzbuf.out_pos != m_xzbuf.out_size) {
+    while (b->out_pos != b->out_size) {
 
         /* Run! */
-        enum xz_ret xr = xz_dec_run(m_xzdec, &m_xzbuf);
+        enum xz_ret xr = xz_dec_run(ctx->xzdec, b);
         switch (xr) {
             case XZ_OK:
                 continue;
@@ -99,8 +119,7 @@ static ssize_t xz_read(int fd, void * const buf, size_t const len)
 }
 
 static tartype_t xztype = {
-    .openfunc   = xz_open,
-    .closefunc  = xz_close,
+    .closefunc  = common_close,
     .readfunc   = xz_read,
 };
 
@@ -117,43 +136,25 @@ static bool is_xz_file(const char *buf, size_t len)
 
 /*******************************************************************************/
 
-static int mem_open(const char *pathname, int oflags, ...)
+static ssize_t mem_read(void *context, void * const buf, size_t len)
 {
-    return XZ_FAKE_FD;
-}
+    struct exctx *ctx = context;
+    struct xz_buf *b = &ctx->buf;
 
-static int mem_close(int fd)
-{
-    if (fd != XZ_FAKE_FD) {
-        debug_printf("Unexpected fd %d\n", fd);
-        return -1;
-    }
+    const uint8_t *source = b->in + b->in_pos;
+    size_t ar_remain = b->in_size - b->in_pos;
 
-    return 0;
-}
-
-static ssize_t mem_read(int fd, void * const buf, size_t len)
-{
-    if (fd != XZ_FAKE_FD) {
-        debug_printf("Unexpected fd %d\n", fd);
-        return -1;
-    }
-
-    const uint8_t *source = m_xzbuf.in + m_xzbuf.in_pos;
-
-    size_t ar_remain = m_xzbuf.in_size - m_xzbuf.in_pos;
     if (len > ar_remain)
         len = ar_remain;
 
     memcpy(buf, source, len);
-    m_xzbuf.in_pos += len;
+    b->in_pos += len;
 
     return len;
 }
 
 static tartype_t memtype = {
-    .openfunc   = mem_open,
-    .closefunc  = mem_close,
+    .closefunc  = common_close,
     .readfunc   = mem_read,
 };
 
@@ -178,22 +179,19 @@ extract_archive(const char *dest_path)
     const void *ar_data = cptr_add(ehdr, shdr->sh_offset);
 
     /* Determine if the archive is compressed */
-    tartype_t *tartype = is_xz_file(ar_data, ar_size) ? &xztype : &memtype;
+    bool xz = is_xz_file(ar_data, ar_size);
+    tartype_t *tartype = xz ? &xztype : &memtype;
 
-    /* Input buffer; used by xztype and memtype handlers */
-    m_xzbuf = (typeof(m_xzbuf)) {
-        .in      = ar_data,
-        .in_pos  = 0,
-        .in_size = ar_size,
-        /* Other fields initialized to zero */
-    };
+    /* Create extration context */
+    struct exctx *ctx = exctx_new(ar_data, ar_size, xz);
 
     /* Open the tar file */
     TAR *t;
     errno = 0;
-    t = tar_open("", tartype, O_RDONLY, 0, TAR_DEBUG_OPTIONS);
+    t = tar_new(ctx, tartype, O_RDONLY, TAR_DEBUG_OPTIONS);
     if (t == NULL)
         error(2, errno, "tar_open() failed");
+
 
     if (tar_extract_all(t, dest_path) != 0)
         error(2, errno, "tar_extract_all() failed");

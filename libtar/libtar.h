@@ -60,13 +60,11 @@ struct tar_header
 
 /***** handle.c ************************************************************/
 
-typedef int (*openfunc_t)(const char *, int, ...);
-typedef int (*closefunc_t)(int);
-typedef ssize_t (*readfunc_t)(int, void *, size_t);
+typedef int (*closefunc_t)(void *context);
+typedef ssize_t (*readfunc_t)(void *context, void *buf, size_t len);
 
 typedef struct
 {
-	openfunc_t openfunc;
 	closefunc_t closefunc;
 	readfunc_t readfunc;
 }
@@ -75,8 +73,7 @@ tartype_t;
 typedef struct
 {
 	tartype_t *type;
-	const char *pathname;
-	long fd;
+	void *context;
 	int oflags;
 	int options;
 	struct tar_header th_buf;
@@ -98,16 +95,8 @@ TAR;
 extern const char libtar_version[];
 
 
-/* open a new tarfile handle */
-TAR *tar_open(const char *pathname, tartype_t *type,
-	     int oflags, int mode, int options);
-
-/* make a tarfile handle out of a previously-opened descriptor */
-TAR *tar_fdopen(int fd, const char *pathname, tartype_t *type,
-	       int oflags, int mode, int options);
-
-/* returns the descriptor associated with t */
-int tar_fd(TAR *t);
+/* make a tarfile handle */
+TAR *tar_new(void *context, tartype_t *type, int oflags, int options);
 
 /* close tarfile handle */
 int tar_close(TAR *t);
@@ -116,7 +105,7 @@ int tar_close(TAR *t);
 
 static inline ssize_t tar_block_read(TAR *t, void *buf)
 {
-	return t->type->readfunc(t->fd, buf, T_BLOCKSIZE);
+	return t->type->readfunc(t->context, buf, T_BLOCKSIZE);
 }
 
 /* read a header block */
