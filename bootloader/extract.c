@@ -12,8 +12,14 @@
 
 #define XZ_DICT_MAX     8<<20       /* 8 MiB */
 
+static int common_close(void *context);
+static ssize_t xz_read(void *context, void *buf, size_t const len);
+static ssize_t mem_read(void *context, void *buf, size_t len);
+
 /* Extraction context */
 struct exctx {
+    tartype_t tartype;
+
     /* This is used by both the xztype and memtype tar handlers */
     struct xz_buf buf;
 
@@ -31,6 +37,14 @@ exctx_new(const void *data, size_t datalen, bool xz)
     if (!ctx) {
         error(2, 0, "Failed to allocate exctx");
         return NULL;
+    }
+
+    /* Setup tartype */
+    {
+        tartype_t *typ = &ctx->tartype;
+
+        typ->closefunc = common_close;
+        typ->readfunc = xz ? xz_read : mem_read;
     }
 
     /* Initialize buffer descriptor */
@@ -118,11 +132,6 @@ static ssize_t xz_read(void *context, void * const buf, size_t const len)
     return len;
 }
 
-static tartype_t xztype = {
-    .closefunc  = common_close,
-    .readfunc   = xz_read,
-};
-
 static bool is_xz_file(const char *buf, size_t len)
 {
     /* https://tukaani.org/xz/xz-file-format.txt */
@@ -153,11 +162,6 @@ static ssize_t mem_read(void *context, void * const buf, size_t len)
     return len;
 }
 
-static tartype_t memtype = {
-    .closefunc  = common_close,
-    .readfunc   = mem_read,
-};
-
 /*******************************************************************************/
 
 void
@@ -180,7 +184,6 @@ extract_archive(const char *dest_path)
 
     /* Determine if the archive is compressed */
     bool xz = is_xz_file(ar_data, ar_size);
-    tartype_t *tartype = xz ? &xztype : &memtype;
 
     /* Create extration context */
     struct exctx *ctx = exctx_new(ar_data, ar_size, xz);
@@ -188,7 +191,7 @@ extract_archive(const char *dest_path)
     /* Open the tar file */
     TAR *t;
     errno = 0;
-    t = tar_new(ctx, tartype, TAR_DEBUG_OPTIONS);
+    t = tar_new(ctx, &ctx->tartype, TAR_DEBUG_OPTIONS);
     if (t == NULL)
         error(2, errno, "tar_open() failed");
 
