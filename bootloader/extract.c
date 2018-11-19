@@ -164,6 +164,18 @@ static ssize_t mem_read(void *context, void * const buf, size_t len)
 
 /*******************************************************************************/
 
+static TAR *tar_smart_bufopen(const void *ar_data, size_t ar_size, int options)
+{
+    /* Determine if the archive is compressed */
+    bool xz = is_xz_file(ar_data, ar_size);
+
+    /* Create extration context */
+    struct exctx *ctx = exctx_new(ar_data, ar_size, xz);
+
+    /* Open the tar file */
+    return tar_new(ctx, &ctx->tartype, options);
+}
+
 void
 extract_archive(const char *dest_path)
 {
@@ -182,23 +194,17 @@ extract_archive(const char *dest_path)
     size_t ar_size = shdr->sh_size;
     const void *ar_data = cptr_add(ehdr, shdr->sh_offset);
 
-    /* Determine if the archive is compressed */
-    bool xz = is_xz_file(ar_data, ar_size);
-
-    /* Create extration context */
-    struct exctx *ctx = exctx_new(ar_data, ar_size, xz);
-
     /* Open the tar file */
-    TAR *t;
     errno = 0;
-    t = tar_new(ctx, &ctx->tartype, TAR_DEBUG_OPTIONS);
+    TAR *t = tar_smart_bufopen(ar_data, ar_size, TAR_DEBUG_OPTIONS);
     if (t == NULL)
         error(2, errno, "tar_open() failed");
 
-
+    /* Extract it */
     if (tar_extract_all(t, dest_path) != 0)
         error(2, errno, "tar_extract_all() failed");
 
+    /* Close it */
     if (tar_close(t) != 0)
         error(2, errno, "tar_close() failed");
     t = NULL;
