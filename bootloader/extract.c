@@ -164,16 +164,42 @@ static ssize_t mem_read(void *context, void * const buf, size_t len)
 
 /*******************************************************************************/
 
-static TAR *tar_smart_bufopen(const void *ar_data, size_t ar_size, int options)
+struct archive
+{
+    const void *data;
+    size_t size;
+};
+
+static TAR *tar_smart_bufopen(const struct archive ar, int options)
 {
     /* Determine if the archive is compressed */
-    bool xz = is_xz_file(ar_data, ar_size);
+    bool xz = is_xz_file(ar.data, ar.size);
 
     /* Create extration context */
-    struct exctx *ctx = exctx_new(ar_data, ar_size, xz);
+    struct exctx *ctx = exctx_new(ar.data, ar.size, xz);
 
     /* Open the tar file */
     return tar_new(ctx, &ctx->tartype, options);
+}
+
+static struct archive
+find_archive(void *map)
+{
+    struct archive ar;
+
+    /* Find the .staticx.archive section */
+    Elf_Ehdr *ehdr = map;
+    if (!elf_is_valid(ehdr))
+        error(2, 0, "Invalid ELF header");
+
+    const Elf_Shdr *shdr = elf_get_section_by_name(ehdr, ARCHIVE_SECTION);
+    if (!shdr)
+        error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
+
+    ar.size = shdr->sh_size;
+    ar.data = cptr_add(ehdr, shdr->sh_offset);
+
+    return ar;
 }
 
 void
@@ -182,21 +208,12 @@ extract_archive(const char *dest_path)
     /* mmap this ELF file */
     struct map *map = mmap_file("/proc/self/exe", true);
 
-    /* Find the .staticx.archive section */
-    Elf_Ehdr *ehdr = map->map;
-    if (!elf_is_valid(ehdr))
-        error(2, 0, "Invalid ELF header");
-
-    const Elf_Shdr *shdr = elf_get_section_by_name(ehdr, ARCHIVE_SECTION);
-    if (!shdr)
-        error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
-
-    size_t ar_size = shdr->sh_size;
-    const void *ar_data = cptr_add(ehdr, shdr->sh_offset);
+    /* Find the archive */
+    struct archive ar = find_archive(map->map);
 
     /* Open the tar file */
     errno = 0;
-    TAR *t = tar_smart_bufopen(ar_data, ar_size, TAR_DEBUG_OPTIONS);
+    TAR *t = tar_smart_bufopen(ar, TAR_DEBUG_OPTIONS);
     if (t == NULL)
         error(2, errno, "tar_open() failed");
 
