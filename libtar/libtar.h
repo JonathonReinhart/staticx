@@ -17,8 +17,6 @@
 #include <sys/stat.h>
 #include <tar.h>
 
-#include "listhash/listhash.h"
-
 #ifdef __cplusplus
 extern "C"
 {
@@ -62,29 +60,22 @@ struct tar_header
 
 /***** handle.c ************************************************************/
 
-typedef int (*openfunc_t)(const char *, int, ...);
-typedef int (*closefunc_t)(int);
-typedef ssize_t (*readfunc_t)(int, void *, size_t);
-typedef ssize_t (*writefunc_t)(int, const void *, size_t);
+typedef int (*closefunc_t)(void *context);
+typedef ssize_t (*readfunc_t)(void *context, void *buf, size_t len);
 
 typedef struct
 {
-	openfunc_t openfunc;
 	closefunc_t closefunc;
 	readfunc_t readfunc;
-	writefunc_t writefunc;
 }
 tartype_t;
 
 typedef struct
 {
 	tartype_t *type;
-	const char *pathname;
-	long fd;
-	int oflags;
+	void *context;
 	int options;
 	struct tar_header th_buf;
-	libtar_hash_t *h;
 }
 TAR;
 
@@ -103,55 +94,21 @@ TAR;
 extern const char libtar_version[];
 
 
-/* open a new tarfile handle */
-int tar_open(TAR **t, const char *pathname, tartype_t *type,
-	     int oflags, int mode, int options);
-
-/* make a tarfile handle out of a previously-opened descriptor */
-int tar_fdopen(TAR **t, int fd, const char *pathname, tartype_t *type,
-	       int oflags, int mode, int options);
-
-/* returns the descriptor associated with t */
-int tar_fd(TAR *t);
+/* make a tarfile handle */
+TAR *tar_new(void *context, tartype_t *type, int options);
 
 /* close tarfile handle */
 int tar_close(TAR *t);
 
-
-/***** append.c ************************************************************/
-
-/* forward declaration to appease the compiler */
-struct tar_dev;
-
-/* cleanup function */
-void tar_dev_free(struct tar_dev *tdp);
-
-/* Appends a file to the tar archive.
- * Arguments:
- *    t        = TAR handle to append to
- *    realname = path of file to append
- *    savename = name to save the file under in the archive
- */
-int tar_append_file(TAR *t, const char *realname, const char *savename);
-
-/* write EOF indicator */
-int tar_append_eof(TAR *t);
-
-/* add file contents to a tarchive */
-int tar_append_regfile(TAR *t, const char *realname);
-
-
 /***** block.c *************************************************************/
 
-/* macros for reading/writing tarchive blocks */
-#define tar_block_read(t, buf) \
-	(*((t)->type->readfunc))((t)->fd, (char *)(buf), T_BLOCKSIZE)
-#define tar_block_write(t, buf) \
-	(*((t)->type->writefunc))((t)->fd, (char *)(buf), T_BLOCKSIZE)
+static inline ssize_t tar_block_read(TAR *t, void *buf)
+{
+	return t->type->readfunc(t->context, buf, T_BLOCKSIZE);
+}
 
-/* read/write a header block */
+/* read a header block */
 int th_read(TAR *t);
-int th_write(TAR *t);
 
 
 /***** decode.c ************************************************************/
@@ -187,92 +144,55 @@ int th_write(TAR *t);
 #define th_get_linkname(t) ((t)->th_buf.gnu_longlink \
                             ? (t)->th_buf.gnu_longlink \
                             : (t)->th_buf.linkname)
-char *th_get_pathname(TAR *t);
-mode_t th_get_mode(TAR *t);
-uid_t th_get_uid(TAR *t);
-gid_t th_get_gid(TAR *t);
-
-
-/***** encode.c ************************************************************/
-
-/* encode file info in th_header */
-void th_set_type(TAR *t, mode_t mode);
-void th_set_path(TAR *t, const char *pathname);
-void th_set_link(TAR *t, const char *linkname);
-void th_set_device(TAR *t, dev_t device);
-void th_set_user(TAR *t, uid_t uid);
-void th_set_group(TAR *t, gid_t gid);
-void th_set_mode(TAR *t, mode_t fmode);
-#define th_set_mtime(t, fmtime) \
-	int_to_oct_nonull((fmtime), (t)->th_buf.mtime, 12)
-#define th_set_size(t, fsize) \
-	int_to_oct_nonull((fsize), (t)->th_buf.size, 12)
-
-/* encode everything at once (except the pathname and linkname) */
-void th_set_from_stat(TAR *t, struct stat *s);
-
-/* encode magic, version, and crc - must be done after everything else is set */
-void th_finish(TAR *t);
+const char *th_get_pathname(const TAR *t);
+mode_t th_get_mode(const TAR *t);
+uid_t th_get_uid(const TAR *t);
+gid_t th_get_gid(const TAR *t);
 
 
 /***** extract.c ***********************************************************/
 
+/* extract all files */
+int tar_extract_all(TAR *t, const char *prefix);
+
 /* sequentially extract next file from t */
-int tar_extract_file(TAR *t, char *realname);
+int tar_extract_file(TAR *t, const char *realname);
 
 /* extract different file types */
-int tar_extract_dir(TAR *t, char *realname);
-int tar_extract_hardlink(TAR *t, char *realname);
-int tar_extract_symlink(TAR *t, char *realname);
-int tar_extract_chardev(TAR *t, char *realname);
-int tar_extract_blockdev(TAR *t, char *realname);
-int tar_extract_fifo(TAR *t, char *realname);
+int tar_extract_dir(TAR *t, const char *realname);
+int tar_extract_hardlink(TAR *t, const char *realname);
+int tar_extract_symlink(TAR *t, const char *realname);
+int tar_extract_chardev(TAR *t, const char *realname);
+int tar_extract_blockdev(TAR *t, const char *realname);
+int tar_extract_fifo(TAR *t, const char *realname);
 
 /* for regfiles, we need to extract the content blocks as well */
-int tar_extract_regfile(TAR *t, char *realname);
+int tar_extract_regfile(TAR *t, const char *realname);
 int tar_skip_regfile(TAR *t);
 
 
 /***** output.c ************************************************************/
 
-/* print the tar header */
-void th_print(TAR *t);
-
 /* print "ls -l"-like output for the file described by th */
-void th_print_long_ls(TAR *t);
+void th_print_long_ls(const TAR *t);
 
 
 /***** util.c *************************************************************/
 
-/* hashing function for pathnames */
-int path_hashfunc(char *key, int numbuckets);
-
-/* matching function for dev_t's */
-int dev_match(dev_t *dev1, dev_t *dev2);
-
-/* matching function for ino_t's */
-int ino_match(ino_t *ino1, ino_t *ino2);
-
-/* hashing function for dev_t's */
-int dev_hash(dev_t *dev);
-
-/* hashing function for ino_t's */
-int ino_hash(ino_t *inode);
-
 /* create any necessary dirs */
-int mkdirhier(char *path);
+int mkdirhier(const char *path);
 
 /* calculate header checksum */
-int th_crc_calc(TAR *t);
+int th_crc_calc(const TAR *t);
 
 /* calculate a signed header checksum */
-int th_signed_crc_calc(TAR *t);
+int th_signed_crc_calc(const TAR *t);
 
 /* compare checksums in a forgiving way */
 #define th_crc_ok(t) (th_get_crc(t) == th_crc_calc(t) || th_get_crc(t) == th_signed_crc_calc(t))
 
 /* string-octal to integer conversion */
-int oct_to_int(char *oct);
+int oct_to_int(const char *oct);
 
 /* integer to NULL-terminated string-octal conversion */
 #define int_to_oct(num, oct, octlen) \
@@ -280,16 +200,6 @@ int oct_to_int(char *oct);
 
 /* integer to string-octal conversion, no NULL */
 void int_to_oct_nonull(int num, char *oct, size_t octlen);
-
-
-/***** wrapper.c **********************************************************/
-
-/* extract groups of files */
-int tar_extract_glob(TAR *t, char *globname, char *prefix);
-int tar_extract_all(TAR *t, char *prefix);
-
-/* add a whole tree of files */
-int tar_append_tree(TAR *t, char *realdir, char *savedir);
 
 
 #ifdef __cplusplus

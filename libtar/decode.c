@@ -20,8 +20,8 @@
 #define TLS_THREAD __thread
 
 /* determine full path name */
-char *
-th_get_pathname(TAR *t)
+const char *
+th_get_pathname(const TAR *t)
 {
 	static TLS_THREAD char filename[MAXPATHLEN];
 
@@ -41,7 +41,7 @@ th_get_pathname(TAR *t)
 
 
 uid_t
-th_get_uid(TAR *t)
+th_get_uid(const TAR *t)
 {
 	int uid;
 	struct passwd *pw;
@@ -57,7 +57,7 @@ th_get_uid(TAR *t)
 
 
 gid_t
-th_get_gid(TAR *t)
+th_get_gid(const TAR *t)
 {
 	int gid;
 	struct group *gr;
@@ -73,7 +73,7 @@ th_get_gid(TAR *t)
 
 
 mode_t
-th_get_mode(TAR *t)
+th_get_mode(const TAR *t)
 {
 	mode_t mode;
 

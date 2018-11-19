@@ -19,52 +19,6 @@
 #include "compat.h"
 
 
-/* hashing function for pathnames */
-int
-path_hashfunc(char *key, int numbuckets)
-{
-	char buf[MAXPATHLEN];
-	char *p;
-
-	strcpy(buf, key);
-	p = basename(buf);
-
-	return (((unsigned int)p[0]) % numbuckets);
-}
-
-
-/* matching function for dev_t's */
-int
-dev_match(dev_t *dev1, dev_t *dev2)
-{
-	return !memcmp(dev1, dev2, sizeof(dev_t));
-}
-
-
-/* matching function for ino_t's */
-int
-ino_match(ino_t *ino1, ino_t *ino2)
-{
-	return !memcmp(ino1, ino2, sizeof(ino_t));
-}
-
-
-/* hashing function for dev_t's */
-int
-dev_hash(dev_t *dev)
-{
-	return *dev % 16;
-}
-
-
-/* hashing function for ino_t's */
-int
-ino_hash(ino_t *inode)
-{
-	return *inode % 256;
-}
-
-
 /*
 ** mkdirhier() - create all directories in a given path
 ** returns:
@@ -73,7 +27,7 @@ ino_hash(ino_t *inode)
 **	-1 (and sets errno)	error
 */
 int
-mkdirhier(char *path)
+mkdirhier(const char *path)
 {
 	char src[MAXPATHLEN], dst[MAXPATHLEN] = "";
 	char *dirp, *nextp = src;
@@ -112,7 +66,7 @@ mkdirhier(char *path)
 
 /* calculate header checksum */
 int
-th_crc_calc(TAR *t)
+th_crc_calc(const TAR *t)
 {
 	int i, sum = 0;
 
@@ -127,7 +81,7 @@ th_crc_calc(TAR *t)
 
 /* calculate a signed header checksum */
 int
-th_signed_crc_calc(TAR *t)
+th_signed_crc_calc(const TAR *t)
 {
 	int i, sum = 0;
 
@@ -142,7 +96,7 @@ th_signed_crc_calc(TAR *t)
 
 /* string-octal to integer conversion */
 int
-oct_to_int(char *oct)
+oct_to_int(const char *oct)
 {
 	int i;
 

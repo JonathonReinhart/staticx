@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include "libtar.h"
+#include "compat.h"
 
 static int mkdirs_for(const char *filename)
 {
@@ -41,13 +42,13 @@ static int mkdirs_for(const char *filename)
 }
 
 static int
-tar_set_file_perms(TAR *t, char *realname)
+tar_set_file_perms(TAR *t, const char *realname)
 {
 	mode_t mode;
 	uid_t uid;
 	gid_t gid;
 	struct utimbuf ut;
-	char *filename;
+	const char *filename;
 
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
@@ -99,7 +100,7 @@ tar_set_file_perms(TAR *t, char *realname)
 
 /* switchboard */
 int
-tar_extract_file(TAR *t, char *realname)
+tar_extract_file(TAR *t, const char *realname)
 {
 	int i;
 	char *lnp;
@@ -145,17 +146,11 @@ tar_extract_file(TAR *t, char *realname)
 
 	pathname_len = strlen(th_get_pathname(t)) + 1;
 	realname_len = strlen(realname) + 1;
-	lnp = (char *)calloc(1, pathname_len + realname_len);
+	lnp = calloc(1, pathname_len + realname_len);
 	if (lnp == NULL)
 		return -1;
 	strcpy(&lnp[0], th_get_pathname(t));
 	strcpy(&lnp[pathname_len], realname);
-#ifdef DEBUG
-	printf("tar_extract_file(): calling libtar_hash_add(): key=\"%s\", "
-	       "value=\"%s\"\n", th_get_pathname(t), realname);
-#endif
-	if (libtar_hash_add(t->h, lnp) != 0)
-		return -1;
 
 	return 0;
 }
@@ -163,7 +158,7 @@ tar_extract_file(TAR *t, char *realname)
 
 /* extract regular file */
 int
-tar_extract_regfile(TAR *t, char *realname)
+tar_extract_regfile(TAR *t, const char *realname)
 {
 	mode_t mode;
 	size_t size;
@@ -172,7 +167,7 @@ tar_extract_regfile(TAR *t, char *realname)
 	int fdout;
 	int i, k;
 	char buf[T_BLOCKSIZE];
-	char *filename;
+	const char *filename;
 
 #ifdef DEBUG
 	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
@@ -296,12 +291,10 @@ tar_skip_regfile(TAR *t)
 
 /* hardlink */
 int
-tar_extract_hardlink(TAR * t, char *realname)
+tar_extract_hardlink(TAR * t, const char *realname)
 {
-	char *filename;
-	char *linktgt = NULL;
-	char *lnp;
-	libtar_hashptr_t hp;
+	const char *filename;
+	const char *linktgt = NULL;
 
 	if (!TH_ISLNK(t))
 	{
@@ -312,15 +305,7 @@ tar_extract_hardlink(TAR * t, char *realname)
 	filename = (realname ? realname : th_get_pathname(t));
 	if (mkdirs_for(filename) == -1)
 		return -1;
-	libtar_hashptr_reset(&hp);
-	if (libtar_hash_getkey(t->h, &hp, th_get_linkname(t),
-			       (libtar_matchfunc_t)libtar_str_match) != 0)
-	{
-		lnp = (char *)libtar_hashptr_data(&hp);
-		linktgt = &lnp[strlen(lnp) + 1];
-	}
-	else
-		linktgt = th_get_linkname(t);
+	linktgt = th_get_linkname(t);
 
 #ifdef DEBUG
 	printf("  ==> extracting: %s (link to %s)\n", filename, linktgt);
@@ -339,9 +324,9 @@ tar_extract_hardlink(TAR * t, char *realname)
 
 /* symlink */
 int
-tar_extract_symlink(TAR *t, char *realname)
+tar_extract_symlink(TAR *t, const char *realname)
 {
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISSYM(t))
 	{
@@ -374,11 +359,11 @@ tar_extract_symlink(TAR *t, char *realname)
 
 /* character device */
 int
-tar_extract_chardev(TAR *t, char *realname)
+tar_extract_chardev(TAR *t, const char *realname)
 {
 	mode_t mode;
 	unsigned long devmaj, devmin;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISCHR(t))
 	{
@@ -413,11 +398,11 @@ tar_extract_chardev(TAR *t, char *realname)
 
 /* block device */
 int
-tar_extract_blockdev(TAR *t, char *realname)
+tar_extract_blockdev(TAR *t, const char *realname)
 {
 	mode_t mode;
 	unsigned long devmaj, devmin;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISBLK(t))
 	{
@@ -452,10 +437,10 @@ tar_extract_blockdev(TAR *t, char *realname)
 
 /* directory */
 int
-tar_extract_dir(TAR *t, char *realname)
+tar_extract_dir(TAR *t, const char *realname)
 {
 	mode_t mode;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISDIR(t))
 	{
@@ -507,10 +492,10 @@ tar_extract_dir(TAR *t, char *realname)
 
 /* FIFO */
 int
-tar_extract_fifo(TAR *t, char *realname)
+tar_extract_fifo(TAR *t, const char *realname)
 {
 	mode_t mode;
-	char *filename;
+	const char *filename;
 
 	if (!TH_ISFIFO(t))
 	{
@@ -539,3 +524,37 @@ tar_extract_fifo(TAR *t, char *realname)
 }
 
 
+int
+tar_extract_all(TAR *t, const char *prefix)
+{
+	const char *filename;
+	char buf[MAXPATHLEN];
+	int i;
+
+#ifdef DEBUG
+	printf("==> tar_extract_all(TAR *t, \"%s\")\n",
+	       (prefix ? prefix : "(null)"));
+#endif
+
+	while ((i = th_read(t)) == 0)
+	{
+#ifdef DEBUG
+		puts("    tar_extract_all(): calling th_get_pathname()");
+#endif
+		filename = th_get_pathname(t);
+		if (t->options & TAR_VERBOSE)
+			th_print_long_ls(t);
+		if (prefix != NULL)
+			snprintf(buf, sizeof(buf), "%s/%s", prefix, filename);
+		else
+			strlcpy(buf, filename, sizeof(buf));
+#ifdef DEBUG
+		printf("    tar_extract_all(): calling tar_extract_file(t, "
+		       "\"%s\")\n", buf);
+#endif
+		if (tar_extract_file(t, buf) != 0)
+			return -1;
+	}
+
+	return (i == 1 ? 0 : -1);
+}
