@@ -20,8 +20,8 @@
 
 const char libtar_version[] = PACKAGE_VERSION;
 
-static TAR *
-tar_init(tartype_t *type, int mode, int options)
+TAR *
+tar_new(void *context, tartype_t *type, int options)
 {
 	TAR *t;
 
@@ -31,21 +31,8 @@ tar_init(tartype_t *type, int mode, int options)
 
 	t->options = options;
 	t->type = type;
-
-	return t;
-}
-
-TAR *
-tar_new(void *context, tartype_t *type, int options)
-{
-	int mode = 0;
-	TAR *t;
-
-	t = tar_init(type, mode, options);
-	if (t == NULL)
-		return NULL;
-
 	t->context = context;
+
 	return t;
 }
 
