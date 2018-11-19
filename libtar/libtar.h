@@ -186,7 +186,7 @@ int tar_skip_regfile(TAR *t);
 /***** output.c ************************************************************/
 
 /* print "ls -l"-like output for the file described by th */
-void th_print_long_ls(TAR *t);
+void th_print_long_ls(const TAR *t);
 
 
 /***** util.c *************************************************************/

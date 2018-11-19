@@ -27,7 +27,7 @@
 
 
 void
-th_print_long_ls(TAR *t)
+th_print_long_ls(const TAR *t)
 {
 	char modestring[12];
 	struct passwd *pw;
