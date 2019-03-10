@@ -27,7 +27,7 @@ if ARGUMENTS.get('DEBUG'):
 
 libtar = env.SConscript(
     dirs = 'libtar',
-    variant_dir = env.subst('$BUILD_ROOT/libtar'),
+    variant_dir = '$BUILD_ROOT/libtar',
     duplicate = False,
     exports = dict(env=env.Clone()),
 )
@@ -35,7 +35,7 @@ env.Install('$LIBDIR', libtar)
 
 libxz = env.SConscript(
     dirs = 'libxz',
-    variant_dir = env.subst('$BUILD_ROOT/libxz'),
+    variant_dir = '$BUILD_ROOT/libxz',
     duplicate = False,
     exports = dict(env=env.Clone()),
 )
@@ -43,7 +43,7 @@ env.Install('$LIBDIR', libxz)
 
 bl = env.SConscript(
     dirs = 'bootloader',
-    variant_dir = env.subst('$BUILD_ROOT/bootloader'),
+    variant_dir = '$BUILD_ROOT/bootloader',
     duplicate = False,
     exports = dict(env=env.Clone()),
 )
