@@ -4,3 +4,4 @@ scuba
 wheel
 backports.lzma; (python_version == '2.7')
 pyelftools
+cffi        # Used for test/pyinstall-cffi/
