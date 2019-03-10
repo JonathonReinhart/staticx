@@ -85,7 +85,9 @@ def get_shobj_deps(path, libpath=[]):
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
     pat = re.compile('\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
-    ignore_list = 'linux-vdso.so'
+    ignore_list = [
+        'linux-vdso.so',
+    ]
 
     def ignore(p):
         for name in ignore_list:
