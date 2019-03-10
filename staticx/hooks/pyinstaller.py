@@ -85,7 +85,7 @@ class PyInstallHook(object):
         make_executable(lib)
 
         # Add any missing libraries to our archive
-        for deppath in get_shobj_deps(lib):
+        for deppath in get_shobj_deps(lib, libpath=[self.tmpdir]):
             dep = os.path.basename(deppath)
 
             if dep in self.sx_ar.libraries:
