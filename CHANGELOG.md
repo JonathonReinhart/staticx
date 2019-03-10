@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.0] - 2019-03-10
+### Changed
+- Refactored and trimmed libtar ([#74])
+
+### Fixed
+- Correctly handle applications and libraries that specify an `RPATH` including
+  `$ORIGIN`, including apps built with PyInstaller ([#75])
+- Fixed potential issue in ignored libraries list ([#77])
+- Fixed missing libxz in source distributions ([#77])
+
+
 ## [0.6.0] - 2018-11-13
 ### Added
 - Add `--no-compress` option to store archive uncompressed ([#58])
@@ -63,7 +74,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/JonathonReinhart/staticx/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/JonathonReinhart/staticx/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/JonathonReinhart/staticx/compare/v0.4.0...v0.4.1
@@ -89,3 +101,6 @@ Initial release
 [#65]: https://github.com/JonathonReinhart/staticx/pull/65
 [#69]: https://github.com/JonathonReinhart/staticx/pull/69
 [#70]: https://github.com/JonathonReinhart/staticx/pull/70
+[#74]: https://github.com/JonathonReinhart/staticx/pull/74
+[#75]: https://github.com/JonathonReinhart/staticx/pull/75
+[#77]: https://github.com/JonathonReinhart/staticx/pull/77
