@@ -1,5 +1,9 @@
-.sconsign.dblite
+# Compiled Python files
 *.pyc
+__pycache__/
+
+# SCons stuff
+.sconsign.dblite
 /scons_build/
 
 # Setup.py stuff
