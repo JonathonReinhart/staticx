@@ -3,6 +3,8 @@ import sys
 import re
 import logging
 import errno
+import os
+from pprint import pformat
 
 from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
@@ -23,11 +25,11 @@ class ExternTool(object):
                 return True
         return False
 
-    def run(self, *args):
+    def run(self, *args, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
-        kw = dict(stderr=subprocess.PIPE)
+        kw['stderr'] = subprocess.PIPE
         if self.capture_stdout:
             kw['stdout'] = subprocess.PIPE
 
@@ -65,8 +67,18 @@ tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     ])
 tool_strip      = ExternTool('strip', 'binutils')
 
-def get_shobj_deps(path):
-    output = tool_ldd.run(path)
+def get_shobj_deps(path, libpath=[]):
+    # TODO: Should we use dict(os.environ) instead?
+    #       For now, make sure we always pass a clean environment.
+    env = {}
+
+    if libpath:
+        # Prepend to LD_LIBRARY_PATH
+        assert isinstance(libpath, list)
+        old_libpath = env.get('LD_LIBRARY_PATH', '')
+        env['LD_LIBRARY_PATH'] = ':'.join(libpath + [old_libpath])
+
+    output = tool_ldd.run(path, env=env)
 
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
