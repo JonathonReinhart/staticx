@@ -139,7 +139,7 @@ def _open_elf(path, mode='rb'):
     try:
         return ELFCloser(path, mode)
     except ELFError as e:
-        raise InvalidInputError("Invalid ELF image: {}".format(e))
+        raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
 
 
 def get_machine(path):
