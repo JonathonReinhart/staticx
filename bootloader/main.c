@@ -231,6 +231,17 @@ restore_sig_handler(int signum)
         error(2, errno, "Error restoring handler for signal %d", signum);
 }
 
+static void
+setup_environment(void)
+{
+    /**
+     * Set STATICX_BUNDLE_DIR to the absolute path of the "bundle" directory,
+     * the temporary dir where the archive has been extracted.
+     */
+    if (setenv("STATICX_BUNDLE_DIR", m_bundle_dir, 1) != 0)
+        error(2, errno, "Error setting STATICX_BUNDLE_DIR=%s", m_bundle_dir);
+}
+
 /**
  * Run the user application in a child process.
  *
@@ -307,6 +318,9 @@ main(int argc, char **argv)
 
     /* Patch the user application ELF to run in the temp dir */
     patch_app(prog_path);
+
+    /* Add STATICX_* variables to the environment for the child */
+    setup_environment();
 
     /* Run the user application */
     int wstatus = run_app(argc, argv, prog_path);
