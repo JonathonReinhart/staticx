@@ -12,5 +12,6 @@ def get_resource(name):
     return os.path.join(get_resource_dir(), name)
 
 
-auxapp = get_resource('aux-static')
-subprocess.check_call([auxapp])
+for name in ('aux-dynamic', 'aux-static'):
+    auxapp = get_resource(name)
+    subprocess.check_call([auxapp])

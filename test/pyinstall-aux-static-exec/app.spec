@@ -1,5 +1,6 @@
 a = Analysis(['app.py'],
              binaries=[
+                 ('aux-dynamic', '.'),
                  ('aux-static', '.'),
              ],
              datas=[],

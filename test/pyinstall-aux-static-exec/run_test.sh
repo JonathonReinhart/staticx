@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
+
+: ${CC:=gcc}
+CCFLAGS="-Wall -Werror -Os -s"
+
 outfile=./dist/app.staticx
 
 # Only run if PyInstaller is installed
@@ -14,7 +18,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 
 # Build our auxiliary app
-gcc -Wall -Werror -Os -static -s -o aux-static aux.c
+rm -f aux-dynamic aux-static
+$CC $CCFLAGS -o aux-dynamic aux.c
+$CC $CCFLAGS -static -DSTATIC=1 -o aux-static aux.c
 
 # Run the application normally
 echo -e "\nPython app run normally:"
