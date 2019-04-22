@@ -1,4 +1,6 @@
 build/
 dist/
-aux-static
-aux-dynamic
+aux-glibc-dynamic
+aux-glibc-static
+aux-musl-dynamic
+aux-musl-static

@@ -1,8 +1,17 @@
+import os
+import sys
+
+# Add the diretory of the .spec file to the python path
+specdir = os.path.abspath(SPECPATH)
+sys.path.append(specdir)
+
+from auxlist import aux_apps
+
+# Add whichever binaries were compiled
+binaries = [(b, '.') for b in aux_apps if os.path.isfile(b)]
+
 a = Analysis(['app.py'],
-             binaries=[
-                 ('aux-dynamic', '.'),
-                 ('aux-static', '.'),
-             ],
+             binaries=binaries,
              datas=[],
              excludes=[],
              noarchive=False)
