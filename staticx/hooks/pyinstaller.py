@@ -3,7 +3,7 @@ import logging
 import shutil
 import tempfile
 
-from ..elf import get_shobj_deps, StaticELFError
+from ..elf import get_shobj_deps, StaticELFError, LddError
 from ..utils import make_executable, mkdirs_for
 
 def process_pyinstaller_archive(sx_ar, prog):
@@ -94,6 +94,15 @@ class PyInstallHook(object):
             # It's okay if there's a static executable in the PyInstaller
             # archive. See issue #78
             return
+        except LddError as e:
+            # In certain cases, ldd might get upset about binary files
+            # (probably added by the user via .spec file). This can happen
+            # e.g., if a dynamically-linked musl-libc application is included.
+            # There's a reasonable chance this won't run, but it's not really
+            # staticx's problem, so warn the user and go on.
+            logging.warning(e)
+            return
+
 
         # Add any missing libraries to our archive
         for deppath in deps:
