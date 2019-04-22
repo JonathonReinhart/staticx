@@ -1,5 +1,4 @@
 dist: xenial
-sudo: required
 serivces:
   - docker
 
@@ -13,7 +12,6 @@ matrix:
   include:
     - python: "2.7"
     - python: "3.4"
-      dist: trusty
     - python: "3.5"
     - python: "3.6"
     - python: "3.7"
@@ -22,7 +20,6 @@ matrix:
     - python: "3.5"
       env: CC=
 
-    - python: "3.5-dev" # 3.5 development branch
     - python: "nightly" # currently points to 3.7-alpha
   allow_failures:
     - python: "nightly"
@@ -34,15 +31,11 @@ addons:
       - musl-dev
       - musl-tools
       - liblzma-dev
+      - scons
 
 install:
   # Unset CC before installing Python packages - see #44
   - env -u CC   pip install -r requirements.txt
-  - |
-    if [ "$TRAVIS_PYTHON_VERSION" != "3.4" ]; then
-      sudo apt-get update
-      sudo apt-get install scons
-    fi
 
 before_script:
   - docker pull $TEST_DOCKER_IMAGE
