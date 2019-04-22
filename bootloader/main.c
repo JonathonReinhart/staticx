@@ -18,8 +18,8 @@
 #include "elfutil.h"
 
 
-/* Our "home" directory, where the archive is extracted */
-static const char *m_homedir;
+/* The "bundle" directory, where the archive is extracted */
+static const char *m_bundle_dir;
 
 static char *
 path_join(const char *p1, const char *p2)
@@ -159,8 +159,8 @@ patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_
 static void
 patch_app(const char *prog_path)
 {
-    char *interp_path = path_join(m_homedir, INTERP_FILENAME);
-    const char *new_rpath = m_homedir;
+    char *interp_path = path_join(m_bundle_dir, INTERP_FILENAME);
+    const char *new_rpath = m_bundle_dir;
 
     patch_prog_paths(prog_path, interp_path, new_rpath);
 
@@ -231,6 +231,32 @@ restore_sig_handler(int signum)
         error(2, errno, "Error restoring handler for signal %d", signum);
 }
 
+static void
+setup_environment(void)
+{
+    /**
+     * Set STATICX_BUNDLE_DIR to the absolute path of the "bundle" directory,
+     * the temporary dir where the archive has been extracted.
+     */
+    if (setenv("STATICX_BUNDLE_DIR", m_bundle_dir, 1) != 0)
+        error(2, errno, "Error setting STATICX_BUNDLE_DIR=%s", m_bundle_dir);
+
+
+    /**
+     * Set STATICX_PROG_PATH to the absolute path of the program being
+     * executed. This is necessary because the user would see /proc/self/exe
+     * as pointing to the extracted binary in the bundle directory.
+     */
+    {
+        char *my_path = realpath("/proc/self/exe", NULL);
+        if (!my_path)
+            error(2, errno, "Failed to read /proc/self/exe");
+        if (setenv("STATICX_PROG_PATH", my_path, 1))
+            error(2, errno, "Error setting STATICX_PROG_PATH=%s", my_path);
+        free(my_path);  /* setenv() copied the string */
+    }
+}
+
 /**
  * Run the user application in a child process.
  *
@@ -296,17 +322,20 @@ main(int argc, char **argv)
     xz_crc32_init();
 
     /* Create temporary directory where archive will be extracted */
-    m_homedir = create_tmpdir();
-    debug_printf("Home dir: %s\n", m_homedir);
+    m_bundle_dir = create_tmpdir();
+    debug_printf("Temporary bundle dir: %s\n", m_bundle_dir);
 
     /* Extract the archive embedded in this program */
-    extract_archive(m_homedir);
+    extract_archive(m_bundle_dir);
 
     /* Get path to user application inside temp dir */
-    char *prog_path = path_join(m_homedir, PROG_FILENAME);
+    char *prog_path = path_join(m_bundle_dir, PROG_FILENAME);
 
     /* Patch the user application ELF to run in the temp dir */
     patch_app(prog_path);
+
+    /* Add STATICX_* variables to the environment for the child */
+    setup_environment();
 
     /* Run the user application */
     int wstatus = run_app(argc, argv, prog_path);
@@ -315,11 +344,11 @@ main(int argc, char **argv)
     prog_path = NULL;
 
     /* Cleanup */
-    debug_printf("Removing temp dir %s\n", m_homedir);
-    if (remove_tree(m_homedir) < 0) {
-        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_homedir);
+    debug_printf("Removing temporary bundle dir %s\n", m_bundle_dir);
+    if (remove_tree(m_bundle_dir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
     }
-    m_homedir = NULL;
+    m_bundle_dir = NULL;
 
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {
