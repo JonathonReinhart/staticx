@@ -64,6 +64,12 @@ Including additional library files with the package (any number can be specified
 staticx -l /path/to/fancy/library /path/to/exe /path/to/output
 ```
 
+## Run-time Information
+StaticX sets the following environment variables for the wrapped user program:
+- `STATICX_BUNDLE_DIR`: The absolute path of the "bundle" directory, the
+  temporary dir where the archive has been extracted.
+- `STATICX_PROG_PATH`: The absolute path of the program being executed.
+
 
 ## License
 This software is released under the GPLv2, with an exception allowing the

@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Added
+- Set `STATICX_BUNDLE_DIR` and `STATICX_PROG_PATH` in child process ([#81])
+
+
 ## [0.7.0] - 2019-03-10
 ### Changed
 - Refactored and trimmed libtar ([#74])
@@ -104,3 +109,4 @@ Initial release
 [#74]: https://github.com/JonathonReinhart/staticx/pull/74
 [#75]: https://github.com/JonathonReinhart/staticx/pull/75
 [#77]: https://github.com/JonathonReinhart/staticx/pull/77
+[#81]: https://github.com/JonathonReinhart/staticx/pull/81
