@@ -240,6 +240,21 @@ setup_environment(void)
      */
     if (setenv("STATICX_BUNDLE_DIR", m_bundle_dir, 1) != 0)
         error(2, errno, "Error setting STATICX_BUNDLE_DIR=%s", m_bundle_dir);
+
+
+    /**
+     * Set STATICX_PROG_PATH to the absolute path of the program being
+     * executed. This is necessary because the user would see /proc/self/exe
+     * as pointing to the extracted binary in the bundle directory.
+     */
+    {
+        char *my_path = realpath("/proc/self/exe", NULL);
+        if (!my_path)
+            error(2, errno, "Failed to read /proc/self/exe");
+        if (setenv("STATICX_PROG_PATH", my_path, 1))
+            error(2, errno, "Error setting STATICX_PROG_PATH=%s", my_path);
+        free(my_path);  /* setenv() copied the string */
+    }
 }
 
 /**
