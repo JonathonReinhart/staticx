@@ -68,6 +68,13 @@ tool_patchelf   = ExternTool('patchelf', 'patchelf',
 tool_strip      = ExternTool('strip', 'binutils')
 
 def get_shobj_deps(path, libpath=[]):
+    """Discover the dependencies of a shared object (*.so file)
+    """
+
+    # First verify we're dealing with a dynamic ELF file
+    ensure_dynamic(path)
+
+
     # TODO: Should we use dict(os.environ) instead?
     #       For now, make sure we always pass a clean environment.
     env = {}
@@ -91,26 +98,29 @@ def get_shobj_deps(path, libpath=[]):
 
     def ignore(p):
         for name in ignore_list:
-            if libpath.startswith(name):
+            if p.startswith(name):
                 return True
         return False
 
-    for line in output.splitlines():
-        m = pat.match(line)
-        if not m:
-            # Some shared objs might have no DT_NEEDED tags (see issue #67)
-            if line == '\tstatically linked':
-                break
-            raise ToolError('ldd', "Unexpected line in ldd output: " + line)
-        libname  = m.group(1)
-        libpath  = m.group(2)
-        baseaddr = int(m.group(3), 16)
+    def parse():
+        for line in output.splitlines():
+            m = pat.match(line)
+            if not m:
+                # Some shared objs might have no DT_NEEDED tags (see issue #67)
+                if line == '\tstatically linked':
+                    break
+                raise ToolError('ldd', "Unexpected line in ldd output: " + line)
+            libname  = m.group(1)
+            libpath  = m.group(2)
+            baseaddr = int(m.group(3), 16)
 
-        libpath = libpath or libname
+            libpath = libpath or libname
 
-        if ignore(libpath):
-            continue
-        yield libpath
+            if ignore(libpath):
+                continue
+            yield libpath
+
+    return list(parse())
 
 
 
@@ -137,6 +147,13 @@ def strip_elf(path):
 
 ################################################################################
 # Using pyelftools
+
+class StaticELFError(Error):
+    """Dynamic operation requested on static executable"""
+    def __init__(self, path):
+        message = "{} is a static ELF file".format(path)
+        super(StaticELFError, self).__init__(message)
+
 
 class ELFCloser(object):
     def __init__(self, path, mode):
@@ -173,3 +190,16 @@ def get_prog_interp(path):
             raise InvalidInputError("{}: not a dynamic executable "
                                     "(no interp segment)".format(path))
 
+
+def is_dynamic(path):
+    with _open_elf(path) as elf:
+        for seg in elf.iter_segments():
+            if seg['p_type'] == 'PT_DYNAMIC':
+                # seg is an instance of DynamicSegment
+                return True
+        return False
+
+
+def ensure_dynamic(path):
+    if not is_dynamic(path):
+        raise StaticELFError(path=path)
