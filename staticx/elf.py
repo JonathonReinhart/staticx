@@ -25,7 +25,7 @@ class ExternTool(object):
                 return True
         return False
 
-    def run(self, *args, **kw):
+    def popen(self, *args, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
@@ -35,11 +35,15 @@ class ExternTool(object):
 
         logging.debug("Running " + str(args))
         try:
-            p = subprocess.Popen(args, **kw)
+            return subprocess.Popen(args, **kw)
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise MissingToolError(self.cmd, self.os_pkg)
             raise
+
+
+    def run(self, *args, **kw):
+        p = self.popen(*args, **kw)
 
         stdout, stderr = p.communicate()
         stdout = stdout.decode(self.encoding)
@@ -51,8 +55,14 @@ class ExternTool(object):
                 continue
             sys.stderr.write(line)
 
-        if p.returncode != 0:
-            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, p.returncode))
+        return p.returncode, stdout
+
+
+    def run_check(self, *args, **kw):
+        rc, stdout = self.run(*args, **kw)
+
+        if rc != 0:
+            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, rc))
 
         return stdout
 
@@ -85,7 +95,7 @@ def get_shobj_deps(path, libpath=[]):
         old_libpath = env.get('LD_LIBRARY_PATH', '')
         env['LD_LIBRARY_PATH'] = ':'.join(libpath + [old_libpath])
 
-    output = tool_ldd.run(path, env=env)
+    output = tool_ldd.run_check(path, env=env)
 
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
@@ -125,7 +135,7 @@ def get_shobj_deps(path, libpath=[]):
 
 
 def elf_add_section(elfpath, secname, secfilename):
-    tool_objcopy.run(
+    tool_objcopy.run_check(
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath)
 
@@ -139,10 +149,10 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args.append('--force-rpath')
     args.append(path)
 
-    tool_patchelf.run(*args)
+    tool_patchelf.run_check(*args)
 
 def strip_elf(path):
-    tool_strip.run(path)
+    tool_strip.run_check(path)
 
 
 ################################################################################
