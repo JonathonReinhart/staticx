@@ -78,6 +78,7 @@ setup(
     package_data = {
         'staticx': [
             'bootloader',
+            'bootloader-debug',
         ],
     },
 

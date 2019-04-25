@@ -56,6 +56,7 @@ def main():
                 bootloader = args.bootloader,
                 strip = args.strip,
                 compress = not args.no_compress,
+                debug = args.debug,
                 )
     except Error as e:
         if args.debug:
