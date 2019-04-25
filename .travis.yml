@@ -21,6 +21,7 @@ matrix:
       env: CC=
 
     - python: "nightly" # currently points to 3.7-alpha
+      env: STATICX_FLAGS='--debug'
   allow_failures:
     - python: "nightly"
 
