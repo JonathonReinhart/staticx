@@ -60,7 +60,8 @@ class SxArchive(object):
 
             fileobj = self.xzf
 
-        self.tar = tarfile.open(fileobj=fileobj, mode=mode)
+        # Our embedded libtar only supports older GNU format (not new PAX format)
+        self.tar = tarfile.open(fileobj=fileobj, mode=mode, format=tarfile.GNU_FORMAT)
         self._added_libs = []
 
     def __enter__(self):
