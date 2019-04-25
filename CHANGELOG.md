@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Set `STATICX_BUNDLE_DIR` and `STATICX_PROG_PATH` in child process ([#81])
 
+### Fixed
+- Always generate tar archive in GNU format. Python 3.8 changed the default to
+  PAX which is not supported by our libtar. ([#85])
 
 ## [0.7.0] - 2019-03-10
 ### Changed
@@ -110,3 +113,4 @@ Initial release
 [#75]: https://github.com/JonathonReinhart/staticx/pull/75
 [#77]: https://github.com/JonathonReinhart/staticx/pull/77
 [#81]: https://github.com/JonathonReinhart/staticx/pull/81
+[#85]: https://github.com/JonathonReinhart/staticx/pull/85
