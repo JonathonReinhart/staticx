@@ -136,8 +136,7 @@ dyn_done:
         error(2, 0, "RPATH outside of dynamic strtab!");
     char *rpath = ptr_add(dynstrtab, dt_rpath->d_un.d_val);
 
-    debug_printf("Current RPATH (0x%lX):\n", dt_rpath->d_un.d_val);
-    debug_printf("\"%s\"\n", rpath);
+    debug_printf("Current RPATH (0x%lX): \"%s\"\n", dt_rpath->d_un.d_val, rpath);
 
     /* Set new RPATH */
     if (strlen(new_rpath) > strlen(rpath))
@@ -153,6 +152,8 @@ patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_
 {
     /* mmap the prog */
     struct map *map = mmap_file(prog_path, false);
+
+    debug_printf("Patching user program %s\n", prog_path);
 
     Elf_Ehdr *ehdr = map->map;
     if (!elf_is_valid(ehdr))
@@ -241,14 +242,23 @@ restore_sig_handler(int signum)
 }
 
 static void
+sx_setenv(const char *name, const char *value)
+{
+    const int overwrite = 1;
+
+    debug_printf("Setting env var: %s=%s\n", name, value);
+    if (setenv(name, value, overwrite) != 0)
+        error(2, errno, "Error setting %s=%s", name, value);
+}
+
+static void
 setup_environment(void)
 {
     /**
      * Set STATICX_BUNDLE_DIR to the absolute path of the "bundle" directory,
      * the temporary dir where the archive has been extracted.
      */
-    if (setenv("STATICX_BUNDLE_DIR", m_bundle_dir, 1) != 0)
-        error(2, errno, "Error setting STATICX_BUNDLE_DIR=%s", m_bundle_dir);
+    sx_setenv("STATICX_BUNDLE_DIR", m_bundle_dir);
 
 
     /**
@@ -260,8 +270,7 @@ setup_environment(void)
         char *my_path = realpath("/proc/self/exe", NULL);
         if (!my_path)
             error(2, errno, "Failed to read /proc/self/exe");
-        if (setenv("STATICX_PROG_PATH", my_path, 1))
-            error(2, errno, "Error setting STATICX_PROG_PATH=%s", my_path);
+        sx_setenv("STATICX_PROG_PATH", my_path);
         free(my_path);  /* setenv() copied the string */
     }
 }
@@ -277,12 +286,12 @@ run_app(int argc, char **argv, char *prog_path)
     /* Generate argv for child app */
     char **new_argv = make_argv(argc, argv, prog_path);
 
-    debug_printf("New argv:\n");
+    debug_printf("Ready to run child process with new argv:\n");
     for (int i=0; ; i++) {
         char *a = new_argv[i];
         if (!a) break;
 
-        debug_printf("[%d] = \"%s\"\n", i, a);
+        debug_printf("  [%d] = \"%s\"\n", i, a);
     }
 
     /* Create new process */
@@ -293,7 +302,7 @@ run_app(int argc, char **argv, char *prog_path)
 
     if (child_pid == 0) {
         /*** Child ***/
-        debug_printf("child: Born\n");
+        debug_printf("Child process started; ready to call execv()\n");
 
         execv(new_argv[0], new_argv);
 
@@ -321,6 +330,8 @@ run_app(int argc, char **argv, char *prog_path)
     /* Restore signal handlers */
     restore_sig_handler(SIGINT);
     restore_sig_handler(SIGTERM);
+
+    debug_printf("Child process terminated with wstatus=%d\n", wstatus);
 
     return wstatus;
 }
