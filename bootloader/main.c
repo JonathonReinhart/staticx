@@ -39,6 +39,29 @@ path_join(const char *p1, const char *p2)
     return result;
 }
 
+#ifdef DEBUG
+static const char *
+fmt_str_rep(const char * const str)
+{
+    const char *s;
+    const char first = str[0];
+    int count;
+    static char buf[80];    /* NOTE: not thread-safe */
+
+    for (s = str, count = 0; *s; s++, count++) {
+        if (*s != first) {
+            // String is not a pure repeat; return the original
+            return str;
+        }
+    }
+
+    if (snprintf(buf, sizeof(buf), "%c...(%d times)", first, count) > sizeof(buf))
+        return "<truncated>";
+
+    return buf;
+}
+#endif /* DEBUG */
+
 /******************************************************************************/
 
 static void
@@ -56,7 +79,7 @@ set_interp(Elf_Ehdr *ehdr, const char *new_interp)
     if (interp[interp_size - 1] != '\0')
         error(2, 0, "Current INTERP not NUL terminated");
 
-    debug_printf("Current program interpreter: \"%s\"\n", interp);
+    debug_printf("Current program interpreter: \"%s\"\n", fmt_str_rep(interp));
 
     if (strlen(new_interp) > interp_size - 1)
         error(2, 0, "Current INTERP too small");
@@ -136,7 +159,8 @@ dyn_done:
         error(2, 0, "RPATH outside of dynamic strtab!");
     char *rpath = ptr_add(dynstrtab, dt_rpath->d_un.d_val);
 
-    debug_printf("Current RPATH (0x%lX): \"%s\"\n", dt_rpath->d_un.d_val, rpath);
+    debug_printf("Current RPATH (0x%lX): \"%s\"\n", dt_rpath->d_un.d_val,
+            fmt_str_rep(rpath));
 
     /* Set new RPATH */
     if (strlen(new_rpath) > strlen(rpath))
