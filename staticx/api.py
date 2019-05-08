@@ -64,10 +64,11 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
     f.flush()
     return f
 
-def _locate_bootloader():
+def _locate_bootloader(debug=False):
     """Determine path to bootloader"""
     pkg_path = os.path.dirname(__file__)
-    blpath = os.path.abspath(os.path.join(pkg_path, 'bootloader'))
+    blname = 'bootloader-debug' if debug else 'bootloader'
+    blpath = os.path.abspath(os.path.join(pkg_path, blname))
     if not os.path.isfile(blpath):
         raise InternalError("bootloader not found at {}".format(blpath))
     return blpath
@@ -92,7 +93,7 @@ def _copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def generate(prog, output, libs=None, bootloader=None, strip=False, compress=True):
+def generate(prog, output, libs=None, bootloader=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
 
     Parameters:
@@ -101,9 +102,10 @@ def generate(prog, output, libs=None, bootloader=None, strip=False, compress=Tru
     libs: Extra libraries to include
     bootloader: Override the bootloader binary
     strip: Strip binaries to reduce size
+    debug: Run in debug mode (use debug bootloader)
     """
     if not bootloader:
-        bootloader = _locate_bootloader()
+        bootloader = _locate_bootloader(debug)
     _check_bootloader_compat(bootloader, prog)
 
 

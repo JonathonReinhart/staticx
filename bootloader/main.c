@@ -14,8 +14,17 @@
 #include "mmap.h"
 #include "util.h"
 #include "common.h"
+#include "debug.h"
 #include "extract.h"
 #include "elfutil.h"
+
+/**
+ * Environment variables which affect the bootloader's execution
+ */
+
+/* Keep temporary files */
+#define STATICX_KEEP_TEMPS      "STATICX_KEEP_TEMPS"
+
 
 
 /* The "bundle" directory, where the archive is extracted */
@@ -29,6 +38,29 @@ path_join(const char *p1, const char *p2)
         error(2, 0, "Failed to allocate path string");
     return result;
 }
+
+#ifdef DEBUG
+static const char *
+fmt_str_rep(const char * const str)
+{
+    const char *s;
+    const char first = str[0];
+    int count;
+    static char buf[80];    /* NOTE: not thread-safe */
+
+    for (s = str, count = 0; *s; s++, count++) {
+        if (*s != first) {
+            // String is not a pure repeat; return the original
+            return str;
+        }
+    }
+
+    if (snprintf(buf, sizeof(buf), "%c...(%d times)", first, count) > sizeof(buf))
+        return "<truncated>";
+
+    return buf;
+}
+#endif /* DEBUG */
 
 /******************************************************************************/
 
@@ -47,7 +79,7 @@ set_interp(Elf_Ehdr *ehdr, const char *new_interp)
     if (interp[interp_size - 1] != '\0')
         error(2, 0, "Current INTERP not NUL terminated");
 
-    debug_printf("Current program interpreter: \"%s\"\n", interp);
+    debug_printf("Current program interpreter: \"%s\"\n", fmt_str_rep(interp));
 
     if (strlen(new_interp) > interp_size - 1)
         error(2, 0, "Current INTERP too small");
@@ -80,8 +112,8 @@ set_rpath(Elf_Ehdr *ehdr, const char *new_rpath)
     /* Setup pointer to dynamic string table */
     char *dynstrtab = ptr_add(ehdr, dynstr_sh->sh_offset);
     size_t dynstrsz = dynstr_sh->sh_size;
-    debug_printf("Dynamic string table: offset=0x%lX size=0x%lX\n",
-            dynstr_sh->sh_offset, dynstrsz);
+    //debug_printf("Dynamic string table: offset=0x%lX size=0x%lX\n",
+    //        dynstr_sh->sh_offset, dynstrsz);
 
     /* Find needed dynamic tags */
 #if 0
@@ -89,10 +121,10 @@ set_rpath(Elf_Ehdr *ehdr, const char *new_rpath)
     Elf_Dyn *dt_strsz  = NULL;  /* DT_STRSZ */
 #endif
     Elf_Dyn *dt_rpath  = NULL;  /* DT_RPATH */
-    debug_printf("Dynamic tags:\n");
+    //debug_printf("Dynamic tags:\n");
     for (size_t i = 0; i < ndyn; i++) {
         Elf_Dyn *dt = &dyn_table[i];
-        debug_printf("0x%lX (%ld): 0x%lX\n", dt->d_tag, dt->d_tag, dt->d_un.d_val);
+        //debug_printf("0x%lX (%ld): 0x%lX\n", dt->d_tag, dt->d_tag, dt->d_un.d_val);
 
         switch (dt->d_tag) {
             case DT_NULL:
@@ -127,8 +159,8 @@ dyn_done:
         error(2, 0, "RPATH outside of dynamic strtab!");
     char *rpath = ptr_add(dynstrtab, dt_rpath->d_un.d_val);
 
-    debug_printf("Current RPATH (0x%lX):\n", dt_rpath->d_un.d_val);
-    debug_printf("\"%s\"\n", rpath);
+    debug_printf("Current RPATH (0x%lX): \"%s\"\n", dt_rpath->d_un.d_val,
+            fmt_str_rep(rpath));
 
     /* Set new RPATH */
     if (strlen(new_rpath) > strlen(rpath))
@@ -144,6 +176,8 @@ patch_prog_paths(const char *prog_path, const char *new_interp, const char *new_
 {
     /* mmap the prog */
     struct map *map = mmap_file(prog_path, false);
+
+    debug_printf("Patching user program %s\n", prog_path);
 
     Elf_Ehdr *ehdr = map->map;
     if (!elf_is_valid(ehdr))
@@ -232,14 +266,23 @@ restore_sig_handler(int signum)
 }
 
 static void
+sx_setenv(const char *name, const char *value)
+{
+    const int overwrite = 1;
+
+    debug_printf("Setting env var: %s=%s\n", name, value);
+    if (setenv(name, value, overwrite) != 0)
+        error(2, errno, "Error setting %s=%s", name, value);
+}
+
+static void
 setup_environment(void)
 {
     /**
      * Set STATICX_BUNDLE_DIR to the absolute path of the "bundle" directory,
      * the temporary dir where the archive has been extracted.
      */
-    if (setenv("STATICX_BUNDLE_DIR", m_bundle_dir, 1) != 0)
-        error(2, errno, "Error setting STATICX_BUNDLE_DIR=%s", m_bundle_dir);
+    sx_setenv("STATICX_BUNDLE_DIR", m_bundle_dir);
 
 
     /**
@@ -251,8 +294,7 @@ setup_environment(void)
         char *my_path = realpath("/proc/self/exe", NULL);
         if (!my_path)
             error(2, errno, "Failed to read /proc/self/exe");
-        if (setenv("STATICX_PROG_PATH", my_path, 1))
-            error(2, errno, "Error setting STATICX_PROG_PATH=%s", my_path);
+        sx_setenv("STATICX_PROG_PATH", my_path);
         free(my_path);  /* setenv() copied the string */
     }
 }
@@ -268,12 +310,12 @@ run_app(int argc, char **argv, char *prog_path)
     /* Generate argv for child app */
     char **new_argv = make_argv(argc, argv, prog_path);
 
-    debug_printf("New argv:\n");
+    debug_printf("Ready to run child process with new argv:\n");
     for (int i=0; ; i++) {
         char *a = new_argv[i];
         if (!a) break;
 
-        debug_printf("[%d] = \"%s\"\n", i, a);
+        debug_printf("  [%d] = \"%s\"\n", i, a);
     }
 
     /* Create new process */
@@ -284,7 +326,7 @@ run_app(int argc, char **argv, char *prog_path)
 
     if (child_pid == 0) {
         /*** Child ***/
-        debug_printf("child: Born\n");
+        debug_printf("Child process started; ready to call execv()\n");
 
         execv(new_argv[0], new_argv);
 
@@ -313,12 +355,34 @@ run_app(int argc, char **argv, char *prog_path)
     restore_sig_handler(SIGINT);
     restore_sig_handler(SIGTERM);
 
+    debug_printf("Child process terminated with wstatus=%d\n", wstatus);
+
     return wstatus;
+}
+
+/**
+ * Clean up the temporary bundle directory
+ */
+static void
+cleanup_bundle_dir(void)
+{
+    if (getenv(STATICX_KEEP_TEMPS)) {
+        debug_printf("%s set; not removing %s\n", STATICX_KEEP_TEMPS, m_bundle_dir);
+        return;
+    }
+
+    debug_printf("Removing temporary bundle dir %s\n", m_bundle_dir);
+    if (remove_tree(m_bundle_dir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
+    }
+    m_bundle_dir = NULL;
 }
 
 int
 main(int argc, char **argv)
 {
+    debug_printf("Version %s\n", STATICX_VERSION);
+
     xz_crc32_init();
 
     /* Create temporary directory where archive will be extracted */
@@ -344,11 +408,7 @@ main(int argc, char **argv)
     prog_path = NULL;
 
     /* Cleanup */
-    debug_printf("Removing temporary bundle dir %s\n", m_bundle_dir);
-    if (remove_tree(m_bundle_dir) < 0) {
-        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
-    }
-    m_bundle_dir = NULL;
+    cleanup_bundle_dir();
 
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {

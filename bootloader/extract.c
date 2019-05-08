@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common.h"
+#include "debug.h"
 #include "elfutil.h"
 #include "error.h"
 #include "extract.h"
@@ -175,6 +176,9 @@ static TAR *tar_smart_bufopen(const struct archive ar, int options)
     /* Determine if the archive is compressed */
     bool xz = is_xz_file(ar.data, ar.size);
 
+    debug_printf("Archive %s XZ-compressed\n",
+            xz ? "is" : "is not");
+
     /* Create extration context */
     struct exctx *ctx = exctx_new(ar.data, ar.size, xz);
 
@@ -195,6 +199,9 @@ find_archive(void *map)
     const Elf_Shdr *shdr = elf_get_section_by_name(ehdr, ARCHIVE_SECTION);
     if (!shdr)
         error(2, 0, "Failed to find "ARCHIVE_SECTION" section");
+
+    debug_printf("Found archive at offset 0x%lX (%lu bytes)\n",
+            (unsigned long)shdr->sh_offset, (unsigned long)shdr->sh_size);
 
     ar.size = shdr->sh_size;
     ar.data = cptr_add(ehdr, shdr->sh_offset);
@@ -218,6 +225,7 @@ extract_archive(const char *dest_path)
         error(2, errno, "tar_open() failed");
 
     /* Extract it */
+    debug_printf("Extracting tar archive to %s\n", dest_path);
     if (tar_extract_all(t, dest_path) != 0)
         error(2, errno, "tar_extract_all() failed");
 
