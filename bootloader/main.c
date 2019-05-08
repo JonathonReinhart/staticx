@@ -14,6 +14,7 @@
 #include "mmap.h"
 #include "util.h"
 #include "common.h"
+#include "debug.h"
 #include "extract.h"
 #include "elfutil.h"
 

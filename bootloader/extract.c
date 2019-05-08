@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common.h"
+#include "debug.h"
 #include "elfutil.h"
 #include "error.h"
 #include "extract.h"

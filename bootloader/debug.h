@@ -1,6 +1,8 @@
 #ifndef BOOTLOADER_DEBUG_H
 #define BOOTLOADER_DEBUG_H
 
+#include <stdio.h>
+
 #ifdef DEBUG
 #define debug_printf(fmt, ...)   fprintf(stderr, fmt, ##__VA_ARGS__)
 #define TAR_DEBUG_OPTIONS		(TAR_VERBOSE)
