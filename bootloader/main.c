@@ -17,6 +17,14 @@
 #include "extract.h"
 #include "elfutil.h"
 
+/**
+ * Environment variables which affect the bootloader's execution
+ */
+
+/* Keep temporary files */
+#define STATICX_KEEP_TEMPS      "STATICX_KEEP_TEMPS"
+
+
 
 /* The "bundle" directory, where the archive is extracted */
 static const char *m_bundle_dir;
@@ -316,6 +324,24 @@ run_app(int argc, char **argv, char *prog_path)
     return wstatus;
 }
 
+/**
+ * Clean up the temporary bundle directory
+ */
+static void
+cleanup_bundle_dir(void)
+{
+    if (getenv(STATICX_KEEP_TEMPS)) {
+        debug_printf("%s set; not removing %s\n", STATICX_KEEP_TEMPS, m_bundle_dir);
+        return;
+    }
+
+    debug_printf("Removing temporary bundle dir %s\n", m_bundle_dir);
+    if (remove_tree(m_bundle_dir) < 0) {
+        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
+    }
+    m_bundle_dir = NULL;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -344,11 +370,7 @@ main(int argc, char **argv)
     prog_path = NULL;
 
     /* Cleanup */
-    debug_printf("Removing temporary bundle dir %s\n", m_bundle_dir);
-    if (remove_tree(m_bundle_dir) < 0) {
-        fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
-    }
-    m_bundle_dir = NULL;
+    cleanup_bundle_dir();
 
     /* Did child exit normally? */
     if (WIFEXITED(wstatus)) {
