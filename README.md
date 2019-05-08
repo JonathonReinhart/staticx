@@ -33,10 +33,6 @@ StaticX is compatible with Python 2.7 (`pip`) or Python 3.4+ (`pip3`):
 sudo pip3 install staticx
 ```
 
-*Note:* Python 2.7 requires the
-[`backports.lzma`](https://pypi.python.org/pypi/backports.lzma) package to be
-installed. (See [#45][#45] for details.)
-
 ### From source
 
 If you have musl libc installed, you can use it to build the staticx
