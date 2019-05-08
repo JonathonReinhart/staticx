@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Added
 - Set `STATICX_BUNDLE_DIR` and `STATICX_PROG_PATH` in child process ([#81])
+- Add `--debug` flag to bundle debug bootloader ([#87])
 
 ### Fixed
 - Always generate tar archive in GNU format. Python 3.8 changed the default to
@@ -114,3 +115,4 @@ Initial release
 [#77]: https://github.com/JonathonReinhart/staticx/pull/77
 [#81]: https://github.com/JonathonReinhart/staticx/pull/81
 [#85]: https://github.com/JonathonReinhart/staticx/pull/85
+[#87]: https://github.com/JonathonReinhart/staticx/pull/87
