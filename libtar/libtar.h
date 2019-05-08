@@ -13,6 +13,7 @@
 #ifndef LIBTAR_H
 #define LIBTAR_H
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <tar.h>
@@ -174,7 +175,7 @@ int tar_skip_regfile(TAR *t);
 /***** output.c ************************************************************/
 
 /* print "ls -l"-like output for the file described by th */
-void th_print_long_ls(const TAR *t);
+void th_print_long_ls(const TAR *t, FILE *f);
 
 
 /***** util.c *************************************************************/

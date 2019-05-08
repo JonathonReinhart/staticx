@@ -543,7 +543,7 @@ tar_extract_all(TAR *t, const char *prefix)
 #endif
 		filename = th_get_pathname(t);
 		if (t->options & TAR_VERBOSE)
-			th_print_long_ls(t);
+			th_print_long_ls(t, stderr);
 		if (prefix != NULL)
 			snprintf(buf, sizeof(buf), "%s/%s", prefix, filename);
 		else
