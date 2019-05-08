@@ -381,6 +381,8 @@ cleanup_bundle_dir(void)
 int
 main(int argc, char **argv)
 {
+    debug_printf("Version %s\n", STATICX_VERSION);
+
     xz_crc32_init();
 
     /* Create temporary directory where archive will be extracted */
