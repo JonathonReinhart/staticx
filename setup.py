@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # Derived from https://github.com/JonathonReinhart/scuba
 from __future__ import print_function
-import staticx.version
 from setuptools import setup, Command, find_packages
 from distutils.command.build import build
 import os
 from subprocess import check_call
+
+from dynversion import get_dynamic_version
+
 
 ################################################################################
 # Commands / hooks
@@ -28,27 +30,12 @@ class build_hook(build):
         self.run_command('build_bootloader')
         build.run(self)
 
-################################################################################
-# Dynamic versioning
-
-def get_version():
-
-    # Travis builds
-    # If we're not building for a tag, then append the build number
-    build_num = os.getenv('TRAVIS_BUILD_NUMBER')
-    build_tag = os.getenv('TRAVIS_TAG')
-    if (not build_tag) and (build_num != None):
-        return '{}.{}'.format(staticx.version.BASE_VERSION, build_num)
-
-    return staticx.version.__version__
-
-
 
 ################################################################################
 
 setup(
     name = 'staticx',
-    version = get_version(),
+    version = get_dynamic_version(),
     description = 'Build static self-extracting app from dynamic executable',
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
     classifiers = [
