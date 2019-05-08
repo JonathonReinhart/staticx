@@ -54,13 +54,17 @@ elf_get_section(Elf_Ehdr *ehdr, const char *lookup_name, Elf64_Word lookup_type)
             ehdr->e_shentsize, sizeof(Elf_Shdr));
 
     /* Iterate sections */
+#if 0
     debug_printf("Sections:\n");
+#endif
     for (int i=0; i < ehdr->e_shnum; i++) {
         Elf_Shdr *sh = &shdr_table[i];
         const char *sh_name = strtab + sh->sh_name;
 
+#if 0
         debug_printf("[%d] %s type=0x%lX  offset=0x%lX\n",
                 i, sh_name, (unsigned long)sh->sh_type, sh->sh_offset);
+#endif
 
         /* Look up by name */
         if (lookup_name) {

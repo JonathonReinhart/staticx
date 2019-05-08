@@ -89,8 +89,8 @@ set_rpath(Elf_Ehdr *ehdr, const char *new_rpath)
     /* Setup pointer to dynamic string table */
     char *dynstrtab = ptr_add(ehdr, dynstr_sh->sh_offset);
     size_t dynstrsz = dynstr_sh->sh_size;
-    debug_printf("Dynamic string table: offset=0x%lX size=0x%lX\n",
-            dynstr_sh->sh_offset, dynstrsz);
+    //debug_printf("Dynamic string table: offset=0x%lX size=0x%lX\n",
+    //        dynstr_sh->sh_offset, dynstrsz);
 
     /* Find needed dynamic tags */
 #if 0
@@ -98,10 +98,10 @@ set_rpath(Elf_Ehdr *ehdr, const char *new_rpath)
     Elf_Dyn *dt_strsz  = NULL;  /* DT_STRSZ */
 #endif
     Elf_Dyn *dt_rpath  = NULL;  /* DT_RPATH */
-    debug_printf("Dynamic tags:\n");
+    //debug_printf("Dynamic tags:\n");
     for (size_t i = 0; i < ndyn; i++) {
         Elf_Dyn *dt = &dyn_table[i];
-        debug_printf("0x%lX (%ld): 0x%lX\n", dt->d_tag, dt->d_tag, dt->d_un.d_val);
+        //debug_printf("0x%lX (%ld): 0x%lX\n", dt->d_tag, dt->d_tag, dt->d_un.d_val);
 
         switch (dt->d_tag) {
             case DT_NULL:
