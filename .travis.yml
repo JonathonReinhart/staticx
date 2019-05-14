@@ -7,7 +7,7 @@ env:
   global:
     - TEST_DOCKER_IMAGE=centos:5
   matrix:
-  - CC=musl-gcc     # Default to musl libc
+  - BOOTLOADER_CC=musl-gcc     # Default to musl libc
 matrix:
   include:
     - python: "2.7"
@@ -18,7 +18,7 @@ matrix:
 
     # Test using glibc
     - python: "3.5"
-      env: CC=
+      env: BOOTLOADER_CC=
 
     - python: "nightly" # currently points to 3.7-alpha
       env: STATICX_FLAGS='--debug'
@@ -34,16 +34,12 @@ addons:
       - liblzma-dev
       - scons
 
-install:
-  # Unset CC before installing Python packages - see #44
-  - env -u CC   pip install -r requirements.txt
-
 before_script:
   - docker pull $TEST_DOCKER_IMAGE
 
 script:
   # Build and install a wheel
-  - python setup.py bdist_wheel
+  - CC=${BOOTLOADER_CC} python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
   - staticx --version
 
