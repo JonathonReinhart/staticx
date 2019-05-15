@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Always generate tar archive in GNU format. Python 3.8 changed the default to
   PAX which is not supported by our libtar. ([#85])
+- Add backports.lzma to setup.py for Python 2, removing manual requirement ([#89])
 
 ## [0.7.0] - 2019-03-10
 ### Changed
@@ -116,3 +117,4 @@ Initial release
 [#81]: https://github.com/JonathonReinhart/staticx/pull/81
 [#85]: https://github.com/JonathonReinhart/staticx/pull/85
 [#87]: https://github.com/JonathonReinhart/staticx/pull/87
+[#89]: https://github.com/JonathonReinhart/staticx/pull/89
