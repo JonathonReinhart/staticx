@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Set `STATICX_BUNDLE_DIR` and `STATICX_PROG_PATH` in child process ([#81])
 - Add `--debug` flag to bundle debug bootloader ([#87])
 
+### Changed
+- Changed pyinstaller hook to ignore static executables ([#83])
+
 ### Fixed
 - Always generate tar archive in GNU format. Python 3.8 changed the default to
   PAX which is not supported by our libtar. ([#85])
@@ -115,6 +118,7 @@ Initial release
 [#75]: https://github.com/JonathonReinhart/staticx/pull/75
 [#77]: https://github.com/JonathonReinhart/staticx/pull/77
 [#81]: https://github.com/JonathonReinhart/staticx/pull/81
+[#83]: https://github.com/JonathonReinhart/staticx/pull/83
 [#85]: https://github.com/JonathonReinhart/staticx/pull/85
 [#87]: https://github.com/JonathonReinhart/staticx/pull/87
 [#89]: https://github.com/JonathonReinhart/staticx/pull/89

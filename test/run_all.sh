@@ -13,3 +13,6 @@ pyinstall/run_test.sh
 
 # Run test against app built with PyInstaller and uses CFFI
 pyinstall-cffi/run_test.sh
+
+# Run test against app built with PyInstaller and includes a helper app
+pyinstall-aux-static-exec/run_test.sh

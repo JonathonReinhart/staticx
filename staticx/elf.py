@@ -25,7 +25,7 @@ class ExternTool(object):
                 return True
         return False
 
-    def run(self, *args, **kw):
+    def popen(self, *args, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
@@ -35,11 +35,15 @@ class ExternTool(object):
 
         logging.debug("Running " + str(args))
         try:
-            p = subprocess.Popen(args, **kw)
+            return subprocess.Popen(args, **kw)
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise MissingToolError(self.cmd, self.os_pkg)
             raise
+
+
+    def run(self, *args, **kw):
+        p = self.popen(*args, **kw)
 
         stdout, stderr = p.communicate()
         stdout = stdout.decode(self.encoding)
@@ -51,8 +55,14 @@ class ExternTool(object):
                 continue
             sys.stderr.write(line)
 
-        if p.returncode != 0:
-            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, p.returncode))
+        return p.returncode, stdout
+
+
+    def run_check(self, *args, **kw):
+        rc, stdout = self.run(*args, **kw)
+
+        if rc != 0:
+            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, rc))
 
         return stdout
 
@@ -67,7 +77,19 @@ tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     ])
 tool_strip      = ExternTool('strip', 'binutils')
 
+class LddError(ToolError):
+    def __init__(self, message):
+        super(LddError, self).__init__('ldd', message)
+
+
 def get_shobj_deps(path, libpath=[]):
+    """Discover the dependencies of a shared object (*.so file)
+    """
+
+    # First verify we're dealing with a dynamic ELF file
+    ensure_dynamic(path)
+
+
     # TODO: Should we use dict(os.environ) instead?
     #       For now, make sure we always pass a clean environment.
     env = {}
@@ -78,7 +100,26 @@ def get_shobj_deps(path, libpath=[]):
         old_libpath = env.get('LD_LIBRARY_PATH', '')
         env['LD_LIBRARY_PATH'] = ':'.join(libpath + [old_libpath])
 
-    output = tool_ldd.run(path, env=env)
+    rc, output = tool_ldd.run(path, env=env)
+
+    if rc != 0:
+        # There are multiple ways this can happen:
+        #
+        # $ ldd ./static
+        #     not a dynamic executable
+        #
+        # We avoid this case by ensuring we're looking at a dynamic ELF.
+        #
+        #
+        # $ ldd ./dynamic-musl
+        # ./dynamic-musl: error while loading shared libraries: /lib64/libc.so: invalid ELF header
+        #
+        # GNU libc doesn't like something about the ELF headers of object files
+        # produced by musl-libc
+        #
+        # We simply raise a specific exception and let the caller deal with it.
+        raise LddError("Unexpected ldd error ({}): {}".format(rc, output))
+
 
     # Example:
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
@@ -91,31 +132,34 @@ def get_shobj_deps(path, libpath=[]):
 
     def ignore(p):
         for name in ignore_list:
-            if libpath.startswith(name):
+            if p.startswith(name):
                 return True
         return False
 
-    for line in output.splitlines():
-        m = pat.match(line)
-        if not m:
-            # Some shared objs might have no DT_NEEDED tags (see issue #67)
-            if line == '\tstatically linked':
-                break
-            raise ToolError('ldd', "Unexpected line in ldd output: " + line)
-        libname  = m.group(1)
-        libpath  = m.group(2)
-        baseaddr = int(m.group(3), 16)
+    def parse():
+        for line in output.splitlines():
+            m = pat.match(line)
+            if not m:
+                # Some shared objs might have no DT_NEEDED tags (see issue #67)
+                if line == '\tstatically linked':
+                    break
+                raise LddError("Unexpected line in ldd output: " + line)
+            libname  = m.group(1)
+            libpath  = m.group(2)
+            baseaddr = int(m.group(3), 16)
 
-        libpath = libpath or libname
+            libpath = libpath or libname
 
-        if ignore(libpath):
-            continue
-        yield libpath
+            if ignore(libpath):
+                continue
+            yield libpath
+
+    return list(parse())
 
 
 
 def elf_add_section(elfpath, secname, secfilename):
-    tool_objcopy.run(
+    tool_objcopy.run_check(
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath)
 
@@ -129,14 +173,21 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args.append('--force-rpath')
     args.append(path)
 
-    tool_patchelf.run(*args)
+    tool_patchelf.run_check(*args)
 
 def strip_elf(path):
-    tool_strip.run(path)
+    tool_strip.run_check(path)
 
 
 ################################################################################
 # Using pyelftools
+
+class StaticELFError(Error):
+    """Dynamic operation requested on static executable"""
+    def __init__(self, path):
+        message = "{} is a static ELF file".format(path)
+        super(StaticELFError, self).__init__(message)
+
 
 class ELFCloser(object):
     def __init__(self, path, mode):
@@ -173,3 +224,16 @@ def get_prog_interp(path):
             raise InvalidInputError("{}: not a dynamic executable "
                                     "(no interp segment)".format(path))
 
+
+def is_dynamic(path):
+    with _open_elf(path) as elf:
+        for seg in elf.iter_segments():
+            if seg['p_type'] == 'PT_DYNAMIC':
+                # seg is an instance of DynamicSegment
+                return True
+        return False
+
+
+def ensure_dynamic(path):
+    if not is_dynamic(path):
+        raise StaticELFError(path=path)

@@ -3,7 +3,7 @@ import logging
 import shutil
 import tempfile
 
-from ..elf import get_shobj_deps
+from ..elf import get_shobj_deps, StaticELFError, LddError
 from ..utils import make_executable, mkdirs_for
 
 def process_pyinstaller_archive(sx_ar, prog):
@@ -47,9 +47,11 @@ class PyInstallHook(object):
 
 
     def process(self):
-        libs = self._extract_binaries()
-        for lib in libs:
-            self._add_required_deps(lib)
+        binaries = self._extract_binaries()
+        for binary in binaries:
+            # These could be Python libraries, shared object dependencies, or
+            # anything else a user might add via `binaries` in the .spec file.
+            self._add_required_deps(binary)
 
 
     def _extract_binaries(self):
@@ -84,8 +86,26 @@ class PyInstallHook(object):
         # Silence "you do not have execution permission" warning from ldd
         make_executable(lib)
 
+        # Assume this is a shared library, and
+        # try to get any dependencies of this file
+        try:
+            deps = get_shobj_deps(lib, libpath=[self.tmpdir])
+        except StaticELFError:
+            # It's okay if there's a static executable in the PyInstaller
+            # archive. See issue #78
+            return
+        except LddError as e:
+            # In certain cases, ldd might get upset about binary files
+            # (probably added by the user via .spec file). This can happen
+            # e.g., if a dynamically-linked musl-libc application is included.
+            # There's a reasonable chance this won't run, but it's not really
+            # staticx's problem, so warn the user and go on.
+            logging.warning(e)
+            return
+
+
         # Add any missing libraries to our archive
-        for deppath in get_shobj_deps(lib, libpath=[self.tmpdir]):
+        for deppath in deps:
             dep = os.path.basename(deppath)
 
             if dep in self.sx_ar.libraries:
