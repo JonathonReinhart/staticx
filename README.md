@@ -36,17 +36,18 @@ sudo pip3 install staticx
 ### From source
 
 If you have musl libc installed, you can use it to build the staticx
-bootloader, resulting in smaller, better binaries. Simply set the `CC`
-environment variable to your `musl-gcc` wrapper path:
-```
-sudo CC=/usr/local/musl/bin/musl-gcc pip3 install https://github.com/JonathonReinhart/staticx/archive/master.zip
-```
-### Building from cloned repository
+bootloader, resulting in smaller, better binaries. To do so, set the
+`BOOTLOADER_CC` environment variable to your `musl-gcc` wrapper path
+wehn invoking `pip` or `setup.py`:
 
-- Ensure dependencies are installed as above.
-- Change to the root repository directory
-- Run `scons`
-- Run `python setup.py install`
+```
+sudo BOOTLOADER_CC=/usr/local/musl/bin/musl-gcc pip3 install https://github.com/JonathonReinhart/staticx/archive/master.zip
+```
+
+```
+cd staticx
+sudo BOOTLOADER_CC=/usr/local/musl/bin/musl-gcc pip3 install .
+```
 
 ## Usage
 
