@@ -205,7 +205,7 @@ static char *
 create_tmpdir(void)
 {
     const char* tmpdir_env = getenv("TMPDIR");
-    static char template[] = printf("%s/%s", (tmpdir_env!=NULL) ? &tmpdir_env : "/tmp", "staticx-XXXXXX");
+    static char template[] = printf("%s/%s", (tmpdir_env!=NULL) ? tmpdir_env : "/tmp", "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
         error(2, errno, "Failed to create tempdir");
