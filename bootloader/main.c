@@ -205,11 +205,10 @@ static char *
 create_tmpdir(void)
 {
     const char* tmpdir_env = getenv("TMPDIR");
-    const char tmpdir_base[] = (tmpdir_env!=NULL) ? tmpdir_env : "/tmp";
     size_t tmpdir_size;
-    tmpdir_size = snprintf(NULL, "%s/%s", tmpdir_base, "staticx-XXXXXX");
+    tmpdir_size = snprintf(NULL, 0, "%s/%s", (tmpdir_env!=NULL) ? tmpdir_env : "/tmp", "staticx-XXXXXX");
     static char *template = malloc(tmpdir_size +1);
-    snprintf(template, "%s/%s", tmpdir_base, "staticx-XXXXXX");
+    snprintf(template, tmpdir_size +1, "%s/%s", tmpdir_base, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
         error(2, errno, "Failed to create tempdir");
