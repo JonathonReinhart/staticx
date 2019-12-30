@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [0.8.0] - 2019-12-30
 ### Added
 - Set `STATICX_BUNDLE_DIR` and `STATICX_PROG_PATH` in child process ([#81])
 - Add `--debug` flag to bundle debug bootloader ([#87])
@@ -87,7 +87,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/JonathonReinhart/staticx/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/JonathonReinhart/staticx/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/JonathonReinhart/staticx/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/JonathonReinhart/staticx/compare/v0.4.1...v0.5.0
