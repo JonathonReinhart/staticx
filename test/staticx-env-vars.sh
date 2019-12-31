@@ -21,6 +21,15 @@ if [[ "$test_bundle_dir" != "/tmp/staticx-"* ]]; then
     exit 1
 fi
 
+# Verify staticx respects $TMPDIR
+export TMPDIR="/tmp/my/special/tmpdir"
+mkdir -p $TMPDIR
+test_bundle_dir=$($outfile -c 'echo $STATICX_BUNDLE_DIR')
+echo "STATICX_BUNDLE_DIR: $test_bundle_dir"
+if [[ "$test_bundle_dir" != "${TMPDIR}/staticx-"* ]]; then
+    echo "STATICX_BUNDLE_DIR looks wrong: \"$test_bundle_dir\""
+    exit 1
+fi
 
 # Verify STATICX_PROG_PATH is set to our application
 test_prog_path=$($outfile -c 'echo $STATICX_PROG_PATH')
