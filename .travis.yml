@@ -39,7 +39,7 @@ before_script:
 
 script:
   # Build and install a wheel
-  - CC=${BOOTLOADER_CC} python setup.py bdist_wheel
+  - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
   - staticx --version
 
