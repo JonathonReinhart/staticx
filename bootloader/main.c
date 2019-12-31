@@ -24,6 +24,7 @@
 
 /* Keep temporary files */
 #define STATICX_KEEP_TEMPS      "STATICX_KEEP_TEMPS"
+#define TMPDIR                  "TMPDIR"
 
 
 
@@ -204,10 +205,11 @@ patch_app(const char *prog_path)
 static char *
 create_tmpdir(void)
 {
-    static char template[] = "/tmp/staticx-XXXXXX";
+    char *template = path_join(getenv(TMPDIR) ?: "/tmp", "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
         error(2, errno, "Failed to create tempdir");
+    assert(tmpdir == template);
     return tmpdir;
 }
 
@@ -375,6 +377,8 @@ cleanup_bundle_dir(void)
     if (remove_tree(m_bundle_dir) < 0) {
         fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
     }
+
+    free((void*)m_bundle_dir);
     m_bundle_dir = NULL;
 }
 
