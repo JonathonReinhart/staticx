@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Staticx binaries now respect `$TMPDIR` for creating temporary directory ([#101])
+
+### Fixed
+- Don't hard-code exclusion of `linux-vdso.so.1` ([#102])
+
+
 ## [0.8.1] - 2019-12-30
 ### Changed
 - Changed `setup.py` to respect `BOOTLOADER_CC`, to simplify `.travis.yml` and
@@ -129,3 +137,5 @@ Initial release
 [#85]: https://github.com/JonathonReinhart/staticx/pull/85
 [#87]: https://github.com/JonathonReinhart/staticx/pull/87
 [#89]: https://github.com/JonathonReinhart/staticx/pull/89
+[#101]: https://github.com/JonathonReinhart/staticx/pull/101
+[#102]: https://github.com/JonathonReinhart/staticx/pull/102
