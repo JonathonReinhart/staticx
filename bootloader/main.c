@@ -208,7 +208,7 @@ create_tmpdir(void)
     char *template = path_join(getenv(TMPDIR) ?: "/tmp", "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
-        error(2, errno, "Failed to create tempdir");
+        error(2, errno, "Failed to create temporary directory: %s", tmpdir);
     assert(tmpdir == template);
     return tmpdir;
 }
