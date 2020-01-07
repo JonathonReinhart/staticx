@@ -122,19 +122,12 @@ def get_shobj_deps(path, libpath=[]):
 
 
     # Example:
+    #	linux-vdso.so.1 (0x00007ffe53551000)
+    #     or
+    #	linux-vdso.so.1 =>  (0x00007ffe53551000)
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
-    pat = re.compile('\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
-
-    ignore_list = [
-        'linux-vdso.so',
-    ]
-
-    def ignore(p):
-        for name in ignore_list:
-            if p.startswith(name):
-                return True
-        return False
+    pat = re.compile(r'\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
     def parse():
         for line in output.splitlines():
@@ -148,11 +141,23 @@ def get_shobj_deps(path, libpath=[]):
             libpath  = m.group(2)
             baseaddr = int(m.group(3), 16)
 
-            libpath = libpath or libname
-
-            if ignore(libpath):
-                continue
-            yield libpath
+            if libname.startswith('/'):
+                # An absolute path here is probably INTERP
+                # and ldd shouldn't output the => /abs/path part.
+                if libpath:
+                    raise LddError("Unexpected line in ldd output: " + line)
+                yield libname
+            else:
+                # A short libname should come from a NEEDED tag
+                # and ldd should include the => /abs/path part.
+                # If it doesn't, then it's probably linux-vdso*.so
+                # or linux-gate.so
+                if not libpath:
+                    # TODO: This check could be removed/relaxed
+                    if libname.startswith('linux-'):
+                        continue
+                    raise LddError("Unexpected line in ldd output: " + line)
+                yield libpath
 
     return list(parse())
 
