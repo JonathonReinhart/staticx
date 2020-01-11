@@ -208,7 +208,7 @@ create_tmpdir(void)
     char *template = path_join(getenv(TMPDIR) ?: "/tmp", "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
-        error(2, errno, "Failed to create tempdir");
+        error(2, errno, "Failed to create temporary directory: %s", tmpdir);
     assert(tmpdir == template);
     return tmpdir;
 }
@@ -349,7 +349,7 @@ run_app(int argc, char **argv, char *prog_path)
     while (waitpid(child_pid, &wstatus, 0) < 0) {
         if (errno == EINTR)
             continue;
-        error(2, errno, "Failed to wait for child process %ld", child_pid);
+        error(2, errno, "Failed to wait for child process %d", child_pid);
     }
     child_pid = 0;
 
