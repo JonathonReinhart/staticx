@@ -11,7 +11,7 @@ except (ImportError, AttributeError):
     from backports import lzma
 
 from .bcjfilter import get_bcj_filter_arch
-from .utils import get_symlink_target
+from .utils import get_symlink_target, make_mode_executable
 from .constants import *
 from .errors import *
 
@@ -92,9 +92,13 @@ class SxArchive(object):
         The program will be added with a fixed name.
         Should only be called once. TODO: Enforce this.
         """
+        def make_exec(tarinfo):
+            tarinfo.mode = make_mode_executable(tarinfo.mode)
+            return tarinfo
+
         arcname = PROG_FILENAME
         logging.info("Adding {} as {}".format(path, arcname))
-        self.tar.add(path, arcname=arcname)
+        self.tar.add(path, arcname=arcname, filter=make_exec)
 
     def add_library(self, path):
         """Add a library to the archive
