@@ -26,3 +26,13 @@ if [ -n "$TEST_DOCKER_IMAGE" ]; then
     echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
     scuba --image $TEST_DOCKER_IMAGE $outfile
 fi
+
+echo -e "\nDumping staticx executable"
+sx-extract $outfile
+
+echo -e "\nVerbose dumping staticx executable"
+sx-extract -v $outfile
+
+echo -e "\nExtracting staticx executable"
+sx-extract $outfile extract
+rm -r extract
