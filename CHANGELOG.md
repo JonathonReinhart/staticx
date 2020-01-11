@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Staticx binaries now respect `$TMPDIR` for creating temporary directory ([#101])
 
+### Changed
+- Ensure user program is always marked executable in archive ([#112])
+
 ### Fixed
 - Don't hard-code exclusion of `linux-vdso.so.1` ([#102])
 
@@ -143,3 +146,4 @@ Initial release
 [#101]: https://github.com/JonathonReinhart/staticx/pull/101
 [#102]: https://github.com/JonathonReinhart/staticx/pull/102
 [#111]: https://github.com/JonathonReinhart/staticx/pull/111
+[#112]: https://github.com/JonathonReinhart/staticx/pull/112

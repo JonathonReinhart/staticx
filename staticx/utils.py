@@ -3,9 +3,14 @@ import errno
 import shutil
 from .errors import *
 
+def make_mode_executable(mode):
+    mode |= (mode & 0o444) >> 2    # copy R bits to X
+    return mode
+
+
 def make_executable(path):
     mode = os.stat(path).st_mode
-    mode |= (mode & 0o444) >> 2    # copy R bits to X
+    make_mode_executable(mode)
     os.chmod(path, mode)
 
 def get_symlink_target(path):
