@@ -41,7 +41,7 @@ setup(
     name = 'staticx',
     version = get_dynamic_version(),
     description = 'Build static self-extracting app from dynamic executable',
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

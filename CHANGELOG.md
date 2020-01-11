@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Don't hard-code exclusion of `linux-vdso.so.1` ([#102])
 
+### Removed
+- Drop support for Python 3.4 ([#111])
+
 
 ## [0.8.1] - 2019-12-30
 ### Changed
@@ -139,3 +142,4 @@ Initial release
 [#89]: https://github.com/JonathonReinhart/staticx/pull/89
 [#101]: https://github.com/JonathonReinhart/staticx/pull/101
 [#102]: https://github.com/JonathonReinhart/staticx/pull/102
+[#111]: https://github.com/JonathonReinhart/staticx/pull/111
