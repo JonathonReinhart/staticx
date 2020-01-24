@@ -37,11 +37,19 @@ class build_hook(build):
 
 ################################################################################
 
+def read_project_file(path):
+    proj_dir = os.path.dirname(__file__)
+    path = os.path.join(proj_dir, path)
+    with open(path, 'r') as f:
+        return f.read()
+
 setup(
     name = 'staticx',
     version = get_dynamic_version(),
     description = 'Build static self-extracting app from dynamic executable',
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    long_description = read_project_file('README.md'),
+    long_description_content_type = 'text/markdown',
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
