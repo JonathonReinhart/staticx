@@ -5,3 +5,4 @@ pyinstaller; (python_version <= '3.7')
 scuba
 wheel
 cffi        # Used for test/pyinstall-cffi/
+pytest

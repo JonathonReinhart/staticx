@@ -37,14 +37,23 @@ before_script:
   - docker pull $TEST_DOCKER_IMAGE
 
 script:
+  # https://github.com/travis-ci/travis-ci/issues/1066
+  - set -e
+
   # Build and install a wheel
   - python setup.py bdist_wheel
   - pip install dist/staticx-*-py2.py3-none-any.whl
   - staticx --version
 
+  # Run unit tests
+  - pytest -v
+
+  # Run integration tests
   - test/run_all.sh
   - STATICX_FLAGS='--no-compress' test/run_all.sh
   - STATICX_FLAGS='--strip' test/run_all.sh
+
+  - set +e
 
 
 deploy:
