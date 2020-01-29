@@ -89,6 +89,8 @@ def _parse_ldd_output(output):
     #	linux-vdso.so.1 =>  (0x00007ffe53551000)
     #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
+    #     or
+    #   /lib64/ld-linux-x86-64.so.2 => /usr/lib64/ld-linux-x86-64.so.2 (0x00007f1de63ac000)
     pat = re.compile(r'\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
     for line in output.splitlines():
@@ -99,26 +101,28 @@ def _parse_ldd_output(output):
                 break
             raise LddError("Unexpected line in ldd output: " + line)
         libname  = m.group(1)
-        libpath  = m.group(2)
+        resolved = m.group(2)
         baseaddr = int(m.group(3), 16)
 
-        if libname.startswith('/'):
-            # An absolute path here is probably INTERP
-            # and ldd shouldn't output the => /abs/path part.
-            if libpath:
-                raise LddError("Unexpected line in ldd output: " + line)
-            yield libname
+        if resolved:
+            # ldd outupt a resolved symlink, use that
+            libpath = resolved
+        elif libname.startswith('/'):
+            # The library directly referenced an absolute path, use that
+            libpath = libname
         else:
-            # A short libname should come from a NEEDED tag
-            # and ldd should include the => /abs/path part.
-            # If it doesn't, then it's probably linux-vdso*.so
-            # or linux-gate.so
-            if not libpath:
-                # TODO: This check could be removed/relaxed
-                if libname.startswith('linux-'):
-                    continue
-                raise LddError("Unexpected line in ldd output: " + line)
-            yield libpath
+            # Assume an unresolved non-absolute library name is synthetic
+            # like linux-vdso*.so or linux-gate.so which should be ignored
+            # TODO: This check could be removed/relaxed
+            if not libname.startswith('linux-'):
+                raise LddError("Unexpected unresolved libname: " + libname)
+            logging.debug("Ignoring synthetic library: " + libname)
+            continue
+
+        # The library path must be absolute
+        if not libpath.startswith('/'):
+            raise LddError("Unexpected non-absolute libpath: " + libpath)
+        yield libpath
 
 
 def get_shobj_deps(path, libpath=[]):

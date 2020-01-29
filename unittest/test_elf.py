@@ -39,3 +39,20 @@ class TestLdd:
             "/lib64/ld-linux-x86-64.so.2",
         ]
         self._test(output, exp)
+
+
+    def test_arch(self):
+        # https://github.com/JonathonReinhart/staticx/issues/116
+        output = (
+            "\tlinux-vdso.so.1 (0x00007ffc431fc000)\n"
+            "\tlibdl.so.2 => /usr/lib/libdl.so.2 (0x00007f1de6361000)\n"
+	    "\tlibz.so.1 => /usr/lib/libz.so.1 (0x00007f1de6347000)\n"
+	    "\tlibc.so.6 => /usr/lib/libc.so.6 (0x00007f1de6180000)\n"
+	    "\t/lib64/ld-linux-x86-64.so.2 => /usr/lib64/ld-linux-x86-64.so.2 (0x00007f1de63ac000)\n")
+        exp = [
+            "/usr/lib/libdl.so.2",
+	    "/usr/lib/libz.so.1",
+	    "/usr/lib/libc.so.6",
+	    "/usr/lib64/ld-linux-x86-64.so.2",
+        ]
+        self._test(output, exp)
