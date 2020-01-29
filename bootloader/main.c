@@ -205,10 +205,11 @@ patch_app(const char *prog_path)
 static char *
 create_tmpdir(void)
 {
-    char *template = path_join(getenv(TMPDIR) ?: "/tmp", "staticx-XXXXXX");
+    const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    char *template = path_join(tmproot, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
-        error(2, errno, "Failed to create temporary directory: %s", tmpdir);
+        error(2, errno, "Failed to create temporary directory in %s", tmproot);
     assert(tmpdir == template);
     return tmpdir;
 }
