@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.9.1] - 2020-01-29
 ### Fixed
 - Correct handling of absolute path symlink in ldd output ([#118])
 - Fixed null tmpdir argument error on GCC9 ([#120])
@@ -113,7 +113,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/JonathonReinhart/staticx/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/JonathonReinhart/staticx/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/JonathonReinhart/staticx/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/JonathonReinhart/staticx/compare/v0.7.0...v0.8.0
