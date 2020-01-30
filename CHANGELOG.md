@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Correct handling of absolute path symlink in ldd output ([#118])
 - Fixed null tmpdir argument error on GCC9 ([#120])
+- Fixed ldd "you do not have execution permission..." warning ([#122])
 
 
 ## [0.9.0] - 2020-01-11
@@ -156,3 +157,4 @@ Initial release
 [#112]: https://github.com/JonathonReinhart/staticx/pull/112
 [#118]: https://github.com/JonathonReinhart/staticx/pull/118
 [#120]: https://github.com/JonathonReinhart/staticx/pull/120
+[#122]: https://github.com/JonathonReinhart/staticx/pull/122

@@ -10,7 +10,7 @@ def make_mode_executable(mode):
 
 def make_executable(path):
     mode = os.stat(path).st_mode
-    make_mode_executable(mode)
+    mode = make_mode_executable(mode)
     os.chmod(path, mode)
 
 def get_symlink_target(path):
