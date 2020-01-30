@@ -4,7 +4,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Fixed
-- Fixed null argument error on GCC9 ([#120])
+- Correct handling of absolute path symlink in ldd output ([#118])
+- Fixed null tmpdir argument error on GCC9 ([#120])
 
 
 ## [0.9.0] - 2020-01-11
@@ -153,4 +154,5 @@ Initial release
 [#102]: https://github.com/JonathonReinhart/staticx/pull/102
 [#111]: https://github.com/JonathonReinhart/staticx/pull/111
 [#112]: https://github.com/JonathonReinhart/staticx/pull/112
+[#118]: https://github.com/JonathonReinhart/staticx/pull/118
 [#120]: https://github.com/JonathonReinhart/staticx/pull/120
