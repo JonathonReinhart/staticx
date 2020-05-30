@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Removed
+- Drop support for Python 2.7 ([#115])
+
+
 ## [0.9.1] - 2020-01-29
 ### Fixed
 - Correct handling of absolute path symlink in ldd output ([#118])
@@ -156,6 +161,7 @@ Initial release
 [#102]: https://github.com/JonathonReinhart/staticx/pull/102
 [#111]: https://github.com/JonathonReinhart/staticx/pull/111
 [#112]: https://github.com/JonathonReinhart/staticx/pull/112
+[#115]: https://github.com/JonathonReinhart/staticx/pull/115
 [#118]: https://github.com/JonathonReinhart/staticx/pull/118
 [#120]: https://github.com/JonathonReinhart/staticx/pull/120
 [#122]: https://github.com/JonathonReinhart/staticx/pull/122
