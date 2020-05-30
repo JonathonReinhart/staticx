@@ -172,6 +172,17 @@ def elf_add_section(elfpath, secname, secfilename):
         '--add-section', '{}={}'.format(secname, secfilename),
         elfpath)
 
+
+def elf_dump_section(elfpath, secname, outpath):
+    # https://stackoverflow.com/a/3925113/119527
+    tool_objcopy.run_check(
+        '-O', 'binary',
+        '--only-section', secname,
+        '--set-section-flags', '{}={}'.format(secname, 'alloc'),
+        elfpath, outpath)
+
+
+
 def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args = []
     if interpreter:
