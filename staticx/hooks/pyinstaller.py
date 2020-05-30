@@ -1,6 +1,5 @@
 import os
 import logging
-import shutil
 import tempfile
 
 from ..elf import get_shobj_deps, StaticELFError, LddError
@@ -34,16 +33,14 @@ class PyInstallHook(object):
         self.sx_ar = sx_archive
         self.pyi_ar = pyi_archive
 
-        # Create a temporary directory
-        # TODO PY3: Use tempfile.TemporaryDirectory and cleanup()
-        self.tmpdir = tempfile.mkdtemp(prefix='staticx-pyi-')
+        self.tmpdir = tempfile.TemporaryDirectory(prefix='staticx-pyi-')
 
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc_info):
-        shutil.rmtree(self.tmpdir)
+        self.tmpdir.cleanup()
 
 
     def process(self):
@@ -67,7 +64,7 @@ class PyInstallHook(object):
 
             # Extract it to a temporary location
             _, data = self.pyi_ar.extract(n)
-            tmppath = os.path.join(self.tmpdir, name)
+            tmppath = os.path.join(self.tmpdir.name, name)
             logging.debug("Extracting to {}".format(tmppath))
             mkdirs_for(tmppath)
             with open(tmppath, 'wb') as f:
@@ -89,7 +86,7 @@ class PyInstallHook(object):
         # Assume this is a shared library, and
         # try to get any dependencies of this file
         try:
-            deps = get_shobj_deps(lib, libpath=[self.tmpdir])
+            deps = get_shobj_deps(lib, libpath=[self.tmpdir.name])
         except StaticELFError:
             # It's okay if there's a static executable in the PyInstaller
             # archive. See issue #78

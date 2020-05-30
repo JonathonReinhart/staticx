@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # Derived from https://github.com/JonathonReinhart/scuba
-from __future__ import print_function
 from setuptools import setup, Command, find_packages
 from distutils.command.build import build
 import os
@@ -47,7 +46,7 @@ setup(
     name = 'staticx',
     version = get_dynamic_version(),
     description = 'Build static self-extracting app from dynamic executable',
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    python_requires='>=3.5',
     long_description = read_project_file('README.md'),
     long_description_content_type = 'text/markdown',
     classifiers = [
@@ -57,10 +56,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -95,7 +91,6 @@ setup(
     },
     install_requires = [
         'pyelftools',
-        'backports.lzma;python_version<"3.3"',
     ],
 
     # http://stackoverflow.com/questions/17806485

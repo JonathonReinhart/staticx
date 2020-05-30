@@ -23,16 +23,6 @@ def move_file(src, dst):
     shutil.move(src, dst)
 
 
-def mkdir_p(path):
-    # TODO Py2.7: Python 3 can simply use
-    # os.makedirs(path, exist_ok=True)
-    try:
-        os.makedirs(path)
-    except OSError as oe:
-        if oe.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
 def mkdirs_for(filename):
-    mkdir_p(os.path.dirname(filename))
+    dirname = os.path.dirname(filename)
+    os.makedirs(dirname, exist_ok=True)

@@ -10,7 +10,6 @@ env:
   - BOOTLOADER_CC=musl-gcc     # Default to musl libc
 matrix:
   include:
-    - python: "2.7"
     - python: "3.5"
     - python: "3.6"
     - python: "3.7"
@@ -42,7 +41,7 @@ script:
 
   # Build and install a wheel
   - python setup.py bdist_wheel
-  - pip install dist/staticx-*-py2.py3-none-any.whl
+  - pip install dist/staticx-*-py3-none-any.whl
   - staticx --version
 
   # Run unit tests
@@ -72,7 +71,7 @@ deploy:
       branch: master
       tags: false
       repo: JonathonReinhart/staticx
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $TRAVIS_PYTHON_VERSION = "3.6"
 
   # Production PyPI (only on tags)
   - provider: pypi
@@ -85,4 +84,4 @@ deploy:
       branch: master
       tags: true
       repo: JonathonReinhart/staticx
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $TRAVIS_PYTHON_VERSION = "3.6"

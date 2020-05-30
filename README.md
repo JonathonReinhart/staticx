@@ -28,7 +28,7 @@ The wheels are built on Travis CI and include a bootloader built with
 musl-libc.
 
 You can install using Pip.
-StaticX is compatible with Python 2.7 (`pip`) or Python 3.4+ (`pip3`):
+StaticX is compatible with Python Python 3.5+ (`pip3`):
 ```
 sudo pip3 install staticx
 ```

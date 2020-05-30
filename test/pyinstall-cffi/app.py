@@ -1,4 +1,3 @@
-from __future__ import print_function
 from cffi import FFI
 import os
 import sys

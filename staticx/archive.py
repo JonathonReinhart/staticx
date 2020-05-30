@@ -1,14 +1,7 @@
 import tarfile
 import logging
+import lzma
 from os.path import basename, islink
-
-try:
-    # Python 3
-    import lzma
-    lzma.open       # pyliblzma doesn't have lzma.open()
-except (ImportError, AttributeError):
-    # Python 2.7
-    from backports import lzma
 
 from .bcjfilter import get_bcj_filter_arch
 from .utils import get_symlink_target, make_mode_executable
