@@ -19,10 +19,15 @@
 #include <errno.h>
 #include <utime.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <unistd.h>
 #include <libgen.h>
 #include "libtar.h"
 #include "compat.h"
+
+#ifndef MIN
+# define MIN(x, y)      (((x) < (y)) ? (x) : (y))
+#endif
 
 static int mkdirs_for(const char *filename)
 {
@@ -155,6 +160,16 @@ tar_extract_file(TAR *t, const char *realname)
 	return 0;
 }
 
+static size_t align_up(size_t val, size_t align)
+{
+	size_t r = val % align;
+
+	if (r) {
+		val += align - r;
+	}
+
+	return val;
+}
 
 /* extract regular file */
 int
@@ -165,8 +180,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 	uid_t uid;
 	gid_t gid;
 	int fdout;
-	int i, k;
-	char buf[T_BLOCKSIZE];
 	const char *filename;
 
 #ifdef DEBUG
@@ -231,20 +244,37 @@ tar_extract_regfile(TAR *t, const char *realname)
 #endif
 
 	/* extract the file */
-	for (i = size; i > 0; i -= T_BLOCKSIZE)
-	{
-		k = tar_block_read(t, buf);
-		if (k != T_BLOCKSIZE)
-		{
-			if (k != -1)
-				errno = EINVAL;
+	while (size) {
+		ssize_t n;
+		char buf[T_BLOCKSIZE * 1024];
+		const size_t to_copy = MIN(size, sizeof(buf));
+
+		// Must always read a multiple of T_BLOCKSIZE bytes
+		const size_t to_read = align_up(to_copy, T_BLOCKSIZE);
+		assert(to_copy <= to_read);
+		assert(to_read <= sizeof(buf));
+
+		// Read blocks
+		n = t->type->readfunc(t->context, buf, to_read);
+		if (n != to_read) {
+# ifdef DEBUG
+			fprintf(stderr, "libtar readfunc(%zu) returned %zd\n", to_read, n);
+# endif
+			errno = EINVAL;
 			return -1;
 		}
 
-		/* write block to output file */
-		if (write(fdout, buf,
-			  ((i > T_BLOCKSIZE) ? T_BLOCKSIZE : i)) == -1)
+		// Write blocks to file
+		n = write(fdout, buf, to_copy);
+		if (n != to_copy) {
+# ifdef DEBUG
+			fprintf(stderr, "libtar write(%zu) returned %zd\n", to_copy, n);
+# endif
+			errno = EINVAL;
 			return -1;
+		}
+
+		size -= to_copy;
 	}
 
 	/* close output file */
