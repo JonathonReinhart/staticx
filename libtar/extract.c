@@ -179,11 +179,12 @@ tar_extract_regfile(TAR *t, const char *realname)
 	size_t size;
 	uid_t uid;
 	gid_t gid;
-	int fdout;
+	int fdout = -1;
 	const char *filename;
 	size_t to_read;
 	char *buf = NULL;
 	ssize_t n;
+	int retval = -1;
 
 #ifdef DEBUG
 	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
@@ -193,7 +194,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	if (!TH_ISREG(t))
 	{
 		errno = EINVAL;
-		return -1;
+		goto out;
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
@@ -207,7 +208,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	(void)gid;
 
 	if (mkdirs_for(filename) == -1)
-		return -1;
+		goto out;
 
 #ifdef DEBUG
 	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %zd bytes)\n",
@@ -223,7 +224,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("open()");
 #endif
-		return -1;
+		goto out;
 	}
 
 #if 0
@@ -233,7 +234,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("fchown()");
 #endif
-		return -1;
+		goto out;
 	}
 
 	/* make sure the mode isn't inheritted from a file we're overwriting */
@@ -242,7 +243,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("fchmod()");
 #endif
-		return -1;
+		goto out;
 	}
 #endif
 
@@ -254,7 +255,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	buf = malloc(to_read);
 	if (!buf) {
 		errno = ENOMEM;
-		return -1;
+		goto out;
 	}
 
 	/* Read blocks */
@@ -264,9 +265,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 		fprintf(stderr, "libtar readfunc(%zu) returned %zd\n", to_read, n);
 # endif
 		errno = EINVAL;
-		free(buf);
-		close(fdout);
-		return -1;
+		goto out;
 	}
 
 	/* Write blocks to file */
@@ -276,23 +275,23 @@ tar_extract_regfile(TAR *t, const char *realname)
 		fprintf(stderr, "libtar write(%zu) returned %zd\n", size, n);
 # endif
 		errno = EINVAL;
-		free(buf);
-		close(fdout);
-		return -1;
+		goto out;
 	}
 
-	free(buf);
-	buf = NULL;
-
-	/* close output file */
-	if (close(fdout) == -1)
-		return -1;
-
+	/* Success */
+	retval = 0;
 #ifdef DEBUG
 	printf("### done extracting %s\n", filename);
 #endif
 
-	return 0;
+out:
+	free(buf);
+	buf = NULL;
+
+	if (fdout != -1)
+		close(fdout);
+
+	return retval;
 }
 
 
