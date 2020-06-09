@@ -259,36 +259,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 }
 
 
-/* skip regfile */
-int
-tar_skip_regfile(TAR *t)
-{
-	int i, k;
-	size_t size;
-	char buf[T_BLOCKSIZE];
-
-	if (!TH_ISREG(t))
-	{
-		errno = EINVAL;
-		return -1;
-	}
-
-	size = th_get_size(t);
-	for (i = size; i > 0; i -= T_BLOCKSIZE)
-	{
-		k = tar_block_read(t, buf);
-		if (k != T_BLOCKSIZE)
-		{
-			if (k != -1)
-				errno = EINVAL;
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-
 /* hardlink */
 int
 tar_extract_hardlink(TAR * t, const char *realname)
