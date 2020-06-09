@@ -169,7 +169,6 @@ int tar_extract_fifo(TAR *t, const char *realname);
 
 /* for regfiles, we need to extract the content blocks as well */
 int tar_extract_regfile(TAR *t, const char *realname);
-int tar_skip_regfile(TAR *t);
 
 
 /***** output.c ************************************************************/

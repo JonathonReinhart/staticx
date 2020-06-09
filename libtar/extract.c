@@ -19,10 +19,15 @@
 #include <errno.h>
 #include <utime.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <unistd.h>
 #include <libgen.h>
 #include "libtar.h"
 #include "compat.h"
+
+#ifndef MIN
+# define MIN(x, y)      (((x) < (y)) ? (x) : (y))
+#endif
 
 static int mkdirs_for(const char *filename)
 {
@@ -155,6 +160,16 @@ tar_extract_file(TAR *t, const char *realname)
 	return 0;
 }
 
+static size_t align_up(size_t val, size_t align)
+{
+	size_t r = val % align;
+
+	if (r) {
+		val += align - r;
+	}
+
+	return val;
+}
 
 /* extract regular file */
 int
@@ -164,10 +179,12 @@ tar_extract_regfile(TAR *t, const char *realname)
 	size_t size;
 	uid_t uid;
 	gid_t gid;
-	int fdout;
-	int i, k;
-	char buf[T_BLOCKSIZE];
+	int fdout = -1;
 	const char *filename;
+	size_t to_read;
+	char *buf = NULL;
+	ssize_t n;
+	int retval = -1;
 
 #ifdef DEBUG
 	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
@@ -177,7 +194,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	if (!TH_ISREG(t))
 	{
 		errno = EINVAL;
-		return -1;
+		goto out;
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
@@ -191,7 +208,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	(void)gid;
 
 	if (mkdirs_for(filename) == -1)
-		return -1;
+		goto out;
 
 #ifdef DEBUG
 	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %zd bytes)\n",
@@ -207,7 +224,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("open()");
 #endif
-		return -1;
+		goto out;
 	}
 
 #if 0
@@ -217,7 +234,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("fchown()");
 #endif
-		return -1;
+		goto out;
 	}
 
 	/* make sure the mode isn't inheritted from a file we're overwriting */
@@ -226,66 +243,55 @@ tar_extract_regfile(TAR *t, const char *realname)
 #ifdef DEBUG
 		perror("fchmod()");
 #endif
-		return -1;
+		goto out;
 	}
 #endif
 
 	/* extract the file */
-	for (i = size; i > 0; i -= T_BLOCKSIZE)
-	{
-		k = tar_block_read(t, buf);
-		if (k != T_BLOCKSIZE)
-		{
-			if (k != -1)
-				errno = EINVAL;
-			return -1;
-		}
 
-		/* write block to output file */
-		if (write(fdout, buf,
-			  ((i > T_BLOCKSIZE) ? T_BLOCKSIZE : i)) == -1)
-			return -1;
+	/* Must always read a multiple of T_BLOCKSIZE bytes */
+	to_read = align_up(size, T_BLOCKSIZE);
+
+	buf = malloc(to_read);
+	if (!buf) {
+		errno = ENOMEM;
+		goto out;
 	}
 
-	/* close output file */
-	if (close(fdout) == -1)
-		return -1;
+	/* Read blocks */
+	n = t->type->readfunc(t->context, buf, to_read);
+	if (n != to_read) {
+# ifdef DEBUG
+		fprintf(stderr, "libtar readfunc(%zu) returned %zd\n", to_read, n);
+# endif
+		errno = EINVAL;
+		goto out;
+	}
 
+	/* Write blocks to file */
+	n = write(fdout, buf, size);
+	if (n != size) {
+# ifdef DEBUG
+		fprintf(stderr, "libtar write(%zu) returned %zd\n", size, n);
+# endif
+		errno = EINVAL;
+		goto out;
+	}
+
+	/* Success */
+	retval = 0;
 #ifdef DEBUG
 	printf("### done extracting %s\n", filename);
 #endif
 
-	return 0;
-}
+out:
+	free(buf);
+	buf = NULL;
 
+	if (fdout != -1)
+		close(fdout);
 
-/* skip regfile */
-int
-tar_skip_regfile(TAR *t)
-{
-	int i, k;
-	size_t size;
-	char buf[T_BLOCKSIZE];
-
-	if (!TH_ISREG(t))
-	{
-		errno = EINVAL;
-		return -1;
-	}
-
-	size = th_get_size(t);
-	for (i = size; i > 0; i -= T_BLOCKSIZE)
-	{
-		k = tar_block_read(t, buf);
-		if (k != T_BLOCKSIZE)
-		{
-			if (k != -1)
-				errno = EINVAL;
-			return -1;
-		}
-	}
-
-	return 0;
+	return retval;
 }
 
 

@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Improved tar extraction to minimize number of write() calls ([#131])
+
+
 ## [0.10.0] - 2020-05-30
 ### Added
 - Added `sx-extract` archive extraction/dumping tool ([#114])
@@ -170,3 +175,4 @@ Initial release
 [#118]: https://github.com/JonathonReinhart/staticx/pull/118
 [#120]: https://github.com/JonathonReinhart/staticx/pull/120
 [#122]: https://github.com/JonathonReinhart/staticx/pull/122
+[#131]: https://github.com/JonathonReinhart/staticx/pull/131
