@@ -181,6 +181,9 @@ tar_extract_regfile(TAR *t, const char *realname)
 	gid_t gid;
 	int fdout;
 	const char *filename;
+	size_t to_read;
+	char *buf = NULL;
+	ssize_t n;
 
 #ifdef DEBUG
 	printf("==> tar_extract_regfile(t=0x%p, realname=\"%s\")\n", t,
@@ -244,38 +247,42 @@ tar_extract_regfile(TAR *t, const char *realname)
 #endif
 
 	/* extract the file */
-	while (size) {
-		ssize_t n;
-		char buf[T_BLOCKSIZE * 1024];
-		const size_t to_copy = MIN(size, sizeof(buf));
 
-		// Must always read a multiple of T_BLOCKSIZE bytes
-		const size_t to_read = align_up(to_copy, T_BLOCKSIZE);
-		assert(to_copy <= to_read);
-		assert(to_read <= sizeof(buf));
+	/* Must always read a multiple of T_BLOCKSIZE bytes */
+	to_read = align_up(size, T_BLOCKSIZE);
 
-		// Read blocks
-		n = t->type->readfunc(t->context, buf, to_read);
-		if (n != to_read) {
-# ifdef DEBUG
-			fprintf(stderr, "libtar readfunc(%zu) returned %zd\n", to_read, n);
-# endif
-			errno = EINVAL;
-			return -1;
-		}
-
-		// Write blocks to file
-		n = write(fdout, buf, to_copy);
-		if (n != to_copy) {
-# ifdef DEBUG
-			fprintf(stderr, "libtar write(%zu) returned %zd\n", to_copy, n);
-# endif
-			errno = EINVAL;
-			return -1;
-		}
-
-		size -= to_copy;
+	buf = malloc(to_read);
+	if (!buf) {
+		errno = ENOMEM;
+		return -1;
 	}
+
+	/* Read blocks */
+	n = t->type->readfunc(t->context, buf, to_read);
+	if (n != to_read) {
+# ifdef DEBUG
+		fprintf(stderr, "libtar readfunc(%zu) returned %zd\n", to_read, n);
+# endif
+		errno = EINVAL;
+		free(buf);
+		close(fdout);
+		return -1;
+	}
+
+	/* Write blocks to file */
+	n = write(fdout, buf, size);
+	if (n != size) {
+# ifdef DEBUG
+		fprintf(stderr, "libtar write(%zu) returned %zd\n", size, n);
+# endif
+		errno = EINVAL;
+		free(buf);
+		close(fdout);
+		return -1;
+	}
+
+	free(buf);
+	buf = NULL;
 
 	/* close output file */
 	if (close(fdout) == -1)
