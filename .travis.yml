@@ -26,6 +26,7 @@ matrix:
 addons:
   apt:
     packages:
+      - busybox
       - musl
       - musl-dev
       - musl-tools
