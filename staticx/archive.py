@@ -79,19 +79,28 @@ class SxArchive(object):
 
         self.tar.addfile(t)
 
-    def add_program(self, path):
+    def add_program(self, path, name):
         """Add user program to the archive
 
-        The program will be added with a fixed name.
+        This adds the user program to the archive using its original filename.
+        Additionally, a symlink to the program is created with a fixed name to
+        enable the bootloader to identify the program to execute.
+
+        Parameters:
+        path:   The path to the program to add
+        name:   The original filename of the program
+
         Should only be called once. TODO: Enforce this.
         """
         def make_exec(tarinfo):
             tarinfo.mode = make_mode_executable(tarinfo.mode)
             return tarinfo
 
-        arcname = PROG_FILENAME
-        logging.info("Adding {} as {}".format(path, arcname))
-        self.tar.add(path, arcname=arcname, filter=make_exec)
+        logging.info("Adding {} as {}".format(path, name))
+        self.tar.add(path, arcname=name, filter=make_exec)
+
+        # Store a link to the program so the bootloader knows what to execute
+        self.add_symlink(PROG_FILENAME, name)
 
     def add_library(self, path):
         """Add a library to the archive
