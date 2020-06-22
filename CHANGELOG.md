@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Improved tar extraction to minimize number of write() calls ([#131])
 
+### Fixed
+- Bundled applications retain their original name ([#135])
+
 
 ## [0.10.0] - 2020-05-30
 ### Added
@@ -176,3 +179,4 @@ Initial release
 [#120]: https://github.com/JonathonReinhart/staticx/pull/120
 [#122]: https://github.com/JonathonReinhart/staticx/pull/122
 [#131]: https://github.com/JonathonReinhart/staticx/pull/131
+[#135]: https://github.com/JonathonReinhart/staticx/pull/135
