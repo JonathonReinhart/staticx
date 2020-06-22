@@ -39,7 +39,7 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     with SxArchive(fileobj=f, mode='w', compress=compress) as ar:
 
-        ar.add_program(copied_prog)
+        ar.add_program(copied_prog, basename(orig_prog))
         ar.add_interp_symlink(interp)
 
         # Add all of the libraries

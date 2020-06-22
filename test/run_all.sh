@@ -4,6 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # Run test against system executable
 ./date.sh
+./busybox.sh
 
 # Test environment variables
 ./staticx-env-vars.sh

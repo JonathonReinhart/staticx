@@ -383,6 +383,28 @@ cleanup_bundle_dir(void)
     m_bundle_dir = NULL;
 }
 
+/**
+ * Returns the path to the actual user program to execute.
+ * We resolve this manually rather than executing the symlink
+ * to ensure the program sees the original argv[0]. See #134.
+ *
+ * Note however that we do not currently pass-through argv[0].
+ * See #133.
+ */
+static char *
+get_real_prog_path(void)
+{
+    // PROG_FILENAME is a symlink to the user's program
+    char *linkpath = path_join(m_bundle_dir, PROG_FILENAME);
+
+    char *result = realpath(linkpath, NULL);
+    if (!result)
+        error(2, errno, "Failed to get realpath for %s", linkpath);
+
+    free(linkpath);
+    return result;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -398,7 +420,7 @@ main(int argc, char **argv)
     extract_archive(m_bundle_dir);
 
     /* Get path to user application inside temp dir */
-    char *prog_path = path_join(m_bundle_dir, PROG_FILENAME);
+    char *prog_path = get_real_prog_path();
 
     /* Patch the user application ELF to run in the temp dir */
     patch_app(prog_path);
