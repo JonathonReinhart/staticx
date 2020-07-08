@@ -18,49 +18,45 @@ base_env = Environment(
     LIBPATH = '$LIBDIR'
 )
 
-base_env['CC'] = ARGUMENTS.get('CC') or os.environ.get('CC') or base_env['CC']
+def get_anywhere(env, what):
+    return ARGUMENTS.get(what) or os.environ.get(what) or env[what]
 
-# Setup Release environment
-release_env = base_env.Clone(
-    MODE = 'release',
-)
-release_env.Append(
-    CPPDEFINES = {'NDEBUG': 1},
-    CPPFLAGS = ['-Os'],
-)
+def tool_debug(env):
+    env['MODE'] = 'debug'
+    env.AppendUnique(
+        CPPDEFINES = {'DEBUG': 1},
+        CCFLAGS = ['-g'],
+    )
 
-# Setup Debug environment
-debug_env = base_env.Clone(
-    MODE = 'debug',
-)
-debug_env.Append(
-    CPPDEFINES = {'DEBUG': 1},
-    CPPFLAGS = ['-g'],
-)
+def tool_release(env):
+    env['MODE'] = 'release'
+    env.AppendUnique(
+        CPPDEFINES = {'NDEBUG': 1},
+        CCFLAGS = ['-Os'],
+    )
 
+def ModeEnvs(env):
+    for t in (tool_debug, tool_release):
+        menv = env.Clone(tools=[t])
+        yield menv
+base_env.AddMethod(ModeEnvs)
 
-# Build in all environments
-for env in (release_env, debug_env):
-    libtar = env.SConscript(
-        dirs = 'libtar',
-        variant_dir = '$BUILD_DIR/libtar',
+def BuildSubdir(env, dirname):
+    return env.SConscript(
+        dirs = dirname,
+        variant_dir = '$BUILD_DIR/' + dirname,
         duplicate = False,
         exports = dict(env=env.Clone()),
     )
-    env.Install('$LIBDIR', libtar)
+base_env.AddMethod(BuildSubdir)
 
-    libxz = env.SConscript(
-        dirs = 'libxz',
-        variant_dir = '$BUILD_DIR/libxz',
-        duplicate = False,
-        exports = dict(env=env.Clone()),
-    )
-    env.Install('$LIBDIR', libxz)
 
-    bl = env.SConscript(
-        dirs = 'bootloader',
-        variant_dir = '$BUILD_DIR/bootloader',
-        duplicate = False,
-        exports = dict(env=env.Clone()),
-    )
-    env.InstallAs('#staticx/assets/$MODE/bootloader', bl)
+################################################################################
+# Bootloader
+bootloader_env = base_env.Clone()
+bootloader_env['CC'] = get_anywhere(bootloader_env, 'CC')
+
+for env in bootloader_env.ModeEnvs():
+    env.Install('$LIBDIR', env.BuildSubdir('libtar'))
+    env.Install('$LIBDIR', env.BuildSubdir('libxz'))
+    env.InstallAs('#staticx/assets/$MODE/bootloader', env.BuildSubdir('bootloader'))
