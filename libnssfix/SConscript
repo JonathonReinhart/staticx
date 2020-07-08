@@ -1,0 +1,10 @@
+Import('env')
+
+libnssfix = env.SharedLibrary(
+    target = 'nssfix',
+    source = [
+        'nssfix.c',
+    ],
+)
+
+Return('libnssfix')

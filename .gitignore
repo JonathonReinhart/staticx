@@ -4,7 +4,9 @@ __pycache__/
 
 # SCons stuff
 .sconsign.dblite
+/.sconf_temp/
 /scons_build/
+*.log
 
 # Setup.py stuff
 /build/
