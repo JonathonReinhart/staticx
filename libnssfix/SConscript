@@ -1,0 +1,18 @@
+Import('env')
+
+libnssfix = env.SharedLibrary(
+    target = 'nssfix',
+    source = [
+        'nssfix.c',
+    ],
+
+    LIBS = [
+        # These aren't needed directly for the library itself, but this ensures
+        # that they will be available for nss at runtime (via dlopen), and
+        # allows their paths to be easily discovered via ldd(1).
+        'nss_files',
+        'nss_dns',
+    ],
+)
+
+Return('libnssfix')
