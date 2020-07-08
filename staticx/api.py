@@ -13,6 +13,7 @@ from .errors import *
 from .utils import *
 from .elf import *
 from .archive import SxArchive
+from .assets import copy_asset_to_tempfile
 from .constants import *
 from .hooks import run_hooks
 
@@ -65,18 +66,11 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
     return f
 
 
-def _locate_asset(name, debug):
-    pkg_path = os.path.dirname(__file__)
-    mode = 'debug' if debug else 'release'
-    path = os.path.abspath(os.path.join(pkg_path, 'assets', mode, name))
-    if not os.path.isfile(path):
-        raise InternalError("Asset not found at {}".format(path))
-    return path
-
-
-def _locate_bootloader(debug=False):
-    """Determine path to bootloader"""
-    return _locate_asset('bootloader', debug)
+def _get_bootloader(debug=False):
+    """Get a temporary copy of the bootloader"""
+    fbl = copy_asset_to_tempfile('bootloader', debug, prefix='staticx-output-', delete=False)
+    make_executable(fbl.name)
+    return fbl.name
 
 
 def _check_bootloader_compat(bootloader, prog):
@@ -86,16 +80,6 @@ def _check_bootloader_compat(bootloader, prog):
     if bldr_mach != prog_mach:
         raise FormatMismatchError("Bootloader machine ({}) doesn't match "
                 "program machine ({})".format(bldr_mach, prog_mach))
-
-
-def _copy_to_tempfile(srcpath, **kwargs):
-    fdst = NamedTemporaryFile(**kwargs)
-    with open(srcpath, 'rb') as fsrc:
-        shutil.copyfileobj(fsrc, fdst)
-
-    fdst.flush()
-    shutil.copystat(srcpath, fdst.name)
-    return fdst
 
 
 def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
@@ -108,19 +92,23 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
-    bootloader = _locate_bootloader(debug)
-    _check_bootloader_compat(bootloader, prog)
 
-
-    tmpdir = mkdtemp(prefix='staticx-archive-')
-
-    # First, learn things about the original program
-    orig_interp = get_prog_interp(prog)
-
-    # Now modify a copy of the user prog
-    tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
     tmpoutput = None
+    tmpprog = None
+    tmpdir = None
+
+    # Work on a temp copy of the bootloader which becomes the output program
+    tmpoutput = _get_bootloader(debug)
+
     try:
+        _check_bootloader_compat(tmpoutput, prog)
+
+        # First, learn things about the original program
+        orig_interp = get_prog_interp(prog)
+
+        # Now modify a copy of the user prog
+        tmpprog = copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
+
         # Strip user prog before modifying it
         if strip:
             logging.info("Stripping prog {}".format(tmpprog))
@@ -133,14 +121,12 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
         new_rpath = 'r' * MAX_RPATH_LEN
         patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
 
-        # Work on a temp copy of the bootloader
-        tmpoutput = _copy_to_tempfile(bootloader, prefix='staticx-output-', delete=False).name
-
         if strip:
             logging.info("Stripping bootloader {}".format(tmpoutput))
             strip_elf(tmpoutput)
 
         # Starting from the bootloader, append archive
+        tmpdir = mkdtemp(prefix='staticx-archive-')
         with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
@@ -149,8 +135,11 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
         tmpoutput = None
 
     finally:
-        os.remove(tmpprog)
-        shutil.rmtree(tmpdir)
+        if tmpprog:
+            os.remove(tmpprog)
+
+        if tmpdir:
+            shutil.rmtree(tmpdir)
 
         if tmpoutput:
             os.remove(tmpoutput)
