@@ -5,6 +5,13 @@ libnssfix = env.SharedLibrary(
     source = [
         'nssfix.c',
     ],
+
+    LIBS = [
+        # These aren't needed for the library itself, but for
+        # staticx.hooks.glibc to discover their paths.
+        'nss_files',
+        'nss_dns',
+    ],
 )
 
 Return('libnssfix')

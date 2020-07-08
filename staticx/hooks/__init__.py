@@ -1,7 +1,9 @@
 from .pyinstaller import process_pyinstaller_archive
+from .glibc import process_glibc_prog
 
 hooks = [
     process_pyinstaller_archive,
+    process_glibc_prog,
 ]
 
 

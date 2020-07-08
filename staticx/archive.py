@@ -79,6 +79,12 @@ class SxArchive(object):
 
         self.tar.addfile(t)
 
+    def add_fileobj(self, name, fileobj):
+        logging.info("Adding {}".format(name))
+        tarinfo = self.tar.gettarinfo(arcname=name, fileobj=fileobj)
+        tarinfo.mode = make_mode_executable(tarinfo.mode)
+        self.tar.addfile(tarinfo, fileobj)
+
     def add_program(self, path, name):
         """Add user program to the archive
 

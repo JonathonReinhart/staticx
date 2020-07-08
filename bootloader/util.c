@@ -1,5 +1,6 @@
 #define _XOPEN_SOURCE 500
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>          /* for remove(3) */
 #include <unistd.h>
 #include <errno.h>
@@ -29,4 +30,9 @@ remove_tree(const char *pathname)
 
     errno = 0;
     return nftw(pathname, remove_tree_fn, max_open_fd, flags);
+}
+
+bool file_exists(const char *path)
+{
+    return access(path, F_OK) == 0;
 }
