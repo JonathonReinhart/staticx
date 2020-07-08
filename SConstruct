@@ -23,7 +23,6 @@ base_env['CC'] = ARGUMENTS.get('CC') or os.environ.get('CC') or base_env['CC']
 # Setup Release environment
 release_env = base_env.Clone(
     MODE = 'release',
-    BOOTLOADER_NAME = 'bootloader',
 )
 release_env.Append(
     CPPDEFINES = {'NDEBUG': 1},
@@ -33,7 +32,6 @@ release_env.Append(
 # Setup Debug environment
 debug_env = base_env.Clone(
     MODE = 'debug',
-    BOOTLOADER_NAME = 'bootloader-debug',
 )
 debug_env.Append(
     CPPDEFINES = {'DEBUG': 1},
@@ -65,4 +63,4 @@ for env in (release_env, debug_env):
         duplicate = False,
         exports = dict(env=env.Clone()),
     )
-    env.InstallAs('#staticx/$BOOTLOADER_NAME', bl)
+    env.InstallAs('#staticx/assets/$MODE/bootloader', bl)

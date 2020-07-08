@@ -71,10 +71,7 @@ setup(
     url = 'https://github.com/JonathonReinhart/staticx',
     packages = find_packages(),
     package_data = {
-        'staticx': [
-            'bootloader',
-            'bootloader-debug',
-        ],
+        'staticx': ['assets/*/*'],
     },
 
     # Ugh.
