@@ -93,19 +93,17 @@ def _copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def generate(prog, output, libs=None, bootloader=None, strip=False, compress=True, debug=False):
+def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
 
     Parameters:
     prog:   Dynamic executable to staticx
     output: Path to result
     libs: Extra libraries to include
-    bootloader: Override the bootloader binary
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
-    if not bootloader:
-        bootloader = _locate_bootloader(debug)
+    bootloader = _locate_bootloader(debug)
     _check_bootloader_compat(bootloader, prog)
 
 
