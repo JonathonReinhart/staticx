@@ -17,7 +17,7 @@ from .assets import copy_asset_to_tempfile
 from .constants import *
 from .hooks import run_hooks
 
-def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True):
+def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True, debug=False):
     """ Generate a StaticX archive
 
     Args:
@@ -60,7 +60,11 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
             # Add the library to the archive
             ar.add_library(libpath)
 
-        run_hooks(ar, orig_prog)
+        run_hooks(
+                archive = ar,
+                program = orig_prog,
+                debug = debug,
+                )
 
     f.flush()
     return f
@@ -127,7 +131,8 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
 
         # Starting from the bootloader, append archive
         tmpdir = mkdtemp(prefix='staticx-archive-')
-        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
+        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs,
+                strip=strip, compress=compress, debug=debug) as ar:
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
         # Move the temporary output file to its final place

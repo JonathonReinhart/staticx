@@ -5,7 +5,7 @@ import tempfile
 from ..elf import get_shobj_deps, StaticELFError, LddError
 from ..utils import make_executable, mkdirs_for
 
-def process_pyinstaller_archive(sx_ar, prog):
+def process_pyinstaller_archive(ctx):
     # See utils/cliutils/archive_viewer.py
 
     # If PyInstaller is not installed, do nothing
@@ -16,13 +16,13 @@ def process_pyinstaller_archive(sx_ar, prog):
 
     # Attempt to open the program as PyInstaller archive
     try:
-        pyi_ar = CArchiveReader(prog)
+        pyi_ar = CArchiveReader(ctx.program)
     except:
         # Silence all PyInstaller exceptions here
         return
     logging.info("Opened PyInstaller archive!")
 
-    with PyInstallHook(sx_ar, pyi_ar) as h:
+    with PyInstallHook(ctx.archive, pyi_ar) as h:
         h.process()
 
 
