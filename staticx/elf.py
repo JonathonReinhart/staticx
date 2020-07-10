@@ -227,19 +227,26 @@ class ELFCloser(object):
     def __exit__(self, *exc_info):
         self.f.close()
 
-def _open_elf(path, mode='rb'):
+def open_elf(path, mode='rb'):
     try:
         return ELFCloser(path, mode)
     except ELFError as e:
         raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
 
 
+def get_section(elf, sectype):
+    for sec in elf.iter_sections():
+        if isinstance(sec, sectype):
+            return sec
+    return KeyError("Can't find section of type {}".format(sectype))
+
+
 def get_machine(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         return elf['e_machine']
 
 def get_prog_interp(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         for seg in elf.iter_segments():
             # Amazingly, this is slightly faster than
             # if isinstance(seg, InterpSegment):
@@ -253,7 +260,7 @@ def get_prog_interp(path):
 
 
 def is_dynamic(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         for seg in elf.iter_segments():
             if seg['p_type'] == 'PT_DYNAMIC':
                 # seg is an instance of DynamicSegment
