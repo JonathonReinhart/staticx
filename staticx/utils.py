@@ -41,4 +41,5 @@ def copy_fileobj_to_tempfile(fsrc, **kwargs):
     fdst = NamedTemporaryFile(**kwargs)
     shutil.copyfileobj(fsrc, fdst)
     fdst.flush()
+    fdst.seek(0)
     return fdst
