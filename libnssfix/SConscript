@@ -6,9 +6,20 @@ env.Tool('stubgen')
 libc_stub = env.ShlibStubGen(
     target = 'libc.so.6',
     symbols = [
+        '__assert_fail',
+        '_exit',
+        'environ',
         'fprintf',
+        'free',
+        'getenv',
+        'getpid',
+        'malloc',
+        'mempcpy',
         '__nss_configure_lookup',
         'stderr',
+        'strchr',
+        'strdup',
+        'strlen',
         'unsetenv',
     ],
 )
@@ -37,6 +48,7 @@ libnssfix = env.SharedLibrary(
     ],
     LIBS = [
         libc_stub,
+        'dl',   # TODO: Stub
 
         # These aren't needed for the library itself, but for
         # staticx.hooks.glibc to discover their paths.

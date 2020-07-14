@@ -315,6 +315,7 @@ setup_nssfix(void)
         goto out;
     }
 
+    sx_setenv("NSSFIX_REINJECT_PATH_PREFIX", m_bundle_dir);
     sx_setenv("LD_PRELOAD", path);
 out:
     free(path);
