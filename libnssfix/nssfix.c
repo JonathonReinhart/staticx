@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <nss.h>
 
 #define ARRAY_LEN(x)        (sizeof(x)/sizeof(x[0]))
@@ -68,5 +69,13 @@ static void configure_nss(void)
 __attribute__((constructor(101)))
 static void init_nssfix(void)
 {
+    /**
+     * Unset LD_PRELOAD so libnssfix.so is not loaded for any child program
+     * executed by the user application. This assumes that any such program
+     * would be either a system (non-bundled) executable, or statically-linked.
+     * See https://github.com/JonathonReinhart/staticx/issues/129#issuecomment-657938274
+     */
+    unsetenv("LD_PRELOAD");
+
     configure_nss();
 }
