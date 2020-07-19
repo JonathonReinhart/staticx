@@ -183,7 +183,7 @@ def elf_dump_section(elfpath, secname, outpath):
 
 
 
-def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False):
     args = []
     if interpreter:
         args += ['--set-interpreter', interpreter]
@@ -191,6 +191,8 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
         args += ['--set-rpath', rpath]
     if force_rpath:
         args.append('--force-rpath')
+    if no_default_lib:
+        args.append('--no-default-lib')
     args.append(path)
 
     tool_patchelf.run_check(*args)
