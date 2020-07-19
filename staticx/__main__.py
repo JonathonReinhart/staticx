@@ -32,8 +32,6 @@ def parse_args():
             help = 'Set the logging level (default: {})'.format(DEFAULT_LOGLEVEL))
 
     # Hidden arguments (for development / testing)
-    ap.add_argument('--bootloader',
-            help = argparse.SUPPRESS)
     ap.add_argument('--debug', action='store_true',
             help = argparse.SUPPRESS)
 
@@ -52,7 +50,6 @@ def main():
     try:
         generate(args.prog, args.output,
                 libs = args.libs,
-                bootloader = args.bootloader,
                 strip = args.strip,
                 compress = not args.no_compress,
                 debug = args.debug,

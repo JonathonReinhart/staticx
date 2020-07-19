@@ -1,6 +1,7 @@
 import os
 import errno
 import shutil
+from tempfile import NamedTemporaryFile
 from .errors import *
 
 def make_mode_executable(mode):
@@ -26,3 +27,18 @@ def move_file(src, dst):
 def mkdirs_for(filename):
     dirname = os.path.dirname(filename)
     os.makedirs(dirname, exist_ok=True)
+
+
+def copy_to_tempfile(srcpath, **kwargs):
+    with open(srcpath, 'rb') as fsrc:
+        fdst = copy_fileobj_to_tempfile(fsrc, **kwargs)
+
+    shutil.copystat(srcpath, fdst.name)
+    return fdst
+
+
+def copy_fileobj_to_tempfile(fsrc, **kwargs):
+    fdst = NamedTemporaryFile(**kwargs)
+    shutil.copyfileobj(fsrc, fdst)
+    fdst.flush()
+    return fdst

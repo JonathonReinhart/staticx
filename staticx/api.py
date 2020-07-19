@@ -13,10 +13,11 @@ from .errors import *
 from .utils import *
 from .elf import *
 from .archive import SxArchive
+from .assets import copy_asset_to_tempfile
 from .constants import *
 from .hooks import run_hooks
 
-def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True):
+def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True, debug=False):
     """ Generate a StaticX archive
 
     Args:
@@ -59,19 +60,21 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
             # Add the library to the archive
             ar.add_library(libpath)
 
-        run_hooks(ar, orig_prog)
+        run_hooks(
+                archive = ar,
+                program = orig_prog,
+                debug = debug,
+                )
 
     f.flush()
     return f
 
-def _locate_bootloader(debug=False):
-    """Determine path to bootloader"""
-    pkg_path = os.path.dirname(__file__)
-    blname = 'bootloader-debug' if debug else 'bootloader'
-    blpath = os.path.abspath(os.path.join(pkg_path, blname))
-    if not os.path.isfile(blpath):
-        raise InternalError("bootloader not found at {}".format(blpath))
-    return blpath
+
+def _get_bootloader(debug=False):
+    """Get a temporary copy of the bootloader"""
+    fbl = copy_asset_to_tempfile('bootloader', debug, prefix='staticx-output-', delete=False)
+    make_executable(fbl.name)
+    return fbl.name
 
 
 def _check_bootloader_compat(bootloader, prog):
@@ -83,41 +86,33 @@ def _check_bootloader_compat(bootloader, prog):
                 "program machine ({})".format(bldr_mach, prog_mach))
 
 
-def _copy_to_tempfile(srcpath, **kwargs):
-    fdst = NamedTemporaryFile(**kwargs)
-    with open(srcpath, 'rb') as fsrc:
-        shutil.copyfileobj(fsrc, fdst)
-
-    fdst.flush()
-    shutil.copystat(srcpath, fdst.name)
-    return fdst
-
-
-def generate(prog, output, libs=None, bootloader=None, strip=False, compress=True, debug=False):
+def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
 
     Parameters:
     prog:   Dynamic executable to staticx
     output: Path to result
     libs: Extra libraries to include
-    bootloader: Override the bootloader binary
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
-    if not bootloader:
-        bootloader = _locate_bootloader(debug)
-    _check_bootloader_compat(bootloader, prog)
 
-
-    tmpdir = mkdtemp(prefix='staticx-archive-')
-
-    # First, learn things about the original program
-    orig_interp = get_prog_interp(prog)
-
-    # Now modify a copy of the user prog
-    tmpprog = _copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
     tmpoutput = None
+    tmpprog = None
+    tmpdir = None
+
+    # Work on a temp copy of the bootloader which becomes the output program
+    tmpoutput = _get_bootloader(debug)
+
     try:
+        _check_bootloader_compat(tmpoutput, prog)
+
+        # First, learn things about the original program
+        orig_interp = get_prog_interp(prog)
+
+        # Now modify a copy of the user prog
+        tmpprog = copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
+
         # Strip user prog before modifying it
         if strip:
             logging.info("Stripping prog {}".format(tmpprog))
@@ -130,15 +125,14 @@ def generate(prog, output, libs=None, bootloader=None, strip=False, compress=Tru
         new_rpath = 'r' * MAX_RPATH_LEN
         patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
 
-        # Work on a temp copy of the bootloader
-        tmpoutput = _copy_to_tempfile(bootloader, prefix='staticx-output-', delete=False).name
-
         if strip:
             logging.info("Stripping bootloader {}".format(tmpoutput))
             strip_elf(tmpoutput)
 
         # Starting from the bootloader, append archive
-        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs, strip=strip, compress=compress) as ar:
+        tmpdir = mkdtemp(prefix='staticx-archive-')
+        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs,
+                strip=strip, compress=compress, debug=debug) as ar:
             elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
 
         # Move the temporary output file to its final place
@@ -146,8 +140,11 @@ def generate(prog, output, libs=None, bootloader=None, strip=False, compress=Tru
         tmpoutput = None
 
     finally:
-        os.remove(tmpprog)
-        shutil.rmtree(tmpdir)
+        if tmpprog:
+            os.remove(tmpprog)
+
+        if tmpdir:
+            shutil.rmtree(tmpdir)
 
         if tmpoutput:
             os.remove(tmpoutput)
