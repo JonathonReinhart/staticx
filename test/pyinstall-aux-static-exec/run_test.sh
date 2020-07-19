@@ -19,12 +19,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # Build our auxiliary app
 echo "Building aux app with gcc"
-gcc $CCFLAGS        -o aux-glibc-dynamic aux.c
 gcc $CCFLAGS_STATIC -o aux-glibc-static  aux.c
 
 if [ -x "$(command -v musl-gcc)" ]; then
     echo "Building aux app with musl-gcc"
-    musl-gcc $CCFLAGS        -o aux-musl-dynamic aux.c
     musl-gcc $CCFLAGS_STATIC -o aux-musl-static  aux.c
 fi
 
@@ -52,7 +50,4 @@ $outfile
 # Run it under an old distro
 if [ -n "$TEST_DOCKER_IMAGE" ]; then
     echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
-
-    # This environment won't have a dynamic musl-libc
-    scuba --image $TEST_DOCKER_IMAGE $outfile --skip aux-musl-dynamic
 fi
