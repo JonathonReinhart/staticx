@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Changed
 - Improved tar extraction to minimize number of write() calls ([#131])
+- Set NODEFLIB flag to prevent any libraries from the target system
+  from being loaded ([#138])
 
 ### Fixed
 - Bundled applications retain their original name ([#135])
@@ -180,3 +182,4 @@ Initial release
 [#122]: https://github.com/JonathonReinhart/staticx/pull/122
 [#131]: https://github.com/JonathonReinhart/staticx/pull/131
 [#135]: https://github.com/JonathonReinhart/staticx/pull/135
+[#138]: https://github.com/JonathonReinhart/staticx/pull/138

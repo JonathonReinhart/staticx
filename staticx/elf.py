@@ -183,7 +183,7 @@ def elf_dump_section(elfpath, secname, outpath):
 
 
 
-def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False):
     args = []
     if interpreter:
         args += ['--set-interpreter', interpreter]
@@ -194,6 +194,13 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False):
     args.append(path)
 
     tool_patchelf.run_check(*args)
+
+    # There is a bug in patchelf that requires the --force-rpath and
+    # --no-default-lib steps to be run in separate invocations.
+    # https://github.com/NixOS/patchelf/issues/223
+    if no_default_lib:
+        tool_patchelf.run_check('--no-default-lib', path)
+
 
 def strip_elf(path):
     tool_strip.run_check(path)

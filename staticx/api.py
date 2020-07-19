@@ -123,7 +123,8 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
         # that patchelf has to do.
         new_interp = 'i' * MAX_INTERP_LEN
         new_rpath = 'r' * MAX_RPATH_LEN
-        patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath, force_rpath=True)
+        patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath,
+                  force_rpath=True, no_default_lib=True)
 
         if strip:
             logging.info("Stripping bootloader {}".format(tmpoutput))
