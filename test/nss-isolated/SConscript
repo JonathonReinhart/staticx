@@ -1,0 +1,6 @@
+Import('env')
+
+env.Program(
+    target = 'app',
+    source = ['app.c'],
+)
