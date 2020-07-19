@@ -191,11 +191,16 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
         args += ['--set-rpath', rpath]
     if force_rpath:
         args.append('--force-rpath')
-    if no_default_lib:
-        args.append('--no-default-lib')
     args.append(path)
 
     tool_patchelf.run_check(*args)
+
+    # There is a bug in patchelf that requires the --force-rpath and
+    # --no-default-lib steps to be run in separate invocations.
+    # https://github.com/NixOS/patchelf/issues/223
+    if no_default_lib:
+        tool_patchelf.run_check('--no-default-lib', path)
+
 
 def strip_elf(path):
     tool_strip.run_check(path)
