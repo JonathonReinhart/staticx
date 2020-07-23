@@ -21,8 +21,8 @@ base_env = Environment(
     LIBPATH = '$LIBDIR'
 )
 
-def get_anywhere(env, what):
-    return ARGUMENTS.get(what) or os.environ.get(what) or env[what]
+def get_anywhere(env, what, default=None):
+    return ARGUMENTS.get(what) or os.environ.get(what) or default
 
 def tool_debug(env):
     env['MODE'] = 'debug'
@@ -62,7 +62,9 @@ conf.Finish()
 ################################################################################
 # Bootloader
 bootloader_env = base_env.Clone()
-bootloader_env['CC'] = get_anywhere(bootloader_env, 'CC')
+cc = get_anywhere(bootloader_env, 'BOOTLOADER_CC')
+if cc:
+    bootloader_env['CC'] = cc
 
 for env in bootloader_env.ModeEnvs():
     env.Install('$LIBDIR', env.BuildSubdir('libtar'))
