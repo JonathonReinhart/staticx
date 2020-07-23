@@ -1,5 +1,10 @@
 Import('env')
 
+env.Append(
+    # Force linkage of libnss*
+    LINKFLAGS = ['-Wl,--no-as-needed'],
+)
+
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
     source = [
