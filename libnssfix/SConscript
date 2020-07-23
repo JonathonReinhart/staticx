@@ -5,7 +5,20 @@ libnssfix = env.SharedLibrary(
     source = [
         'nssfix.c',
     ],
-
+    CPPFLAGS = env.get('CPPFLAGS', []) + [
+        # Ubuntu sets -D_FORTIFY_SOURCE=2 by default:
+        # https://wiki.ubuntu.com/ToolChain/CompilerFlags
+        # This turns fprintf() into __fprintf_chk() which could hurt our libc
+        # compatibility, so we turn it off. Those docs say we should be able
+        # to define it to 0, but GCC doesn't like it:
+        # <command-line>:0:0: error: "_FORTIFY_SOURCE" redefined
+        '-U_FORTIFY_SOURCE',
+    ],
+    LINKFLAGS = env.get('LINKFLAGS', []) + [
+        # Ubuntu sets -Wl,--as-needed by default.
+        # But we want to force linkage of libnss*
+        '-Wl,--no-as-needed',
+    ],
     LIBS = [
         # These aren't needed directly for the library itself, but this ensures
         # that they will be available for nss at runtime (via dlopen), and
