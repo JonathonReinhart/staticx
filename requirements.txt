@@ -2,6 +2,11 @@
 # and are only used for development and testing.
 patchelf-wrapper
 pyinstaller; (python_version <= '3.7')
+
+# https://github.com/pypa/setuptools/issues/1963
+# Exclude from 45.0.0 until 49.1.1
+setuptools !=45.*, !=46.*, !=47.*, !=48.*, !=49.1.0
+
 scuba
 wheel
 cffi        # Used for test/pyinstall-cffi/
