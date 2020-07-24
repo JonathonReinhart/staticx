@@ -7,11 +7,6 @@ base_env = Environment(
         '-Wall', '-Werror',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
     ],
-    CPPPATH = [
-        '#libtar',
-        '#libxz',
-    ],
-
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
     LIBDIR = '$BUILD_DIR/lib',
