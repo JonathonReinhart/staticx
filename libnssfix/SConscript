@@ -4,14 +4,31 @@ env.Append(
     # Force linkage of libnss*
     LINKFLAGS = ['-Wl,--no-as-needed'],
 )
+env.Tool('stubgen')
+
+# Build a stub libc to avoid symbol versioning information
+libc_stub = env.ShlibStubGen(
+    target = 'libc.so.6',
+    symbols = [
+        'fprintf',
+        '__nss_configure_lookup',
+        'stderr',
+        'unsetenv',
+    ],
+)
 
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
     source = [
         'nssfix.c',
     ],
-
+    LINKFLAGS = env['LINKFLAGS'] + [
+        '-nostdlib',            # Force use of stub
+        '-Wl,--no-undefined',
+    ],
     LIBS = [
+        libc_stub,
+
         # These aren't needed for the library itself, but for
         # staticx.hooks.glibc to discover their paths.
         'nss_files',
