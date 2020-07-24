@@ -1,5 +1,17 @@
 Import('env')
 
+env.Tool('stubgen')
+
+# Build a stub libc to avoid symbol versioning information
+libc_stub = env.ShlibStubGen(
+    target = 'libc.so.6',
+    symbols = [
+        'fprintf',
+        '__nss_configure_lookup',
+        'stderr',
+    ],
+)
+
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
     source = [
@@ -18,8 +30,13 @@ libnssfix = env.SharedLibrary(
         # Ubuntu sets -Wl,--as-needed by default.
         # But we want to force linkage of libnss*
         '-Wl,--no-as-needed',
+
+        '-nostdlib',            # Force use of stub
+        '-Wl,--no-undefined',   # Detect missing symbols in stub
     ],
     LIBS = [
+        libc_stub,
+
         # These aren't needed directly for the library itself, but this ensures
         # that they will be available for nss at runtime (via dlopen), and
         # allows their paths to be easily discovered via ldd(1).
