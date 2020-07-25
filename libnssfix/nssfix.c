@@ -13,6 +13,7 @@ static const char *m_orig_ld_preload;
 extern char **environ;
 
 #define ARRAY_LEN(x)        (sizeof(x)/sizeof(x[0]))
+#define always_inline       inline __attribute__((__always_inline__))
 
 #ifdef DEBUG
 # define debug(fmt, ...)    fprintf(stderr, "%s [%d]: %s:" fmt, \
@@ -164,13 +165,14 @@ static void lookup_syms(void)
 /******************************************************************************/
 
 /* Make a copy of envp and add name=value entry */
-static char *make_env_entry(const char *name, const char *value)
+static always_inline char *make_env_entry(const char *name, const char *value)
 {
     const size_t namelen = strlen(name);
     const size_t vallen = strlen(value);
 
-    char * const r = malloc(namelen + 1 + vallen + 1);
-    if (r) {
+    // This function must be always_inline!
+    char * const r = alloca(namelen + 1 + vallen + 1);
+    {
         char *p = r;
         p = mempcpy(p, name, namelen);
         *p++ = '=';
@@ -180,7 +182,7 @@ static char *make_env_entry(const char *name, const char *value)
     return r;
 }
 
-static char **copy_append_env(char *const envp[], char *entry)
+static always_inline char **copy_append_env(char *const envp[], char *entry)
 {
     char **new_envp;
     char *const *p;
@@ -193,12 +195,9 @@ static char **copy_append_env(char *const envp[], char *entry)
     env_count++;    // new one
     env_count++;    // NULL term
 
-    // Allocate the array
-    new_envp = malloc(env_count* sizeof(char*));
-    if (!new_envp) {
-        debug("Failed to allocate new_envp\n");
-        return NULL;
-    }
+    // Allocate the array using alloca
+    // This function must be always_inline!
+    new_envp = alloca(env_count* sizeof(char*));
 
     // Copy the pointers
     char **d;
@@ -226,36 +225,28 @@ static bool should_reinject_into(const char *path)
 
 static int do_exec(typeof(execve) func, const char *path, char *const argv[], char *const envp[])
 {
-    char **new_envp = NULL;
-    char *new_entry = NULL;
-
     dump_char_array("argv", argv, 2, ",");
     dump_char_array("envp", envp, 2, ");");
 
     if (should_reinject_into(path)) {
         debug("=== RESTORING LD_PRELOAD! ===\n");
-
         /**
-         * XXX: Technically, this is a violation of POSIX because it makes
-         * these exec* functions not async-signal-safe due to the use of
-         * malloc(). See the note in glibc/posix/execl.c. To remedy this, we
-         * might be able to use a stack allocation instead.
+         * Restore LD_PRELOAD
+         *
+         * These functions are marked always_inline and use alloca() to avoid
+         * calling malloc(). This is to ensure exec*() stays async-signal-safe
+         * and to avoid violating the requirements of vfork/clone(CLONE_VFORK).
+         *
+         * See the note in glibc/posix/execl.c.
          */
-
-        // Restore LD_PRELOAD
-        new_entry = make_env_entry("LD_PRELOAD", m_orig_ld_preload);
-        new_envp = copy_append_env(envp, new_entry);
+        char *new_entry = make_env_entry("LD_PRELOAD", m_orig_ld_preload);
+        char **new_envp = copy_append_env(envp, new_entry);
         dump_char_array("New envp", new_envp, 0, "");
 
         envp = new_envp;
     }
 
-    int rc = func(path, argv, envp);
-
-    free(new_envp);
-    free(new_entry);
-
-    return rc;
+    return func(path, argv, envp);
 }
 
 static int do_execve(const char *path, char *const argv[], char *const envp[])
