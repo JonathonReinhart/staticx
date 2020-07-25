@@ -174,7 +174,29 @@ struct execdata {
         NULL,                               \
     }
 
+#define EXECL_ARGS(e)                       \
+        e->path,                            \
+        "child",                            \
+        e->testname,                        \
+        NULL
+
 typedef void (*execfunc_t)(struct execdata *e);
+
+static void do_execl(struct execdata *e)
+{
+    execl(e->path, EXECL_ARGS(e));
+}
+
+static void do_execlp(struct execdata *e)
+{
+    execlp(e->path, EXECL_ARGS(e));
+}
+
+static void do_execle(struct execdata *e)
+{
+    execle(e->path, EXECL_ARGS(e), environ);
+}
+
 
 static void do_execv(struct execdata *e)
 {
@@ -241,6 +263,23 @@ static void _run_child_test(const char *path, const char *testname, execfunc_t e
     e_exception("Child exited for unknown reason! (wstatus == %d)", wstatus);
 }
 
+
+static void test__execl__proc_self_exe(void)
+{
+    run_child_test(SELF_EXE, do_execl);
+}
+
+static void test__execlp__proc_self_exe(void)
+{
+    run_child_test(SELF_EXE, do_execlp);
+}
+
+static void test__execle__proc_self_exe(void)
+{
+    run_child_test(SELF_EXE, do_execle);
+}
+
+
 static void test__execv__proc_self_exe(void)
 {
     run_child_test(SELF_EXE, do_execv);
@@ -261,6 +300,21 @@ static void test__execvpe__proc_self_exe(void)
     run_child_test(SELF_EXE, do_execvpe);
 }
 
+
+static void test__execl__this_prog(void)
+{
+    run_child_test(readlinka(SELF_EXE), do_execl);
+}
+
+static void test__execlp__this_prog(void)
+{
+    run_child_test(readlinka(SELF_EXE), do_execlp);
+}
+
+static void test__execle__this_prog(void)
+{
+    run_child_test(readlinka(SELF_EXE), do_execle);
+}
 
 static void test__execv__this_prog(void)
 {
@@ -285,10 +339,18 @@ static void test__execvpe__this_prog(void)
 
 static void run_child_process_tests(void)
 {
+    test__execl__proc_self_exe();
+    test__execlp__proc_self_exe();
+    test__execle__proc_self_exe();
+
     test__execv__proc_self_exe();
     test__execve__proc_self_exe();
     test__execvp__proc_self_exe();
     test__execvpe__proc_self_exe();
+
+    test__execl__this_prog();
+    test__execlp__this_prog();
+    test__execle__this_prog();
 
     test__execv__this_prog();
     test__execve__this_prog();
