@@ -1,6 +1,7 @@
 import os
 import sys
 import pwd
+import subprocess
 
 def get_resource_dir():
     default = os.path.dirname(os.path.abspath(__file__))
@@ -11,3 +12,4 @@ print("Hello {}! Resource dir: {}".format(
     get_resource_dir()),
 )
 
+subprocess.call(['id'])
