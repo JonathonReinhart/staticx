@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -277,13 +278,76 @@ static int do_execvpe(const char *file, char *const argv[], char *const envp[])
 
 #if 0
 // TODO
-int execl(const char *path, const char *arg, ...);
-int execlp(const char *file, const char *arg, ...);
-int execle(const char *path, const char *arg, ...);
-
 int execveat(int dirfd, const char *pathname, char *const argv[], char *const envp[], int flags);
 int fexecve(int fd, char *const argv[], char *const envp[]);
 #endif
+
+#define count_args(firstarg) ({                             \
+    va_list ap;                                             \
+    size_t argc;                                            \
+    va_start(ap, firstarg);                                 \
+    for (argc = 1; va_arg(ap, const char *); argc++) { }    \
+    va_end(ap);                                             \
+    argc;                                                   \
+})
+
+#define copy_args(argc, argv, ap, firstarg) ({              \
+    size_t i;                                               \
+    argv[0] = (char *)firstarg;                             \
+    for (i = 1; i <= argc; i++)                             \
+        argv[i] = va_arg(ap, char *);                       \
+})
+
+#define build_argv(argc, argv, firstarg) ({                 \
+    va_list ap;                                             \
+    va_start(ap, firstarg);                                 \
+    copy_args(argc, argv, ap, firstarg);                    \
+    va_end(ap);                                             \
+})
+
+int execl(const char *path, const char *arg, ...)
+{
+    debug("execl(\n");
+    debug("  path=\"%s\",\n", path);
+
+    size_t argc = count_args(arg);
+    char *argv[argc + 1];   // NULL term
+
+    build_argv(argc, argv, arg);
+
+    return do_execve(path, argv, environ);
+}
+
+int execlp(const char *file, const char *arg, ...)
+{
+    debug("execlp(\n");
+    debug("  file=\"%s\",\n", file);
+
+    size_t argc = count_args(arg);
+    char *argv[argc + 1];   // NULL term
+
+    build_argv(argc, argv, arg);
+
+    return do_execvpe(file, argv, environ);
+}
+
+int execle(const char *path, const char *arg, ...)
+{
+    debug("execle(\n");
+    debug("  path=\"%s\",\n", path);
+
+    size_t argc = count_args(arg);
+    char *argv[argc + 1];   // NULL term
+    char **envp;
+
+    va_list ap;
+    va_start(ap, arg);
+    copy_args(argc, argv, ap, arg);
+    envp = va_arg(ap, char **);
+    va_end(ap);
+
+    return do_execve(path, argv, envp);
+}
 
 
 int execv(const char *path, char *const argv[])
