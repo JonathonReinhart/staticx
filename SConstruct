@@ -7,19 +7,14 @@ base_env = Environment(
         '-Wall', '-Werror',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
     ],
-    CPPPATH = [
-        '#libtar',
-        '#libxz',
-    ],
-
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
     LIBDIR = '$BUILD_DIR/lib',
     LIBPATH = '$LIBDIR'
 )
 
-def get_anywhere(env, what):
-    return ARGUMENTS.get(what) or os.environ.get(what) or env[what]
+def get_anywhere(env, what, default=None):
+    return ARGUMENTS.get(what) or os.environ.get(what) or default
 
 def tool_debug(env):
     env['MODE'] = 'debug'
@@ -54,7 +49,9 @@ base_env.AddMethod(BuildSubdir)
 ################################################################################
 # Bootloader
 bootloader_env = base_env.Clone()
-bootloader_env['CC'] = get_anywhere(bootloader_env, 'CC')
+cc = get_anywhere(bootloader_env, 'BOOTLOADER_CC')
+if cc:
+    bootloader_env['CC'] = cc
 
 for env in bootloader_env.ModeEnvs():
     env.Install('$LIBDIR', env.BuildSubdir('libtar'))

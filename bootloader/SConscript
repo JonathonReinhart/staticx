@@ -13,6 +13,10 @@ env.Append(
     CPPDEFINES = dict(
         STATICX_VERSION = '\\"{}\\"'.format(get_dynamic_version()),
     ),
+    CPPPATH = [
+        '#libtar',
+        '#libxz',
+    ],
 )
 
 bootloader = env.Program(
