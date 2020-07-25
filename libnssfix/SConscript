@@ -28,6 +28,13 @@ libnssfix = env.SharedLibrary(
     source = [
         'nssfix.c',
     ],
+    CCFLAGS = env.get('CCFLAGS', []) + [
+        # Ubuntu sets -fstack-protector-strong by default:
+        # https://wiki.ubuntu.com/ToolChain/CompilerFlags
+        # This emits calls to __stack_chk_fail which could hurt our libc
+        # compatibility, so we turn it off.
+        '-fno-stack-protector',
+    ],
     CPPFLAGS = env.get('CPPFLAGS', []) + [
         # Ubuntu sets -D_FORTIFY_SOURCE=2 by default:
         # https://wiki.ubuntu.com/ToolChain/CompilerFlags
