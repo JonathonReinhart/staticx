@@ -1,6 +1,6 @@
 env = Environment(
     BUILD_DIR = '#build',
-    CCFLAGS = ['-Wall', '-Werror'],
+    CCFLAGS = ['-Wall', '-Werror', '-Wwrite-strings'],
 )
 
 env.SConscript(
