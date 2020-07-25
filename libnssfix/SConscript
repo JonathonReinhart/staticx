@@ -16,6 +16,7 @@ libc_stub = env.ShlibStubGen(
         '__nss_configure_lookup',
         'stderr',
         'strchr',
+        'strcmp',
         'strdup',
         'strlen',
         'unsetenv',

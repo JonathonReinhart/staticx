@@ -216,9 +216,14 @@ static bool should_reinject_into(const char *path)
     // If this variable is set, nssfix will re-inject itself into any
     // programs whose executables start with the given prefix.
     const char *prefix = getenv("NSSFIX_REINJECT_PATH_PREFIX");
-    if (prefix) {
-        return starts_with(path, prefix);
-    }
+    if (prefix && starts_with(path, prefix))
+        return true;
+
+    // If a program is re-execing itself via /proc/self/exe, reinject.
+    // We look for this symlink specifically, to avoid calling readlink() here.
+    if (strcmp(path, "/proc/self/exe") == 0)
+        return true;
+
     return false;
 }
 
