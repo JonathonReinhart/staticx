@@ -1,6 +1,7 @@
 Import('env')
 
 env.Tool('stubgen')
+env.Tool('nsswitchconf')
 
 # Build a stub libc to avoid symbol versioning information
 libc_stub = env.ShlibStubGen(
@@ -12,10 +13,23 @@ libc_stub = env.ShlibStubGen(
     ],
 )
 
+incgen = env.Dir('incgen')
+
+nsswitch_conf = "nsswitch.conf"
+
+env.NsswitchConfH(
+    target = incgen.File('nsswitch_conf.h'),
+    source = nsswitch_conf,
+)
+
+# Build libnssfix.so
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
     source = [
         'nssfix.c',
+    ],
+    CPPPATH = env.get('CPPPATH', []) + [
+        incgen,
     ],
     CPPFLAGS = env.get('CPPFLAGS', []) + [
         # Ubuntu sets -D_FORTIFY_SOURCE=2 by default:
@@ -40,8 +54,7 @@ libnssfix = env.SharedLibrary(
         # These aren't needed directly for the library itself, but this ensures
         # that they will be available for nss at runtime (via dlopen), and
         # allows their paths to be easily discovered via ldd(1).
-        'nss_files',
-        'nss_dns',
+        env.GetNsswitchLibs(nsswitch_conf),
     ],
 )
 

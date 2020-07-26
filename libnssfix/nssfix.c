@@ -13,25 +13,10 @@ struct dbspec {
     const char *dbname;
     const char *service_line;
 };
-#define DBSVC(name, line)   { .dbname = #name, .service_line = line, }
-#define DBFILES(name)       DBSVC(name, "files")
 
+#define NSSWITCH_CONF(name, svcline) { .dbname = name, .service_line = svcline, },
 static struct dbspec m_dbspecs[] = {
-    // https://github.com/bminor/glibc/blob/glibc-2.31/nss/databases.def
-    DBFILES(aliases),
-    DBFILES(ethers),
-    DBFILES(group),
-    DBFILES(gshadow),
-    DBSVC(hosts, "files dns"),
-    DBFILES(initgroups),
-    DBFILES(netgroup),
-    DBFILES(networks),
-    DBFILES(passwd),
-    DBFILES(protocols),
-    DBFILES(publickey),
-    DBFILES(rpc),
-    DBFILES(services),
-    DBFILES(shadow),
+#include "nsswitch_conf.h"
 };
 
 /**
