@@ -16,7 +16,7 @@ def process_pyinstaller_archive(ctx):
 
     # Attempt to open the program as PyInstaller archive
     try:
-        pyi_ar = CArchiveReader(ctx.program)
+        pyi_ar = CArchiveReader(ctx.orig_prog)
     except:
         # Silence all PyInstaller exceptions here
         return
