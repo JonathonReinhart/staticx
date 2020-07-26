@@ -102,7 +102,7 @@ class SxArchive(object):
         # Store a link to the program so the bootloader knows what to execute
         self.add_symlink(PROG_FILENAME, name)
 
-    def add_library(self, path):
+    def add_library(self, path, exist_ok=False):
         """Add a library to the archive
 
         The library will be added with its base name.
@@ -110,6 +110,8 @@ class SxArchive(object):
         """
 
         if basename(path) in self._added_libs:
+            if exist_ok:
+                return
             raise LibExistsError(basename(path))
 
         # 'recursively' step through any symbolic links, generating local links inside the archive
