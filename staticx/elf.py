@@ -10,6 +10,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 
 from .errors import *
+from .utils import coerce_sequence
 
 class ExternTool(object):
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
@@ -183,7 +184,7 @@ def elf_dump_section(elfpath, secname, outpath):
 
 
 
-def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False):
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False, add_needed=None):
     args = []
     if interpreter:
         args += ['--set-interpreter', interpreter]
@@ -191,6 +192,9 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
         args += ['--set-rpath', rpath]
     if force_rpath:
         args.append('--force-rpath')
+    if add_needed:
+        for lib in coerce_sequence(add_needed):
+            args += ['--add-needed', lib]
     args.append(path)
 
     tool_patchelf.run_check(*args)
