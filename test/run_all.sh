@@ -20,3 +20,6 @@ pyinstall-aux-static-exec/run_test.sh
 
 # Verify that target system libs can't be loaded
 no-default-lib/run_test.sh
+
+# Run test against broken NSS
+nss-isolated/run_test.sh

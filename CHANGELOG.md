@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Improved tar extraction to minimize number of write() calls ([#131])
 - Set NODEFLIB flag to prevent any libraries from the target system
   from being loaded ([#138])
+- "nssfix" is used to prevent target system `/etc/nssswitch.conf` from being
+  used which would attempt to load system `libnss_*.so` libraries ([#139])
 
 ### Fixed
 - Bundled applications retain their original name ([#135])

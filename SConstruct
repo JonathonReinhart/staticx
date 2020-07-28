@@ -1,4 +1,7 @@
+from __future__ import print_function
 import os
+
+from conftest import custom_tests
 
 # Set up base environment
 base_env = Environment(
@@ -46,6 +49,11 @@ def BuildSubdir(env, dirname):
 base_env.AddMethod(BuildSubdir)
 
 
+conf = base_env.Configure(custom_tests=custom_tests)
+has_nss = conf.CheckNSS()
+conf.Finish()
+
+
 ################################################################################
 # Bootloader
 bootloader_env = base_env.Clone()
@@ -57,3 +65,12 @@ for env in bootloader_env.ModeEnvs():
     env.Install('$LIBDIR', env.BuildSubdir('libtar'))
     env.Install('$LIBDIR', env.BuildSubdir('libxz'))
     env.InstallAs('#staticx/assets/$MODE/bootloader', env.BuildSubdir('bootloader'))
+
+
+################################################################################
+# nssfix
+if has_nss:
+    for env in base_env.ModeEnvs():
+        env.InstallAs('#staticx/assets/$MODE/libnssfix.so', env.BuildSubdir('libnssfix'))
+else:
+    print("WARNING: NSS not available; staticx will not include nssfix for GLIBC programs!")

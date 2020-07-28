@@ -1,6 +1,7 @@
 import os
 import errno
 import shutil
+from collections.abc import Iterable
 from tempfile import NamedTemporaryFile
 from .errors import *
 
@@ -41,4 +42,14 @@ def copy_fileobj_to_tempfile(fsrc, **kwargs):
     fdst = NamedTemporaryFile(**kwargs)
     shutil.copyfileobj(fsrc, fdst)
     fdst.flush()
+    fdst.seek(0)
     return fdst
+
+def is_iterable(x):
+    """Returns true if x is iterable but not a string"""
+    return isinstance(x, Iterable) and not isinstance(x, str)
+
+def coerce_sequence(x, t=list):
+    if not is_iterable(x):
+        x = [x]
+    return t(x)

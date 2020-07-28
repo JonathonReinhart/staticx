@@ -1,0 +1,11 @@
+env = Environment(
+    BUILD_DIR = '#build',
+    CCFLAGS = ['-Wall', '-Werror'],
+)
+
+env.SConscript(
+    'SConscript',
+    variant_dir = '$BUILD_DIR',
+    duplicate = False,
+    exports = dict(env = env),
+)

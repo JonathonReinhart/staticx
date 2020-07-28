@@ -1,0 +1,61 @@
+Import('env')
+
+env.Tool('stubgen')
+env.Tool('nsswitchconf')
+
+# Build a stub libc to avoid symbol versioning information
+libc_stub = env.ShlibStubGen(
+    target = 'libc.so.6',
+    symbols = [
+        'fprintf',
+        '__nss_configure_lookup',
+        'stderr',
+    ],
+)
+
+incgen = env.Dir('incgen')
+
+nsswitch_conf = "nsswitch.conf"
+
+env.NsswitchConfH(
+    target = incgen.File('nsswitch_conf.h'),
+    source = nsswitch_conf,
+)
+
+# Build libnssfix.so
+libnssfix = env.SharedLibrary(
+    target = 'nssfix',
+    source = [
+        'nssfix.c',
+    ],
+    CPPPATH = env.get('CPPPATH', []) + [
+        incgen,
+    ],
+    CPPFLAGS = env.get('CPPFLAGS', []) + [
+        # Ubuntu sets -D_FORTIFY_SOURCE=2 by default:
+        # https://wiki.ubuntu.com/ToolChain/CompilerFlags
+        # This turns fprintf() into __fprintf_chk() which could hurt our libc
+        # compatibility, so we turn it off. Those docs say we should be able
+        # to define it to 0, but GCC doesn't like it:
+        # <command-line>:0:0: error: "_FORTIFY_SOURCE" redefined
+        '-U_FORTIFY_SOURCE',
+    ],
+    LINKFLAGS = env.get('LINKFLAGS', []) + [
+        # Ubuntu sets -Wl,--as-needed by default.
+        # But we want to force linkage of libnss*
+        '-Wl,--no-as-needed',
+
+        '-nostdlib',            # Force use of stub
+        '-Wl,--no-undefined',   # Detect missing symbols in stub
+    ],
+    LIBS = [
+        libc_stub,
+
+        # These aren't needed directly for the library itself, but this ensures
+        # that they will be available for nss at runtime (via dlopen), and
+        # allows their paths to be easily discovered via ldd(1).
+        env.GetNsswitchLibs(nsswitch_conf),
+    ],
+)
+
+Return('libnssfix')

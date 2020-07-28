@@ -10,6 +10,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 
 from .errors import *
+from .utils import coerce_sequence
 
 class ExternTool(object):
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
@@ -183,7 +184,7 @@ def elf_dump_section(elfpath, secname, outpath):
 
 
 
-def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False):
+def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_lib=False, add_needed=None):
     args = []
     if interpreter:
         args += ['--set-interpreter', interpreter]
@@ -191,6 +192,9 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
         args += ['--set-rpath', rpath]
     if force_rpath:
         args.append('--force-rpath')
+    if add_needed:
+        for lib in coerce_sequence(add_needed):
+            args += ['--add-needed', lib]
     args.append(path)
 
     tool_patchelf.run_check(*args)
@@ -227,19 +231,26 @@ class ELFCloser(object):
     def __exit__(self, *exc_info):
         self.f.close()
 
-def _open_elf(path, mode='rb'):
+def open_elf(path, mode='rb'):
     try:
         return ELFCloser(path, mode)
     except ELFError as e:
         raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
 
 
+def get_section(elf, sectype):
+    for sec in elf.iter_sections():
+        if isinstance(sec, sectype):
+            return sec
+    return KeyError("Can't find section of type {}".format(sectype))
+
+
 def get_machine(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         return elf['e_machine']
 
 def get_prog_interp(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         for seg in elf.iter_segments():
             # Amazingly, this is slightly faster than
             # if isinstance(seg, InterpSegment):
@@ -253,7 +264,7 @@ def get_prog_interp(path):
 
 
 def is_dynamic(path):
-    with _open_elf(path) as elf:
+    with open_elf(path) as elf:
         for seg in elf.iter_segments():
             if seg['p_type'] == 'PT_DYNAMIC':
                 # seg is an instance of DynamicSegment
