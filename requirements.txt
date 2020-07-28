@@ -1,6 +1,9 @@
 # These requirements are in addition to install_requires from setup.py
 # and are only used for development and testing.
 patchelf-wrapper
+
+# PyInstaller does not yet support Python 3.8
+# https://github.com/pyinstaller/pyinstaller/issues/4311
 pyinstaller; (python_version <= '3.7')
 
 # https://github.com/pypa/setuptools/issues/1963
