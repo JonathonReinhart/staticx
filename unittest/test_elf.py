@@ -1,5 +1,44 @@
 #!/usr/bin/env python3
+import pytest
+import os
+from tempfile import NamedTemporaryFile
 from staticx import elf
+from staticx.errors import MissingToolError
+from staticx.utils import make_executable
+
+
+class TestExternTool:
+    def test_nonexist(self):
+        tool_bs = elf.ExternTool('madeupthing1738', 'bs')
+        with pytest.raises(MissingToolError):
+            tool_bs.run_check()
+
+    def test_basic(self):
+        tool_true = elf.ExternTool('true', 'na')
+        tool_true.run_check()
+
+    def test_strderr_ignore(self, capfd):
+        # https://docs.pytest.org/en/stable/capture.html#accessing-captured-output-from-a-test-function
+        with NamedTemporaryFile('w', suffix='.sh', delete=False) as f:
+            f.write('#!/bin/bash\n')
+            f.write('echoerr() { echo "$@" 1>&2; }\n')
+            f.write('echoerr one\n')
+            f.write('echoerr two\n')
+            f.write('echoerr three\n')
+
+        try:
+            make_executable(f.name)
+            tool_foo = elf.ExternTool(f.name, 'na',
+                    stderr_ignore = [
+                        'two',
+                    ])
+            tool_foo.run()
+        finally:
+            os.remove(f.name)
+
+        captured = capfd.readouterr()
+        assert captured.err == 'one\nthree\n'
+
 
 class TestLdd:
     def _test(self, output, exp):
