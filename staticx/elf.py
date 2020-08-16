@@ -37,10 +37,8 @@ class ExternTool(object):
         logging.debug("Running " + str(args))
         try:
             return subprocess.Popen(args, **kw)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                raise MissingToolError(self.cmd, self.os_pkg)
-            raise
+        except FileNotFoundError:
+            raise MissingToolError(self.cmd, self.os_pkg)
 
 
     def run(self, *args, **kw):
