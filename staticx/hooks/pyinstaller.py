@@ -27,8 +27,7 @@ def process_pyinstaller_archive(ctx):
 
 
 
-class PyInstallHook(object):
-
+class PyInstallHook:
     def __init__(self, sx_archive, pyi_archive):
         self.sx_ar = sx_archive
         self.pyi_ar = pyi_archive

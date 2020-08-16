@@ -12,13 +12,11 @@ from elftools.common.exceptions import ELFError
 from .errors import *
 from .utils import coerce_sequence
 
-class ExternTool(object):
-    def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
+class ExternTool:
+    def __init__(self, cmd, os_pkg, stderr_ignore=[]):
         self.cmd = cmd
         self.os_pkg = os_pkg
-        self.capture_stdout = True
         self.stderr_ignore = stderr_ignore
-        self.encoding = encoding
 
     def __should_ignore(self, line):
         for ignore in self.stderr_ignore:
@@ -26,37 +24,33 @@ class ExternTool(object):
                 return True
         return False
 
-    def popen(self, *args, **kw):
+    def run(self, *args, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
-        kw['stderr'] = subprocess.PIPE
-        if self.capture_stdout:
-            kw['stdout'] = subprocess.PIPE
-
         logging.debug("Running " + str(args))
         try:
-            return subprocess.Popen(args, **kw)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                raise MissingToolError(self.cmd, self.os_pkg)
-            raise
+            r = subprocess.run(
+                args = args,
 
+                #text = True,                   # TODO: Python 3.7
+                universal_newlines = True,
 
-    def run(self, *args, **kw):
-        p = self.popen(*args, **kw)
+                #capture_output = True,         # TODO: Python 3.7
+                stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE,
 
-        stdout, stderr = p.communicate()
-        stdout = stdout.decode(self.encoding)
-        stderr = stderr.decode(self.encoding)
+                **kw)
+        except FileNotFoundError:
+            raise MissingToolError(self.cmd, self.os_pkg)
 
         # Hide ignored lines from stderr
-        for line in stderr.splitlines(True):
+        for line in r.stderr.splitlines(True):
             if self.__should_ignore(line):
                 continue
             sys.stderr.write(line)
 
-        return p.returncode, stdout
+        return r.returncode, r.stdout
 
 
     def run_check(self, *args, **kw):
@@ -80,7 +74,7 @@ tool_strip      = ExternTool('strip', 'binutils')
 
 class LddError(ToolError):
     def __init__(self, message):
-        super(LddError, self).__init__('ldd', message)
+        super().__init__('ldd', message)
 
 
 def _parse_ldd_output(output):
@@ -217,10 +211,10 @@ class StaticELFError(Error):
     """Dynamic operation requested on static executable"""
     def __init__(self, path):
         message = "{} is a static ELF file".format(path)
-        super(StaticELFError, self).__init__(message)
+        super().__init__(message)
 
 
-class ELFCloser(object):
+class ELFCloser:
     def __init__(self, path, mode):
         self.f = open(path, mode)
         self.elf = ELFFile(self.f)
