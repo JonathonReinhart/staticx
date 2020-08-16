@@ -13,12 +13,10 @@ from .errors import *
 from .utils import coerce_sequence
 
 class ExternTool:
-    def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
+    def __init__(self, cmd, os_pkg, stderr_ignore=[]):
         self.cmd = cmd
         self.os_pkg = os_pkg
-        self.capture_stdout = True
         self.stderr_ignore = stderr_ignore
-        self.encoding = encoding
 
     def __should_ignore(self, line):
         for ignore in self.stderr_ignore:
@@ -26,35 +24,33 @@ class ExternTool:
                 return True
         return False
 
-    def popen(self, *args, **kw):
+    def run(self, *args, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
-        kw['stderr'] = subprocess.PIPE
-        if self.capture_stdout:
-            kw['stdout'] = subprocess.PIPE
-
         logging.debug("Running " + str(args))
         try:
-            return subprocess.Popen(args, **kw)
+            r = subprocess.run(
+                args = args,
+
+                #text = True,                   # TODO: Python 3.7
+                universal_newlines = True,
+
+                #capture_output = True,         # TODO: Python 3.7
+                stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE,
+
+                **kw)
         except FileNotFoundError:
             raise MissingToolError(self.cmd, self.os_pkg)
 
-
-    def run(self, *args, **kw):
-        p = self.popen(*args, **kw)
-
-        stdout, stderr = p.communicate()
-        stdout = stdout.decode(self.encoding)
-        stderr = stderr.decode(self.encoding)
-
         # Hide ignored lines from stderr
-        for line in stderr.splitlines(True):
+        for line in r.stderr.splitlines(True):
             if self.__should_ignore(line):
                 continue
             sys.stderr.write(line)
 
-        return p.returncode, stdout
+        return r.returncode, r.stdout
 
 
     def run_check(self, *args, **kw):
