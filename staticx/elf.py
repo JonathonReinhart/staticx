@@ -12,7 +12,7 @@ from elftools.common.exceptions import ELFError
 from .errors import *
 from .utils import coerce_sequence
 
-class ExternTool(object):
+class ExternTool:
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding='utf-8'):
         self.cmd = cmd
         self.os_pkg = os_pkg
@@ -218,7 +218,7 @@ class StaticELFError(Error):
         super().__init__(message)
 
 
-class ELFCloser(object):
+class ELFCloser:
     def __init__(self, path, mode):
         self.f = open(path, mode)
         self.elf = ELFFile(self.f)

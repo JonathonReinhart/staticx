@@ -34,7 +34,7 @@ def get_xz_filters():
     filters.append(dict(id=lzma.FILTER_LZMA2))
     return filters
 
-class SxArchive(object):
+class SxArchive:
     def __init__(self, fileobj, mode, compress):
         self.xzf = None
 
