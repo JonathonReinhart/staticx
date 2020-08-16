@@ -80,7 +80,7 @@ tool_strip      = ExternTool('strip', 'binutils')
 
 class LddError(ToolError):
     def __init__(self, message):
-        super(LddError, self).__init__('ldd', message)
+        super().__init__('ldd', message)
 
 
 def _parse_ldd_output(output):
@@ -217,7 +217,7 @@ class StaticELFError(Error):
     """Dynamic operation requested on static executable"""
     def __init__(self, path):
         message = "{} is a static ELF file".format(path)
-        super(StaticELFError, self).__init__(message)
+        super().__init__(message)
 
 
 class ELFCloser(object):
