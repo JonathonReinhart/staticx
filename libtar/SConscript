@@ -2,9 +2,6 @@ Import('env')
 
 env.Append(
     CPPPATH = ['compat'],
-    CPPDEFINES = {
-        'PACKAGE_VERSION': '\\"1.2.20\\"',
-    }
 )
 
 # We don't want libtar DEBUG

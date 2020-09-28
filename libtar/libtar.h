@@ -92,8 +92,6 @@ TAR;
 /* this is obsolete - it's here for backwards-compatibility only */
 #define TAR_IGNORE_MAGIC	0
 
-extern const char libtar_version[];
-
 
 /* make a tarfile handle */
 TAR *tar_new(void *context, tartype_t *type, int options);
@@ -193,13 +191,6 @@ int th_signed_crc_calc(const TAR *t);
 
 /* string-octal to integer conversion */
 int oct_to_int(const char *oct);
-
-/* integer to NULL-terminated string-octal conversion */
-#define int_to_oct(num, oct, octlen) \
-	snprintf((oct), (octlen), "%*lo ", (octlen) - 2, (unsigned long)(num))
-
-/* integer to string-octal conversion, no NULL */
-void int_to_oct_nonull(int num, char *oct, size_t octlen);
 
 
 #ifdef __cplusplus
