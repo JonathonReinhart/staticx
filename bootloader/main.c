@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -160,7 +162,8 @@ dyn_done:
         error(2, 0, "RPATH outside of dynamic strtab!");
     char *rpath = ptr_add(dynstrtab, dt_rpath->d_un.d_val);
 
-    debug_printf("Current RPATH (0x%lX): \"%s\"\n", dt_rpath->d_un.d_val,
+    debug_printf("Current RPATH (0x%"PRIXPTR"): \"%s\"\n",
+            (uintptr_t)dt_rpath->d_un.d_val,
             fmt_str_rep(rpath));
 
     /* Set new RPATH */
