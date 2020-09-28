@@ -196,9 +196,6 @@ int oct_to_int(const char *oct);
 #define int_to_oct(num, oct, octlen) \
 	snprintf((oct), (octlen), "%*lo ", (octlen) - 2, (unsigned long)(num))
 
-/* integer to string-octal conversion, no NULL */
-void int_to_oct_nonull(int num, char *oct, size_t octlen);
-
 
 #ifdef __cplusplus
 }
