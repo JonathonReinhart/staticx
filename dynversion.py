@@ -13,3 +13,6 @@ def get_dynamic_version():
         return '{}.{}'.format(staticx.version.BASE_VERSION, build_num)
 
     return staticx.version.__version__
+
+if __name__ == '__main__':
+    print(get_dynamic_version())
