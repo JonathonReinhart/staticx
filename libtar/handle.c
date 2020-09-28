@@ -18,8 +18,6 @@
 #include "libtar.h"
 
 
-const char libtar_version[] = PACKAGE_VERSION;
-
 TAR *
 tar_new(void *context, tartype_t *type, int options)
 {

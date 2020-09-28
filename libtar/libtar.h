@@ -92,8 +92,6 @@ TAR;
 /* this is obsolete - it's here for backwards-compatibility only */
 #define TAR_IGNORE_MAGIC	0
 
-extern const char libtar_version[];
-
 
 /* make a tarfile handle */
 TAR *tar_new(void *context, tartype_t *type, int options);
