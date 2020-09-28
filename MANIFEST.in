@@ -3,5 +3,6 @@ graft libtar
 graft libxz
 graft libnssfix
 include SConstruct
+include dynversion.py
 graft site_scons
 global-exclude *.py[cod]
