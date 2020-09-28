@@ -29,7 +29,7 @@ fi
 
 # Run the application normally
 echo -e "\nPython app run normally:"
-python app.py
+python3 app.py
 
 # Build a PyInstaller "onefile" application
 echo -e "\nBuilding PyInstaller 'one-file' application:"
