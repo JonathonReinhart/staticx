@@ -192,10 +192,6 @@ int th_signed_crc_calc(const TAR *t);
 /* string-octal to integer conversion */
 int oct_to_int(const char *oct);
 
-/* integer to NULL-terminated string-octal conversion */
-#define int_to_oct(num, oct, octlen) \
-	snprintf((oct), (octlen), "%*lo ", (octlen) - 2, (unsigned long)(num))
-
 
 #ifdef __cplusplus
 }
