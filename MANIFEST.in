@@ -1,4 +1,7 @@
 graft bootloader
 graft libtar
 graft libxz
+graft libnssfix
 include SConstruct
+graft site_scons
+global-exclude *.py[cod]
