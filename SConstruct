@@ -3,6 +3,11 @@ import os
 
 from conftest import custom_tests
 
+def _get_sx_version():
+    import subprocess
+    args = ['python3', 'dynversion.py']
+    return subprocess.check_output(args).strip()
+
 # Set up base environment
 base_env = Environment(
     CCFLAGS = [
@@ -13,7 +18,11 @@ base_env = Environment(
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
     LIBDIR = '$BUILD_DIR/lib',
-    LIBPATH = '$LIBDIR'
+    LIBPATH = '$LIBDIR',
+    STATICX_VERSION = _get_sx_version(),
+    CPPDEFINES = dict(
+        STATICX_VERSION = '\\"$STATICX_VERSION\\"',
+    ),
 )
 
 def get_anywhere(env, what, default=None):
