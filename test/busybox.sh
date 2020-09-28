@@ -5,9 +5,9 @@ outfile=./busybox.staticx
 cd "$(dirname "${BASH_SOURCE[0]}")"
 echo -e "\n\nTest StaticX against 'busybox'"
 
-infile=$(which busybox)
+infile=$(which busybox || echo "")
 
-if [ ! -x $infile ]; then
+if [[ -z $infile || ! -x $infile ]]; then
     echo "Busybox not installed... skipping."
     exit 0
 fi
