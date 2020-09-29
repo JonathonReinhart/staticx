@@ -2,6 +2,21 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.12.0] - 2020-09-29
+### Added
+- Added support for native 32-bit builds of bootloader ([#149])
+
+### Changed
+- Binary wheels now identify as `manylinux1_x86_64` ([#151])
+
+### Fixed
+- Source distributions build correctly again ([#153], [#157])
+
+### Removed
+- Removed more Python 2.7 compatibility cruft ([#142], [#146], [#148])
+- Removed additional unnecessary elements of libtar ([#154])
+
+
 ## [0.11.0] - 2020-07-27
 ### Changed
 - Improved tar extraction to minimize number of write() calls ([#131])
@@ -133,7 +148,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/JonathonReinhart/staticx/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/JonathonReinhart/staticx/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/JonathonReinhart/staticx/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/JonathonReinhart/staticx/compare/v0.9.0...v0.9.1
@@ -186,3 +202,11 @@ Initial release
 [#131]: https://github.com/JonathonReinhart/staticx/pull/131
 [#135]: https://github.com/JonathonReinhart/staticx/pull/135
 [#138]: https://github.com/JonathonReinhart/staticx/pull/138
+[#142]: https://github.com/JonathonReinhart/staticx/pull/142
+[#146]: https://github.com/JonathonReinhart/staticx/pull/146
+[#148]: https://github.com/JonathonReinhart/staticx/pull/148
+[#149]: https://github.com/JonathonReinhart/staticx/pull/149
+[#151]: https://github.com/JonathonReinhart/staticx/pull/151
+[#153]: https://github.com/JonathonReinhart/staticx/pull/153
+[#154]: https://github.com/JonathonReinhart/staticx/pull/154
+[#157]: https://github.com/JonathonReinhart/staticx/pull/157
