@@ -3,6 +3,9 @@ import os
 
 from conftest import custom_tests
 
+def quote(s, q='"'):
+    return q + s + q
+
 # Set up base environment
 base_env = Environment(
     CCFLAGS = [
@@ -13,10 +16,14 @@ base_env = Environment(
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
     LIBDIR = '$BUILD_DIR/lib',
-    LIBPATH = '$LIBDIR'
+    LIBPATH = '$LIBDIR',
+    STATICX_VERSION = ARGUMENTS.get('STATICX_VERSION', '<unknown>'),
+    CPPDEFINES = dict(
+        STATICX_VERSION = quote(quote('$STATICX_VERSION', '"'), "'"),
+    ),
 )
 
-def get_anywhere(env, what, default=None):
+def get_anywhere(what, default=None):
     return ARGUMENTS.get(what) or os.environ.get(what) or default
 
 def tool_debug(env):
@@ -57,7 +64,7 @@ conf.Finish()
 ################################################################################
 # Bootloader
 bootloader_env = base_env.Clone()
-cc = get_anywhere(bootloader_env, 'BOOTLOADER_CC')
+cc = get_anywhere('BOOTLOADER_CC')
 if cc:
     bootloader_env['CC'] = cc
 

@@ -7,7 +7,21 @@ import os
 import sys
 from subprocess import check_call
 
-from dynversion import get_dynamic_version
+
+################################################################################
+# Dynamic versioning
+
+def get_dynamic_version():
+    import staticx.version
+
+    # Travis builds
+    # If we're not building for a tag, then append the build number
+    build_num = os.getenv('TRAVIS_BUILD_NUMBER')
+    build_tag = os.getenv('TRAVIS_TAG')
+    if (not build_tag) and (build_num != None):
+        return '{}.{}'.format(staticx.version.BASE_VERSION, build_num)
+
+    return staticx.version.__version__
 
 
 ################################################################################
@@ -23,7 +37,12 @@ class build_bootloader(Command):
         pass
 
     def run(self):
-        check_call(['scons', '-Q'])
+        args = [
+            'scons',
+            '-Q',       # Quiet output (except for build status)
+            'STATICX_VERSION={}'.format(get_dynamic_version()),
+        ]
+        check_call(args)
 
 
 class build_hook(build):
