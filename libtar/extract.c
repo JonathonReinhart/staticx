@@ -177,8 +177,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 {
 	mode_t mode;
 	size_t size;
-	uid_t uid;
-	gid_t gid;
 	int fdout = -1;
 	const char *filename;
 	size_t to_read;
@@ -200,19 +198,15 @@ tar_extract_regfile(TAR *t, const char *realname)
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
 	size = th_get_size(t);
-	uid = th_get_uid(t);
-	gid = th_get_gid(t);
 
 	(void)mode;
-	(void)uid;
-	(void)gid;
 
 	if (mkdirs_for(filename) == -1)
 		goto out;
 
 #ifdef DEBUG
-	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %zd bytes)\n",
-	       filename, mode, uid, gid, size);
+	printf("  ==> extracting: %s (mode %04o, %zd bytes)\n",
+	       filename, mode, size);
 #endif
 	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC
 #ifdef O_BINARY
@@ -226,26 +220,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 #endif
 		goto out;
 	}
-
-#if 0
-	/* change the owner.  (will only work if run as root) */
-	if (fchown(fdout, uid, gid) == -1 && errno != EPERM)
-	{
-#ifdef DEBUG
-		perror("fchown()");
-#endif
-		goto out;
-	}
-
-	/* make sure the mode isn't inheritted from a file we're overwriting */
-	if (fchmod(fdout, mode & 07777) == -1)
-	{
-#ifdef DEBUG
-		perror("fchmod()");
-#endif
-		goto out;
-	}
-#endif
 
 	/* extract the file */
 
