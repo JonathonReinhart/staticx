@@ -4,9 +4,11 @@ env.Append(
     CPPPATH = ['compat'],
 )
 
-# We don't want libtar DEBUG
 if 'DEBUG' in env['CPPDEFINES']:
+    # We don't want libtar DEBUG
     del env['CPPDEFINES']['DEBUG']
+else:
+    env['CPPDEFINES']['LIBTAR_NO_OUTPUT'] = 1
 
 libtar = env.StaticLibrary(
     target = 'tar',

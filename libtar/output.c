@@ -9,6 +9,7 @@
 **  Campus Information Technologies and Educational Services
 **  University of Illinois at Urbana-Champaign
 */
+#ifndef LIBTAR_NO_OUTPUT
 
 #include <stdio.h>
 #include <pwd.h>
@@ -98,4 +99,4 @@ th_print_long_ls(const TAR *t, FILE *f)
 	putc('\n', f);
 }
 
-
+#endif /* LIBTAR_NO_OUTPUT */

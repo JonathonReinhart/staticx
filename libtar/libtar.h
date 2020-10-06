@@ -172,7 +172,11 @@ int tar_extract_regfile(TAR *t, const char *realname);
 /***** output.c ************************************************************/
 
 /* print "ls -l"-like output for the file described by th */
+#ifdef LIBTAR_NO_OUTPUT
+static inline void th_print_long_ls(const TAR *t, FILE *f) { }
+#else /* LIBTAR_NO_OUTPUT */
 void th_print_long_ls(const TAR *t, FILE *f);
+#endif /* LIBTAR_NO_OUTPUT */
 
 
 /***** util.c *************************************************************/
