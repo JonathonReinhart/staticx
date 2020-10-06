@@ -38,6 +38,14 @@
 # define S_IALLUGO      (S_ISUID|S_ISGID|S_ISVTX|S_IRWXUGO)
 #endif
 
+static int tar_extract_dir(TAR *t, const char *realname);
+static int tar_extract_hardlink(TAR *t, const char *realname);
+static int tar_extract_symlink(TAR *t, const char *realname);
+static int tar_extract_chardev(TAR *t, const char *realname);
+static int tar_extract_blockdev(TAR *t, const char *realname);
+static int tar_extract_fifo(TAR *t, const char *realname);
+static int tar_extract_regfile(TAR *t, const char *realname);
+
 static int mkdirs_for(const char *filename)
 {
 	char *fndup;
@@ -181,7 +189,8 @@ static size_t align_up(size_t val, size_t align)
 }
 
 /* extract regular file */
-int
+/* for regfiles, we need to extract the content blocks as well */
+static int
 tar_extract_regfile(TAR *t, const char *realname)
 {
 	mode_t mode;
@@ -273,7 +282,7 @@ out:
 
 
 /* hardlink */
-int
+static int
 tar_extract_hardlink(TAR * t, const char *realname)
 {
 	const char *filename;
@@ -306,7 +315,7 @@ tar_extract_hardlink(TAR * t, const char *realname)
 
 
 /* symlink */
-int
+static int
 tar_extract_symlink(TAR *t, const char *realname)
 {
 	const char *filename;
@@ -341,7 +350,7 @@ tar_extract_symlink(TAR *t, const char *realname)
 
 
 /* character device */
-int
+static int
 tar_extract_chardev(TAR *t, const char *realname)
 {
 	mode_t mode;
@@ -380,7 +389,7 @@ tar_extract_chardev(TAR *t, const char *realname)
 
 
 /* block device */
-int
+static int
 tar_extract_blockdev(TAR *t, const char *realname)
 {
 	mode_t mode;
@@ -419,7 +428,7 @@ tar_extract_blockdev(TAR *t, const char *realname)
 
 
 /* directory */
-int
+static int
 tar_extract_dir(TAR *t, const char *realname)
 {
 	mode_t mode;
@@ -474,7 +483,7 @@ tar_extract_dir(TAR *t, const char *realname)
 
 
 /* FIFO */
-int
+static int
 tar_extract_fifo(TAR *t, const char *realname)
 {
 	mode_t mode;

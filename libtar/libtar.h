@@ -157,18 +157,6 @@ int tar_extract_all(TAR *t, const char *prefix);
 /* sequentially extract next file from t */
 int tar_extract_file(TAR *t, const char *realname);
 
-/* extract different file types */
-int tar_extract_dir(TAR *t, const char *realname);
-int tar_extract_hardlink(TAR *t, const char *realname);
-int tar_extract_symlink(TAR *t, const char *realname);
-int tar_extract_chardev(TAR *t, const char *realname);
-int tar_extract_blockdev(TAR *t, const char *realname);
-int tar_extract_fifo(TAR *t, const char *realname);
-
-/* for regfiles, we need to extract the content blocks as well */
-int tar_extract_regfile(TAR *t, const char *realname);
-
-
 /***** output.c ************************************************************/
 
 /* print "ls -l"-like output for the file described by th */
