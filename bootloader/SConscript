@@ -1,4 +1,6 @@
 import sys
+import staticx.constants as const
+from buildutils import cquote
 
 Import('env')
 
@@ -9,6 +11,9 @@ env.Append(
         '#libtar',
         '#libxz',
     ],
+    CPPDEFINES = {
+        n: cquote(getattr(const, n)) for n in dir(const) if not n.startswith('_')
+    },
 )
 
 bootloader = env.Program(

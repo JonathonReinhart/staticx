@@ -2,10 +2,6 @@
 #define BOOTLOADER_COMMON_H
 #include <stdint.h>
 
-#define ARCHIVE_SECTION         ".staticx.archive"
-#define INTERP_FILENAME         ".staticx.interp"
-#define PROG_FILENAME           ".staticx.prog"
-
 static inline void *
 ptr_add(void *p, size_t off)
 {

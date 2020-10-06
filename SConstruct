@@ -1,9 +1,12 @@
 from __future__ import print_function
 import os
+import sys
 
 from conftest import custom_tests
 from buildutils import cquote
 
+top_dir = Dir('.')
+sys.path.append(str(top_dir))
 
 # Set up base environment
 base_env = Environment(
