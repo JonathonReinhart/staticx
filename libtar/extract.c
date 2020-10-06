@@ -15,6 +15,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/sysmacros.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <utime.h>
@@ -27,6 +28,14 @@
 
 #ifndef MIN
 # define MIN(x, y)      (((x) < (y)) ? (x) : (y))
+#endif
+
+#ifndef S_IRWXUGO
+# define S_IRWXUGO      (S_IRWXU|S_IRWXG|S_IRWXO)
+#endif
+
+#ifndef S_IALLUGO
+# define S_IALLUGO      (S_ISUID|S_ISGID|S_ISVTX|S_IRWXUGO)
 #endif
 
 static int mkdirs_for(const char *filename)
@@ -196,10 +205,8 @@ tar_extract_regfile(TAR *t, const char *realname)
 	}
 
 	filename = (realname ? realname : th_get_pathname(t));
-	mode = th_get_mode(t);
+	mode = th_get_mode(t) & S_IALLUGO;
 	size = th_get_size(t);
-
-	(void)mode;
 
 	if (mkdirs_for(filename) == -1)
 		goto out;
@@ -208,7 +215,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	printf("  ==> extracting: %s (mode %04o, %zd bytes)\n",
 	       filename, mode, size);
 #endif
-	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
+	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, mode);
 	if (fdout == -1)
 	{
 #ifdef DEBUG
