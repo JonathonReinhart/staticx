@@ -82,6 +82,7 @@ class SxArchive:
     def add_fileobj(self, name, fileobj):
         logging.info("Adding {}".format(name))
         tarinfo = self.tar.gettarinfo(arcname=name, fileobj=fileobj)
+        tarinfo = tf_no_info(tarinfo)
         self.tar.addfile(tarinfo, fileobj)
 
     def add_program(self, path, name):
@@ -97,12 +98,13 @@ class SxArchive:
 
         Should only be called once. TODO: Enforce this.
         """
-        def make_exec(tarinfo):
-            tarinfo.mode = make_mode_executable(tarinfo.mode)
+        def _filt(tarinfo):
+            tarinfo = tf_make_exec(tarinfo)
+            tarinfo = tf_no_info(tarinfo)
             return tarinfo
 
         logging.info("Adding {} as {}".format(path, name))
-        self.tar.add(path, arcname=name, filter=make_exec)
+        self.tar.add(path, arcname=name, filter=_filt)
 
         # Store a link to the program so the bootloader knows what to execute
         self.add_symlink(PROG_FILENAME, name)
@@ -133,9 +135,23 @@ class SxArchive:
         # left with a real file at this point, add it to the archive.
         arcname = basename(linklib)
         logging.info("    Adding {} as {}".format(linklib, arcname))
-        self.tar.add(linklib, arcname=arcname)
+        self.tar.add(linklib, arcname=arcname, filter=tf_no_info)
         self._added_libs.append(arcname)
 
     def add_interp_symlink(self, interp):
         """Add symlink for ld.so interpreter"""
         self.add_symlink(INTERP_FILENAME, basename(interp))
+
+
+# Tar filters
+def tf_no_info(tarinfo):
+    tarinfo.uid = 0
+    tarinfo.gid = 0
+    tarinfo.uname = ""
+    tarinfo.gname = ""
+    tarinfo.mtime = 0
+    return tarinfo
+
+def tf_make_exec(tarinfo):
+    tarinfo.mode = make_mode_executable(tarinfo.mode)
+    return tarinfo
