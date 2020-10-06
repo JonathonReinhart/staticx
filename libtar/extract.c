@@ -208,11 +208,7 @@ tar_extract_regfile(TAR *t, const char *realname)
 	printf("  ==> extracting: %s (mode %04o, %zd bytes)\n",
 	       filename, mode, size);
 #endif
-	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC
-#ifdef O_BINARY
-		     | O_BINARY
-#endif
-		    , 0666);
+	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0666);
 	if (fdout == -1)
 	{
 #ifdef DEBUG
