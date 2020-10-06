@@ -2,9 +2,8 @@ from __future__ import print_function
 import os
 
 from conftest import custom_tests
+from buildutils import cquote
 
-def quote(s, q='"'):
-    return q + s + q
 
 # Set up base environment
 base_env = Environment(
@@ -19,7 +18,7 @@ base_env = Environment(
     LIBPATH = '$LIBDIR',
     STATICX_VERSION = ARGUMENTS.get('STATICX_VERSION', '<unknown>'),
     CPPDEFINES = dict(
-        STATICX_VERSION = quote(quote('$STATICX_VERSION', '"'), "'"),
+        STATICX_VERSION = cquote('$STATICX_VERSION'),
     ),
 )
 
