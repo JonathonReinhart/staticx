@@ -21,7 +21,7 @@ def ShlibStubGen(env, target, symbols):
     for sym in symbols:
         lines += [
             'void {}(void);'.format(sym),       # for strict prototypes
-            'void {}(void) {{}}'.format(sym),
+            'void __attribute__ ((visibility ("default"))) {}(void) {{}}'.format(sym),
             '',
         ]
 

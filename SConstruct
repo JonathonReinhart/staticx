@@ -13,9 +13,11 @@ base_env = Environment(
         '-Wall', '-Werror',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
         '-flto', '-fno-fat-lto-objects',
+        '-fvisibility=hidden',
     ],
     LINKFLAGS = [
         '-flto',
+        '-fvisibility=hidden',
     ],
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
