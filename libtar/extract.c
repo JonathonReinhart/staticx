@@ -66,6 +66,7 @@ static int mkdirs_for(const char *filename)
 static int
 tar_set_file_perms(TAR *t, const char *realname)
 {
+#ifndef LIBTAR_NO_SET_FILE_PERMS
 	mode_t mode;
 	uid_t uid;
 	gid_t gid;
@@ -80,6 +81,7 @@ tar_set_file_perms(TAR *t, const char *realname)
 
 	/* change owner/group */
 	if (geteuid() == 0)
+	{
 #ifdef HAVE_LCHOWN
 		if (lchown(filename, uid, gid) == -1)
 		{
@@ -87,6 +89,8 @@ tar_set_file_perms(TAR *t, const char *realname)
 			fprintf(stderr, "lchown(\"%s\", %d, %d): %s\n",
 				filename, uid, gid, strerror(errno));
 # endif
+			return -1;
+		}
 #else /* ! HAVE_LCHOWN */
 		if (!TH_ISSYM(t) && chown(filename, uid, gid) == -1)
 		{
@@ -94,9 +98,10 @@ tar_set_file_perms(TAR *t, const char *realname)
 			fprintf(stderr, "chown(\"%s\", %d, %d): %s\n",
 				filename, uid, gid, strerror(errno));
 # endif
-#endif /* HAVE_LCHOWN */
 			return -1;
 		}
+#endif /* HAVE_LCHOWN */
+	}
 
 	/* change access/modification time */
 	if (!TH_ISSYM(t) && utime(filename, &ut) == -1)
@@ -116,6 +121,7 @@ tar_set_file_perms(TAR *t, const char *realname)
 		return -1;
 	}
 
+#endif /* LIBTAR_NO_SET_FILE_PERMS */
 	return 0;
 }
 

@@ -2,6 +2,12 @@ Import('env')
 
 env.Append(
     CPPPATH = ['compat'],
+    CPPDEFINES = dict(
+        # Staticx cares only that extracted files have the correct
+        # permission bits, namely executable. It doesn't care about
+        # ownership or atime/mtime.
+        LIBTAR_NO_SET_FILE_PERMS=1,
+    ),
 )
 
 if 'DEBUG' in env['CPPDEFINES']:
