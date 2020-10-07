@@ -143,11 +143,6 @@ int th_read(TAR *t);
 #define th_get_linkname(t) ((t)->th_buf.gnu_longlink \
                             ? (t)->th_buf.gnu_longlink \
                             : (t)->th_buf.linkname)
-const char *th_get_pathname(const TAR *t);
-mode_t th_get_mode(const TAR *t);
-uid_t th_get_uid(const TAR *t);
-gid_t th_get_gid(const TAR *t);
-
 
 /***** extract.c ***********************************************************/
 
@@ -156,16 +151,6 @@ int tar_extract_all(TAR *t, const char *prefix);
 
 /* sequentially extract next file from t */
 int tar_extract_file(TAR *t, const char *realname);
-
-/***** output.c ************************************************************/
-
-/* print "ls -l"-like output for the file described by th */
-#ifdef LIBTAR_NO_OUTPUT
-static inline void th_print_long_ls(const TAR *t, FILE *f) { }
-#else /* LIBTAR_NO_OUTPUT */
-void th_print_long_ls(const TAR *t, FILE *f);
-#endif /* LIBTAR_NO_OUTPUT */
-
 
 /***** util.c *************************************************************/
 

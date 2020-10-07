@@ -20,10 +20,8 @@ libtar = env.StaticLibrary(
     target = 'tar',
     source = [
         'block.c',
-        'decode.c',
         'extract.c',
         'handle.c',
-        'output.c',
         'util.c',
         'compat/strlcpy.c',
         'compat/strmode.c',
