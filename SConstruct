@@ -12,6 +12,10 @@ base_env = Environment(
         '-std=gnu99',
         '-Wall', '-Werror',
         '-Wmissing-prototypes', '-Wstrict-prototypes',
+        '-flto', '-fno-fat-lto-objects',
+    ],
+    LINKFLAGS = [
+        '-flto',
     ],
     BUILD_ROOT = '#scons_build',
     BUILD_DIR = '$BUILD_ROOT/$MODE',
