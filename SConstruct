@@ -43,7 +43,7 @@ def tool_release(env):
     env['MODE'] = 'release'
     env.AppendUnique(
         CPPDEFINES = {'NDEBUG': 1},
-        CCFLAGS = ['-Os'],
+        CCFLAGS = ['-O2'],
     )
 
 def ModeEnvs(env):
