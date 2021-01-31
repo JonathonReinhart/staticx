@@ -46,6 +46,11 @@ def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, st
                 debug = debug,
                 )
 
+        # Make the program depend on all of the libraries added by hooks.
+        # This will ensure they those libaries are loaded, even in light
+        # of any RUNPATH on nested libs.
+        patch_elf(copied_prog, add_needed=ar.libraries)
+
         ar.add_program(copied_prog, basename(orig_prog))
         ar.add_interp_symlink(interp)
 

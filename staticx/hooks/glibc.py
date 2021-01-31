@@ -17,6 +17,7 @@ def process_glibc_prog(ctx):
         raise InternalError("GLIBC binary detected but libnssfix.so not available")
 
     # Make the user program depend on libnssfix.so
+    # TODO: Remove this
     patch_elf(ctx.copied_prog, add_needed=LIBNSSFIX)
 
     # Add libnssfix.so and its dependencies to the archive.
