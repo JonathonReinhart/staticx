@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.12.1] - 2021-02-06
+### Fixed
+- Fixed bug causing libnssfix to be built incorrectly under
+  SCons v4.1.0 ([#168])
+
+
 ## [0.12.0] - 2020-09-29
 ### Added
 - Added support for native 32-bit builds of bootloader ([#149])
@@ -148,7 +154,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/JonathonReinhart/staticx/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/JonathonReinhart/staticx/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/JonathonReinhart/staticx/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/JonathonReinhart/staticx/compare/v0.9.1...v0.10.0
@@ -210,3 +217,4 @@ Initial release
 [#153]: https://github.com/JonathonReinhart/staticx/pull/153
 [#154]: https://github.com/JonathonReinhart/staticx/pull/154
 [#157]: https://github.com/JonathonReinhart/staticx/pull/157
+[#168]: https://github.com/JonathonReinhart/staticx/pull/168
