@@ -37,7 +37,7 @@ def ShlibStubGen(env, target, symbols):
             '-fno-builtin',
         ],
         LINKFLAGS = env['LINKFLAGS'] + [
-            '-Wl,-soname=$_SHLIBSONAME',
+            '-Wl,-soname=${TARGET.name}',
             '-nostdlib',
         ],
         SHLIBSUFFIX='',
