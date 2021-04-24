@@ -194,6 +194,12 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
     if rpath:
         args += ['--set-rpath', rpath]
     if force_rpath:
+        # There is a bug in patchelf that requires --remove-rpath to be used
+        # first before --force-rpath is effective.
+        # https://github.com/NixOS/patchelf/issues/94
+        # This was fixed in v0.11 but that's newer than Debian Buster.
+        tool_patchelf.run_check('--remove-rpath', path)
+
         args.append('--force-rpath')
     if add_needed:
         for lib in coerce_sequence(add_needed):

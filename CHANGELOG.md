@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Worked around patchelf bug which caused `Couldn't find DT_RPATH tag`
+  error at runtime ([#175])
+
+
 ## [0.12.1] - 2021-02-06
 ### Fixed
 - Fixed bug causing libnssfix to be built incorrectly under
@@ -218,3 +224,4 @@ Initial release
 [#154]: https://github.com/JonathonReinhart/staticx/pull/154
 [#157]: https://github.com/JonathonReinhart/staticx/pull/157
 [#168]: https://github.com/JonathonReinhart/staticx/pull/168
+[#175]: https://github.com/JonathonReinhart/staticx/pull/175

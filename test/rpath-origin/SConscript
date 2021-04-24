@@ -1,5 +1,7 @@
 Import('env')
 
+# app --deps--> libfoo.so --deps--> libbar.so
+
 lib = env.SharedLibrary(
     target = 'bar',
     source = ['libbar.c'],
