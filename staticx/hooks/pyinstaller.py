@@ -88,6 +88,11 @@ class PyInstallHook:
         # Silence "you do not have execution permission" warning from ldd
         make_executable(lib)
 
+        self.sx.audit_library(lib)
+        # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
+        # here, because staticx is not about to to modify the library and
+        # re-pack the PyInstaller archive itself.
+
         # Try to get any dependencies of this file
         try:
             deps = get_shobj_deps(lib, libpath=[self.tmpdir.name])
