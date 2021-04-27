@@ -70,9 +70,18 @@ class SxArchive:
         return self
 
     def __exit__(self, *excinfo):
-        self.tar.close()
+        self.close()
+
+    def close(self):
+        # Don't touch self.fileobj here
+
+        if self.tar:
+            self.tar.close()
+            self.tar = None
+
         if self.xzf:
             self.xzf.close()
+            self.xzf = None
 
 
     @property
