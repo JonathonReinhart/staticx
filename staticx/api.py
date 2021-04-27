@@ -57,6 +57,9 @@ class StaticxGenerator:
         self.tmpprog = None
         self.tmpdir = None
 
+        f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
+        self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
+
 
     def __enter__(self):
         return self
@@ -78,15 +81,22 @@ class StaticxGenerator:
             shutil.rmtree(self.tmpdir)
             self.tmpdir = None
 
+        if self.sxar:
+            self.sxar.close()
+            self.sxar = None
 
-    def generate(self, output, libs=None):
+
+
+    def generate(self, output, extra_libs=None):
         """Generate a Staticx program
 
         Parameters:
         output: Path where output file is written
-        libs:   Extra libraries to include
+        extra_libs:   Extra libraries to include
         """
-        # TODO: Remove libs and use an add_library() method
+        # TODO: Remove extra_libs and use an add_library() method
+        if extra_libs is None:
+            extra_libs = []
 
         # Only allow generate() to be called once per instance.
         # In the future we might relax this, but YAGNI for now.
@@ -101,6 +111,7 @@ class StaticxGenerator:
 
         # First, learn things about the original program
         orig_interp = get_prog_interp(self.orig_prog)
+        logging.info("Program interpreter: " + orig_interp)
 
         # Now modify a copy of the user prog
         self.tmpprog = copy_to_tempfile(self.orig_prog, prefix='staticx-prog-', delete=False).name
@@ -113,10 +124,42 @@ class StaticxGenerator:
             strip_elf(self.tmpoutput)
 
 
-        # Starting from the bootloader, append archive
+        # Build the archive to be appended
         self.tmpdir = mkdtemp(prefix='staticx-archive-')
-        with self._generate_archive(orig_interp, libs) as ar:
-            elf_add_section(self.tmpoutput, ARCHIVE_SECTION, ar.name)
+        with self.sxar as ar:
+            run_hooks(
+                    archive = ar,
+                    orig_prog = self.orig_prog,
+                    copied_prog = self.tmpprog,
+                    debug = self.debug,
+                    )
+
+            ar.add_program(self.tmpprog, basename(self.orig_prog))
+            ar.add_interp_symlink(orig_interp)
+
+            # Add all of the libraries
+            for libpath in chain(get_shobj_deps(self.orig_prog), extra_libs):
+                if self.strip:
+                    # Copy the library to the temp dir before stripping
+                    tmplib = os.path.join(self.tmpdir, basename(libpath))
+                    logging.info("Copying {} to {}".format(libpath, tmplib))
+                    shutil.copy(libpath, tmplib)
+
+                    # Strip the library
+                    logging.info("Stripping binary {}".format(tmplib))
+                    strip_elf(tmplib)
+
+                    libpath = tmplib
+
+                # Add the library to the archive
+                ar.add_library(libpath, exist_ok=True)
+
+        # errr...
+        arf = self.sxar.fileobj
+        arf.flush()
+
+        # Starting from the bootloader, append archive
+        elf_add_section(self.tmpoutput, ARCHIVE_SECTION, arf.name)
 
         # Move the temporary output file to its final place
         move_file(self.tmpoutput, output)
@@ -140,55 +183,6 @@ class StaticxGenerator:
                   force_rpath=True, no_default_lib=True)
 
 
-    def _generate_archive(self, interp, extra_libs=None):
-        """ Generate a StaticX archive
-
-        Args:
-            interp: Original program interpreter
-            extra_libs: Additional libraries to add to the archive
-
-        Returns:
-            A handle to the created file object
-        """
-        logging.info("Program interpreter: " + interp)
-
-        if extra_libs is None:
-            extra_libs = []
-
-        f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-        with SxArchive(fileobj=f, mode='w', compress=self.compress) as ar:
-            run_hooks(
-                    archive = ar,
-                    orig_prog = self.orig_prog,
-                    copied_prog = self.tmpprog,
-                    debug = self.debug,
-                    )
-
-            ar.add_program(self.tmpprog, basename(self.orig_prog))
-            ar.add_interp_symlink(interp)
-
-            # Add all of the libraries
-            for libpath in chain(get_shobj_deps(self.orig_prog), extra_libs):
-                if self.strip:
-                    # Copy the library to the temp dir before stripping
-                    tmplib = os.path.join(self.tmpdir, basename(libpath))
-                    logging.info("Copying {} to {}".format(libpath, tmplib))
-                    shutil.copy(libpath, tmplib)
-
-                    # Strip the library
-                    logging.info("Stripping binary {}".format(tmplib))
-                    strip_elf(tmplib)
-
-                    libpath = tmplib
-
-                # Add the library to the archive
-                ar.add_library(libpath, exist_ok=True)
-
-
-        f.flush()
-        return f
-
-
 def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
 
@@ -206,4 +200,4 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
             debug=debug,
             )
     with gen:
-        gen.generate(output=output, libs=libs)
+        gen.generate(output=output, extra_libs=libs)
