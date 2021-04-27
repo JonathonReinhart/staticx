@@ -121,12 +121,7 @@ class StaticxGenerator:
         # Build the archive to be appended
         self.tmpdir = mkdtemp(prefix='staticx-archive-')
         with self.sxar as ar:
-            run_hooks(
-                    archive = ar,
-                    orig_prog = self.orig_prog,
-                    copied_prog = self.tmpprog,
-                    debug = self.debug,
-                    )
+            run_hooks(self)
 
             ar.add_program(self.tmpprog, basename(self.orig_prog))
             ar.add_interp_symlink(orig_interp)

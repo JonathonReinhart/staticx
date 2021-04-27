@@ -7,12 +7,6 @@ hooks = [
 ]
 
 
-class HookContext:
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-
-def run_hooks(**kw):
-    ctx = HookContext(**kw)
+def run_hooks(sx):
     for hook in hooks:
-        hook(ctx)
+        hook(sx)

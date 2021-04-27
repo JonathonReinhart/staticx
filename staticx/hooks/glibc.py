@@ -6,18 +6,18 @@ import logging
 
 LIBNSSFIX = 'libnssfix.so'
 
-def process_glibc_prog(ctx):
-    if not is_linked_against_glibc(ctx.orig_prog):
+def process_glibc_prog(sx):
+    if not is_linked_against_glibc(sx.orig_prog):
         return
 
     try:
-        nssfix = copy_asset_to_tempfile(LIBNSSFIX, debug=ctx.debug,
+        nssfix = copy_asset_to_tempfile(LIBNSSFIX, debug=sx.debug,
                 prefix='libnssfix-', suffix='.so')
     except KeyError:
         raise InternalError("GLIBC binary detected but libnssfix.so not available")
 
     # Make the user program depend on libnssfix.so
-    patch_elf(ctx.copied_prog, add_needed=LIBNSSFIX)
+    patch_elf(sx.tmpprog, add_needed=LIBNSSFIX)
 
     # Add libnssfix.so and its dependencies to the archive.
     # These include the configured libnss_*.so "service" libs and their
@@ -29,9 +29,10 @@ def process_glibc_prog(ctx):
     # operates on the *original* executable and not the copied/modified one,
     # so it doesn't see changes made here.
     with nssfix:
-        ctx.archive.add_fileobj(LIBNSSFIX, nssfix)
+        # TODO: Don't use sxar
+        sx.sxar.add_fileobj(LIBNSSFIX, nssfix)
         for libpath in get_shobj_deps(nssfix.name):
-            ctx.archive.add_library(libpath, exist_ok=True)
+            sx.add_library(libpath, exist_ok=True)
 
 
 def is_linked_against_glibc(prog):
