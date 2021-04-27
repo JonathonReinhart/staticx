@@ -139,20 +139,7 @@ class StaticxGenerator:
 
             # Add all of the libraries
             for libpath in chain(get_shobj_deps(self.orig_prog), extra_libs):
-                if self.strip:
-                    # Copy the library to the temp dir before stripping
-                    tmplib = os.path.join(self.tmpdir, basename(libpath))
-                    logging.info("Copying {} to {}".format(libpath, tmplib))
-                    shutil.copy(libpath, tmplib)
-
-                    # Strip the library
-                    logging.info("Stripping binary {}".format(tmplib))
-                    strip_elf(tmplib)
-
-                    libpath = tmplib
-
-                # Add the library to the archive
-                ar.add_library(libpath, exist_ok=True)
+                self.add_library(libpath, exist_ok=True)
 
         # errr...
         arf = self.sxar.fileobj
@@ -164,6 +151,29 @@ class StaticxGenerator:
         # Move the temporary output file to its final place
         move_file(self.tmpoutput, output)
         self.tmpoutput = None
+
+
+    def add_library(self, libpath, exist_ok=False):
+        libname = basename(libpath)
+        if libname in self.sxar.libraries:
+            if exist_ok:
+                return
+            raise LibExistsError(libname)
+
+        # Copy the library to the temp dir before stripping
+        tmplib = os.path.join(self.tmpdir, basename(libpath))
+        logging.info("Copying {} to {}".format(libpath, tmplib))
+        shutil.copy(libpath, tmplib)
+
+        if self.strip:
+            # Strip the library
+            logging.info("Stripping binary {}".format(tmplib))
+            strip_elf(tmplib)
+
+            libpath = tmplib
+
+        # Add the library to the archive
+        self.sxar.add_library(libpath, exist_ok=True)
 
 
     def _fixup_prog(self):
