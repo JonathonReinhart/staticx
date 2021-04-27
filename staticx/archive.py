@@ -36,6 +36,15 @@ def get_xz_filters():
 
 class SxArchive:
     def __init__(self, fileobj, mode, compress):
+        """Create a staticx archive
+
+        Parameters:
+        fileobj:    File object for the archive (not closed by this class)
+        mode:       Mode: 'r' (for reading) or 'w' (for writing)
+        compress:   Boolean: use xz compression or not
+        """
+        # Keep original fileobj arg for consumer convenience only, never closed
+        self.fileobj = fileobj
         self.xzf = None
 
         if compress:
