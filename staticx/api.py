@@ -86,6 +86,111 @@ def _check_bootloader_compat(bootloader, prog):
         raise FormatMismatchError("Bootloader machine ({}) doesn't match "
                 "program machine ({})".format(bldr_mach, prog_mach))
 
+class StaticxGenerator:
+    """StaticxGenerator is responsible for producing a staticx-ified executable.
+    """
+
+    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True):
+        """
+        Parameters:
+        prog:   Dynamic executable to staticx
+        debug:  Run in debug mode (use debug bootloader)
+        """
+        self.orig_prog = prog
+        self.strip = strip
+        self.compress = compress
+        self.debug = debug
+        self.cleanup = cleanup
+
+        self._generate_called = False
+
+        self.tmpoutput = None
+        self.tmpprog = None
+        self.tmpdir = None
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        if self.cleanup:
+            self._cleanup()
+
+    def _cleanup(self):
+        if self.tmpoutput:
+            os.remove(self.tmpoutput)
+            self.tmpoutput = None
+
+        if self.tmpprog:
+            os.remove(self.tmpprog)
+            self.tmpprog = None
+
+        if self.tmpdir:
+            shutil.rmtree(self.tmpdir)
+            self.tmpdir = None
+
+
+    def generate(self, output, libs=None):
+        """Generate a Staticx program
+
+        Parameters:
+        output: Path where output file is written
+        libs:   Extra libraries to include
+        """
+        # TODO: Remove libs and use an add_library() method
+
+        # Only allow generate() to be called once per instance.
+        # In the future we might relax this, but YAGNI for now.
+        if self._generate_called:
+            raise InternalError("generate() already called")
+        self._generate_called = True
+
+        # Work on a temp copy of the bootloader which becomes the output program
+        self.tmpoutput = _get_bootloader(self.debug)
+
+        _check_bootloader_compat(self.tmpoutput, self.orig_prog)
+
+        # First, learn things about the original program
+        orig_interp = get_prog_interp(self.orig_prog)
+
+        # Now modify a copy of the user prog
+        self.tmpprog = copy_to_tempfile(self.orig_prog, prefix='staticx-prog-', delete=False).name
+        self._fixup_prog()
+
+        if self.strip:
+            # TODO: Now that we have ship separate debug/release bootloaders
+            # do we ever want and need to do this at staticx-time?
+            logging.info("Stripping bootloader {}".format(self.tmpoutput))
+            strip_elf(self.tmpoutput)
+
+
+        # Starting from the bootloader, append archive
+        self.tmpdir = mkdtemp(prefix='staticx-archive-')
+        with generate_archive(self.orig_prog, self.tmpprog, orig_interp, self.tmpdir, libs,
+                strip=self.strip, compress=self.compress, debug=self.debug) as ar:
+            elf_add_section(self.tmpoutput, ARCHIVE_SECTION, ar.name)
+
+        # Move the temporary output file to its final place
+        move_file(self.tmpoutput, output)
+        self.tmpoutput = None
+
+
+    def _fixup_prog(self):
+        """Fixup our temporary copy of the user's program"""
+
+        # Strip user prog before modifying it
+        if self.strip:
+            logging.info("Stripping prog {}".format(self.tmpprog))
+            strip_elf(self.tmpprog)
+
+        # Set long dummy INTERP and RPATH in the executable to allow plenty of space
+        # for bootloader to patch them at runtime, without the reording complexity
+        # that patchelf has to do.
+        new_interp = 'i' * MAX_INTERP_LEN
+        new_rpath = 'r' * MAX_RPATH_LEN
+        patch_elf(self.tmpprog, interpreter=new_interp, rpath=new_rpath,
+                  force_rpath=True, no_default_lib=True)
+
 
 def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
@@ -97,56 +202,11 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
-
-    tmpoutput = None
-    tmpprog = None
-    tmpdir = None
-
-    # Work on a temp copy of the bootloader which becomes the output program
-    tmpoutput = _get_bootloader(debug)
-
-    try:
-        _check_bootloader_compat(tmpoutput, prog)
-
-        # First, learn things about the original program
-        orig_interp = get_prog_interp(prog)
-
-        # Now modify a copy of the user prog
-        tmpprog = copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
-
-        # Strip user prog before modifying it
-        if strip:
-            logging.info("Stripping prog {}".format(tmpprog))
-            strip_elf(tmpprog)
-
-        # Set long dummy INTERP and RPATH in the executable to allow plenty of space
-        # for bootloader to patch them at runtime, without the reording complexity
-        # that patchelf has to do.
-        new_interp = 'i' * MAX_INTERP_LEN
-        new_rpath = 'r' * MAX_RPATH_LEN
-        patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath,
-                  force_rpath=True, no_default_lib=True)
-
-        if strip:
-            logging.info("Stripping bootloader {}".format(tmpoutput))
-            strip_elf(tmpoutput)
-
-        # Starting from the bootloader, append archive
-        tmpdir = mkdtemp(prefix='staticx-archive-')
-        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs,
-                strip=strip, compress=compress, debug=debug) as ar:
-            elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
-
-        # Move the temporary output file to its final place
-        move_file(tmpoutput, output)
-        tmpoutput = None
-
-    finally:
-        if tmpprog:
-            os.remove(tmpprog)
-
-        if tmpdir:
-            shutil.rmtree(tmpdir)
-
-        if tmpoutput:
-            os.remove(tmpoutput)
+    gen = StaticxGenerator(
+            prog=prog,
+            strip=strip,
+            compress=compress,
+            debug=debug,
+            )
+    with gen:
+        gen.generate(output=output, libs=libs)
