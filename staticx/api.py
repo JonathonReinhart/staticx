@@ -5,7 +5,7 @@
 import shutil
 from tempfile import NamedTemporaryFile, mkdtemp
 import os
-from os.path import basename
+from os.path import basename, islink
 import logging
 
 from .errors import *
@@ -51,6 +51,7 @@ class StaticxGenerator:
         self.cleanup = cleanup
 
         self._generate_called = False
+        self._added_libs = {}
 
         self.tmpoutput = None
         self.tmpprog = None
@@ -143,8 +144,13 @@ class StaticxGenerator:
 
 
     def add_library(self, libpath, exist_ok=False):
+        """Add a library to the archive
+
+        The library will be added with its base name.
+        Symlinks will also be added and followed.
+        """
         libname = basename(libpath)
-        if libname in self.sxar.libraries:
+        if libname in self._added_libs:
             if exist_ok:
                 return
             raise LibExistsError(libname)
@@ -161,8 +167,33 @@ class StaticxGenerator:
 
             libpath = tmplib
 
-        # Add the library to the archive
-        self.sxar.add_library(libpath, exist_ok=True)
+        # Add the library to the archive.
+        # "Recursively" step through any symbolic links,
+        # generating local links inside the archive.
+        linklib = libpath
+        while islink(linklib):
+            arcname = basename(linklib)
+            linklib = get_symlink_target(linklib)
+
+            # Add a symlink.
+            # At this point the target probably doesn't exist, but that doesn't matter yet.
+            logging.info("    Adding Symlink {} => {}".format(arcname, basename(linklib)))
+            self.sxar.add_symlink(arcname, basename(linklib))
+            if arcname in self._added_libs:
+                raise InternalError("libname {} absent from _added_libs but"
+                        " symlink {} present".format(libname, arcname))
+            self._added_libs[arcname] = None    # Don't care about real target for symlinks
+
+        # We're left with a real file at this point, add it to the archive.
+        arcname = basename(linklib)
+        logging.info("    Adding {} as {}".format(linklib, arcname))
+        self.sxar.add_file(linklib, arcname=arcname)
+        if arcname in self._added_libs:
+            raise InternalError("libname {} absent from _added_libs but"
+                    " library {} present".format(libname, arcname))
+        self._added_libs[arcname] = linklib
+
+
 
 
     def _fixup_prog(self):
