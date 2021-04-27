@@ -27,7 +27,7 @@ def process_glibc_prog(sx):
     # since we added the dependency on libnssfix to the user program above.
     # Even though dependency discovery runs after this hook, it necessarily
     # operates on the *original* executable and not the copied/modified one,
-    # so it doesn't see changes made here.
+    # (see dfa201b07e) so it doesn't see changes made here.
     with nssfix:
         # TODO: Don't use sxar
         sx.sxar.add_fileobj(LIBNSSFIX, nssfix)
