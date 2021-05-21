@@ -36,13 +36,15 @@ def process_glibc_prog(ctx):
 
 def is_linked_against_glibc(prog):
     with open_elf(prog) as elf:
-        sec = get_section(elf, GNUVerNeedSection)
-        for verneed, vernaux_iter in sec.iter_versions():
-            if not verneed.name.startswith('libc.so'):
-                continue
-            for vernaux in vernaux_iter:
-                if vernaux.name.startswith('GLIBC_'):
-                    logging.debug("Program linked with GLIBC: Found {} {}".format(
-                        verneed.name, vernaux.name))
-                    return True
-    return False
+        try:
+            sec = get_section(elf, GNUVerNeedSection)
+            for verneed, vernaux_iter in sec.iter_versions():
+                if not verneed.name.startswith('libc.so'):
+                    continue
+                for vernaux in vernaux_iter:
+                    if vernaux.name.startswith('GLIBC_'):
+                        logging.debug("Program linked with GLIBC: Found {} {}".format(
+                            verneed.name, vernaux.name))
+                        return True
+        except KeyError:
+            return False
