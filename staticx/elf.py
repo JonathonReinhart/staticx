@@ -251,7 +251,7 @@ def get_section(elf, sectype):
     for sec in elf.iter_sections():
         if isinstance(sec, sectype):
             return sec
-    return KeyError("Can't find section of type {}".format(sectype))
+    raise KeyError("Can't find section of type {}".format(sectype))
 
 
 def get_machine(path):
