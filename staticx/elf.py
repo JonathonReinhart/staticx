@@ -70,7 +70,7 @@ class ExternTool:
 
 
 
-tool_ldd        = ExternTool('ldd', 'binutils')
+tool_ldd        = ExternTool(os.getenv("STATICX_LDD", "ldd"), 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
