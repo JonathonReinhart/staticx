@@ -70,7 +70,7 @@ class ExternTool:
 
 
 
-tool_ldd        = ExternTool('ldd', 'binutils')
+tool_ldd        = ExternTool(os.getenv("STATICX_LDD", "ldd"), 'binutils')
 tool_objcopy    = ExternTool('objcopy', 'binutils')
 tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     stderr_ignore = [
@@ -165,7 +165,10 @@ def get_shobj_deps(path, libpath=[]):
         # produced by musl-libc
         #
         # We simply raise a specific exception and let the caller deal with it.
-        raise LddError("Unexpected ldd error ({}): {}".format(rc, output))
+        message = "Unexpected ldd error ({}):\n{}".format(rc, output.strip('\n'))
+        if "invalid ELF header" in output:
+            message += "\nHint: try setting STATICX_LDD to the appropriate ldd for this executable"
+        raise LddError(message)
 
     return list(_parse_ldd_output(output))
 

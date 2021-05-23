@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Added `STATICX_LDD` environment variable to override the `ldd` executable
+  used by Staticx to discover library dependencies. ([#180])
+
+
 ## [0.12.2] - 2021-05-22
 ### Fixed
 - Worked around patchelf bug which caused `Couldn't find DT_RPATH tag`
@@ -229,3 +235,4 @@ Initial release
 [#168]: https://github.com/JonathonReinhart/staticx/pull/168
 [#175]: https://github.com/JonathonReinhart/staticx/pull/175
 [#179]: https://github.com/JonathonReinhart/staticx/pull/179
+[#180]: https://github.com/JonathonReinhart/staticx/pull/180
