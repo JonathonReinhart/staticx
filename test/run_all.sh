@@ -9,6 +9,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Test environment variables
 ./staticx-env-vars.sh
 
+# Run test an executable linked against musl-libc
+musl/run_test.sh
+
 # Run test against app built with PyInstaller
 pyinstall/run_test.sh
 
