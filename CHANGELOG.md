@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Worked around patchelf bug which caused `Couldn't find DT_RPATH tag`
   error at runtime ([#175])
+- Fixed a bug which caused the glibc hook to crash on non-glibc
+  executables ([#179])
 
 
 ## [0.12.1] - 2021-02-06
@@ -225,3 +227,4 @@ Initial release
 [#157]: https://github.com/JonathonReinhart/staticx/pull/157
 [#168]: https://github.com/JonathonReinhart/staticx/pull/168
 [#175]: https://github.com/JonathonReinhart/staticx/pull/175
+[#179]: https://github.com/JonathonReinhart/staticx/pull/179
