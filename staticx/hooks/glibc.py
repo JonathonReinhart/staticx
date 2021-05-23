@@ -37,6 +37,8 @@ def process_glibc_prog(ctx):
 def is_linked_against_glibc(prog):
     with open_elf(prog) as elf:
         sec = get_section(elf, GNUVerNeedSection)
+        if not sec:
+            return False
         for verneed, vernaux_iter in sec.iter_versions():
             if not verneed.name.startswith('libc.so'):
                 continue
