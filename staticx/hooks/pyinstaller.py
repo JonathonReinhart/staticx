@@ -82,6 +82,14 @@ class PyInstallHook:
         # Silence "you do not have execution permission" warning from ldd
         make_executable(lib)
 
+        # Audit the library to see if it uses problematic RUNPATH (#172).
+        rp = get_runpath(lib)
+        if rp:
+            # Unfortunately, there's no easy way to fix this, because staticx
+            # is not about to to modify the library and re-pack the PyInstaller
+            # archive itself.
+            raise InvalidInputError("{} uses unsupported DT_RUNPATH ({!r})".format(path, rp.runpath))
+
         # Assume this is a shared library, and
         # try to get any dependencies of this file
         try:

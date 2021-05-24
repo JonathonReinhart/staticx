@@ -7,6 +7,7 @@ from .bcjfilter import get_bcj_filter_arch
 from .utils import get_symlink_target, make_mode_executable
 from .constants import *
 from .errors import *
+from .elf import get_runpath, tool_patchelf
 
 
 def get_bcj_filter():
@@ -114,11 +115,22 @@ class SxArchive:
         The library will be added with its base name.
         Symlinks will also be added and followed.
         """
-
         if basename(path) in self._added_libs:
             if exist_ok:
                 return
             raise LibExistsError(basename(path))
+
+        # TODO: Isn't RPATH a potential problem here, too?
+
+        # Audit the library to see if it uses problematic RUNPATH (#172)
+        rp = get_runpath(path)
+        if rp:
+            # TODO: Do this on a copy!
+            tool_patchelf.run_check('--remove-rpath', path)
+
+        rp = get_runpath(path)
+        if rp:
+            raise InvalidInputError("{} uses unsupported DT_RUNPATH ({!r})".format(path, rp.runpath))
 
         # 'recursively' step through any symbolic links, generating local links inside the archive
         linklib = path

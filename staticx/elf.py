@@ -8,6 +8,7 @@ import os
 from pprint import pformat
 
 from elftools.elf.elffile import ELFFile
+from elftools.elf.dynamic import DynamicSegment
 from elftools.common.exceptions import ELFError
 
 from .errors import *
@@ -274,16 +275,29 @@ def get_prog_interp(path):
             raise InvalidInputError("{}: not a dynamic executable "
                                     "(no interp segment)".format(path))
 
+def _get_dynamic_segment(elf):
+    for seg in elf.iter_segments():
+        if seg['p_type'] == 'PT_DYNAMIC':
+            assert isinstance(seg, DynamicSegment)
+            return seg
+    return None
+
 
 def is_dynamic(path):
     with open_elf(path) as elf:
-        for seg in elf.iter_segments():
-            if seg['p_type'] == 'PT_DYNAMIC':
-                # seg is an instance of DynamicSegment
-                return True
-        return False
+        return bool(_get_dynamic_segment(elf))
 
 
 def ensure_dynamic(path):
     if not is_dynamic(path):
         raise StaticELFError(path=path)
+
+
+def get_runpath(path):
+    """Returns the value of the DT_RUPATH tag of the ELF file"""
+    with open_elf(path) as elf:
+        dyn = _get_dynamic_segment(elf)
+        if dyn:
+            for tag in dyn.iter_tags('DT_RUNPATH'):
+                return tag
+        return None
