@@ -19,6 +19,7 @@ bootloader = env.Program(
         'extract.c',
         'main.c',
         'mmap.c',
+        'profile.c',
         'util.c',
     ],
     LIBS = [

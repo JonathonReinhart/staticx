@@ -3,12 +3,14 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "common.h"
 #include "debug.h"
 #include "elfutil.h"
 #include "error.h"
 #include "extract.h"
 #include "mmap.h"
+#include "profile.h"
 #include "xz.h"
 
 #define XZ_DICT_MAX     8<<20       /* 8 MiB */
@@ -212,6 +214,10 @@ find_archive(void *map)
 void
 extract_archive(const char *dest_path)
 {
+    struct timespec t0, t1, dt;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+
     /* mmap this ELF file */
     struct map *map = mmap_file("/proc/self/exe", true);
 
@@ -237,4 +243,9 @@ extract_archive(const char *dest_path)
 
     unmap_file(map);
     map = NULL;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+    timespec_sub(&t0, &t1, &dt);
+    debug_printf("[PROFILE] extract_archive() total:      "
+            PR_TSPEC_FMT " sec\n", PR_TSPEC_ARG(dt));
 }
