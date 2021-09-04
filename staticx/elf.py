@@ -129,17 +129,16 @@ def _parse_ldd_output(output):
         yield libpath
 
 
-def get_shobj_deps(path, libpath=[]):
+def get_shobj_deps(path, libpath=None):
     """Discover the dependencies of a shared object (*.so file)
     """
 
     # First verify we're dealing with a dynamic ELF file
     ensure_dynamic(path)
 
-
-    # TODO: Should we use dict(os.environ) instead?
-    #       For now, make sure we always pass a clean environment.
-    env = {}
+    # Prepare the environment
+    keep_vars = {'LD_LIBRARY_PATH'}
+    env = {k:v for k,v in os.environ.items() if k in keep_vars}
 
     if libpath:
         # Prepend to LD_LIBRARY_PATH
