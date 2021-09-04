@@ -129,7 +129,7 @@ def _parse_ldd_output(output):
         yield libpath
 
 
-def get_shobj_deps(path, libpath=[]):
+def get_shobj_deps(path, libpath=None):
     """Discover the dependencies of a shared object (*.so file)
     """
 
