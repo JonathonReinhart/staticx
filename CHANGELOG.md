@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.12.3] - 2021-09-04
 ### Added
 - Added `STATICX_LDD` environment variable to override the `ldd` executable
   used by Staticx to discover library dependencies. ([#180])
@@ -172,7 +172,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.12.3...HEAD
+[0.12.3]: https://github.com/JonathonReinhart/staticx/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/JonathonReinhart/staticx/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/JonathonReinhart/staticx/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/JonathonReinhart/staticx/compare/v0.11.0...v0.12.0
