@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added `STATICX_LDD` environment variable to override the `ldd` executable
   used by Staticx to discover library dependencies. ([#180])
 
+### Changed
+- `LD_LIBRARY_PATH` enviroment variable is now maintained when invoking `ldd`
+  to discover dependencies ([#185])
+
 
 ## [0.12.2] - 2021-05-22
 ### Fixed
@@ -236,3 +240,4 @@ Initial release
 [#175]: https://github.com/JonathonReinhart/staticx/pull/175
 [#179]: https://github.com/JonathonReinhart/staticx/pull/179
 [#180]: https://github.com/JonathonReinhart/staticx/pull/180
+[#185]: https://github.com/JonathonReinhart/staticx/pull/185
