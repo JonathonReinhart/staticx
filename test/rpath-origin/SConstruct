@@ -1,6 +1,18 @@
+from SCons.Errors import StopError
+
+try:
+    name = ARGUMENTS['name']
+except KeyError:
+    raise StopError("'name=' must be provided on command line.")
+
+extra_linkflags = ARGUMENTS.get('LINKFLAGS').split(' ')
+
 env = Environment(
-    BUILD_DIR = Dir('#build.rpath'),
-    DIST_DIR = Dir('#dist.rpath'),
+    NAME = name,
+)
+env.Replace(
+    BUILD_DIR = env.Dir('#build.$NAME'),
+    DIST_DIR = env.Dir('#dist.$NAME'),
     LIB_DIR = '$DIST_DIR/lib',
     BIN_DIR = '$DIST_DIR/bin',
 
@@ -8,11 +20,7 @@ env = Environment(
     LINKFLAGS = [
         '-z', 'origin',
         '-Wl,-rpath-link', '$LIB_DIR',
-
-        # Force use of RPATH, not RUNPATH
-        # https://stackoverflow.com/a/52020177/119527
-        '-Wl,--disable-new-dtags',
-    ],
+    ] + extra_linkflags,
 
     # Programs look for shared libs in ../lib
     PROG_RPATH = Literal('\\$$ORIGIN/../lib'),

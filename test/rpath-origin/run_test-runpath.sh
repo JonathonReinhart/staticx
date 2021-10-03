@@ -9,7 +9,9 @@ app="dist.runpath/bin/app"
 outfile="dist.runpath/app.staticx"
 
 # Build the application
-scons -f SConstruct.runpath --quiet
+# Force use of RUNPATH, not RPATH
+# https://stackoverflow.com/a/52020177/119527
+scons --quiet name=runpath LINKFLAGS='-Wl,--enable-new-dtags'
 
 # Ensure this test uses DT_RUNPATH and not DT_RPATH
 if (readelf -d $app | grep -q '(RPATH)'); then
@@ -27,8 +29,9 @@ $app
 
 # Make a staticx executable from it
 # This is an expected failure!
-echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS):"
+echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS) [EXPECTED FAILURE]:"
 if (staticx $STATICX_FLAGS $app $outfile) ; then
     echo "FAIL: Staticx permitted a problematic library using RUNPATH"
     exit 66
 fi
+echo "Success"

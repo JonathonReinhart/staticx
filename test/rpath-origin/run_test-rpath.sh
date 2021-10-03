@@ -9,7 +9,9 @@ app="dist.rpath/bin/app"
 outfile="dist.rpath/app.staticx"
 
 # Build the application
-scons -f SConstruct.rpath --quiet
+# Force use of RPATH, not RUNPATH
+# https://stackoverflow.com/a/52020177/119527
+scons --quiet name=rpath LINKFLAGS='-Wl,--disable-new-dtags'
 
 # Ensure this test uses DT_RPATH and not DT_RUNPATH
 if (readelf -d $app | grep -q '(RUNPATH)'); then
