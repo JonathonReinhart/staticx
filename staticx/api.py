@@ -203,18 +203,36 @@ class StaticxGenerator:
         self._added_libs[arcname] = linklib
 
 
-    def check_library_rpath(self, path):
+    def check_library_rpath(self, path, dangerous_only=False):
         """Inspect a library to see if it uses problematic RPATH/RUNPATH
 
         See https://github.com/JonathonReinhart/staticx/issues/172
         """
+        def is_dangerous(rpath):
+            # rpath can be:
+            # * Absolutute                  dangerous
+            # * Relative (to working dir)   dangerous (and stupid)
+            # * Relative (to $ORIGIN)       safe (as long as no ..)
+            if not rpath.startswith('$ORIGIN'):
+                return True
+
+            # There might be some odd corner cases here, but this
+            # conservative approach should be good enough.
+            if '..' in rpath:
+                return True
+
+            return False
+
         with open_elf(path) as elf:
+            # Check for RPATH
             rp = elf.get_rpath()
-            if rp:
+            if rp and not dangerous_only and is_dangerous(rp.rpath):
                 raise UnsupportedRpathError(path, rp.rpath)
 
+            # Check for RUNPATH
             rp = elf.get_runpath()
             if rp:
+                # RUNPATH is always dangerous because it kills RPATH
                 raise UnsupportedRunpathError(path, rp.runpath)
 
 

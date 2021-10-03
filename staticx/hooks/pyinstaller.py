@@ -88,7 +88,9 @@ class PyInstallHook:
         # Silence "you do not have execution permission" warning from ldd
         make_executable(lib)
 
-        self.sx.check_library_rpath(lib)
+        # Check for RPATH/RUNPATH, but only "dangerous" values and let
+        # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
+        self.sx.check_library_rpath(lib, dangerous_only=True)
         # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
         # here, because staticx is not about to to modify the library and
         # re-pack the PyInstaller archive itself.
