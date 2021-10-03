@@ -1,0 +1,35 @@
+env = Environment(
+    BUILD_DIR = Dir('#build'),
+    DIST_DIR = Dir('#dist'),
+    LIB_DIR = '$DIST_DIR/lib',
+    BIN_DIR = '$DIST_DIR/bin',
+
+    # https://github.com/SCons/scons/wiki/UsingOrigin
+    LINKFLAGS = [
+        '-z', 'origin',
+        '-Wl,-rpath-link', '$LIB_DIR',
+
+        # Force use of RUNPATH, not RPATH
+        # https://stackoverflow.com/a/52020177/119527
+        '-Wl,--enable-new-dtags',
+    ],
+
+    # Programs look for shared libs in ../lib
+    PROG_RPATH = Literal('\\$$ORIGIN/../lib'),
+
+    # Libraries look for shared libs in .
+    LIB_RPATH = Literal('\\$$ORIGIN'),
+
+    CCFLAGS = ['-Wall', '-Werror'],
+    LIBPATH = ['$LIB_DIR'],
+)
+
+# gcc (ld) requires that -rpath-link dirs be present, but they may not (yet) exist
+env.Execute(Mkdir('$LIB_DIR'))
+
+env.SConscript(
+    'SConscript',
+    variant_dir = '$BUILD_DIR',
+    duplicate = False,
+    exports = dict(env = env),
+)
