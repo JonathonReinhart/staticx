@@ -11,7 +11,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 
 from .errors import *
-from .utils import coerce_sequence
+from .utils import coerce_sequence, single
 
 class ExternTool:
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding=None):
@@ -242,18 +242,20 @@ class ELFFileX(ELFFile):
     def __exit__(self, *exc_info):
         self.stream.close()
 
+    def get_single_section(self, sectype):
+        """Returns the only section of a given type, or None if absent"""
+        def key(sec):
+            return isinstance(sec, sectype)
+        return single(self.iter_sections(), key=key, default=None)
+
+
+
+
 def open_elf(path, mode='rb'):
     try:
         return ELFFileX.open(path, mode)
     except ELFError as e:
         raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
-
-
-def get_section(elf, sectype):
-    for sec in elf.iter_sections():
-        if isinstance(sec, sectype):
-            return sec
-    return None
 
 
 def get_machine(path):
