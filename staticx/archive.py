@@ -1,7 +1,7 @@
 import tarfile
 import logging
 import lzma
-from os.path import basename, islink
+from os.path import basename
 
 from .bcjfilter import get_bcj_filter_arch
 from .utils import get_symlink_target, make_mode_executable
@@ -36,6 +36,15 @@ def get_xz_filters():
 
 class SxArchive:
     def __init__(self, fileobj, mode, compress):
+        """Create a staticx archive
+
+        Parameters:
+        fileobj:    File object for the archive (not closed by this class)
+        mode:       Mode: 'r' (for reading) or 'w' (for writing)
+        compress:   Boolean: use xz compression or not
+        """
+        # Keep original fileobj arg for consumer convenience only, never closed
+        self.fileobj = fileobj
         self.xzf = None
 
         if compress:
@@ -55,20 +64,24 @@ class SxArchive:
 
         # Our embedded libtar only supports older GNU format (not new PAX format)
         self.tar = tarfile.open(fileobj=fileobj, mode=mode, format=tarfile.GNU_FORMAT)
-        self._added_libs = []
 
     def __enter__(self):
         return self
 
     def __exit__(self, *excinfo):
-        self.tar.close()
+        self.close()
+
+    def close(self):
+        # Don't touch self.fileobj here
+
+        if self.tar:
+            self.tar.close()
+            self.tar = None
+
         if self.xzf:
             self.xzf.close()
+            self.xzf = None
 
-
-    @property
-    def libraries(self):
-        return iter(self._added_libs)
 
     def add_symlink(self, name, target):
         """Add a symlink to the archive"""
@@ -108,34 +121,8 @@ class SxArchive:
         # Store a link to the program so the bootloader knows what to execute
         self.add_symlink(PROG_FILENAME, name)
 
-    def add_library(self, path, exist_ok=False):
-        """Add a library to the archive
-
-        The library will be added with its base name.
-        Symlinks will also be added and followed.
-        """
-
-        if basename(path) in self._added_libs:
-            if exist_ok:
-                return
-            raise LibExistsError(basename(path))
-
-        # 'recursively' step through any symbolic links, generating local links inside the archive
-        linklib = path
-        while islink(linklib):
-            arcname = basename(linklib)
-            linklib = get_symlink_target(linklib)
-
-            # add a symlink.  at this point the target probably doesn't exist, but that doesn't matter yet
-            logging.info("    Adding Symlink {} => {}".format(arcname, basename(linklib)))
-            self.add_symlink(arcname, basename(linklib))
-            self._added_libs.append(arcname)
-
-        # left with a real file at this point, add it to the archive.
-        arcname = basename(linklib)
-        logging.info("    Adding {} as {}".format(linklib, arcname))
-        self.tar.add(linklib, arcname=arcname)
-        self._added_libs.append(arcname)
+    def add_file(self, path, arcname=None):
+        self.tar.add(path, arcname=arcname)
 
     def add_interp_symlink(self, interp):
         """Add symlink for ld.so interpreter"""

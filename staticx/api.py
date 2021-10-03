@@ -5,9 +5,8 @@
 import shutil
 from tempfile import NamedTemporaryFile, mkdtemp
 import os
-from os.path import basename
+from os.path import basename, islink
 import logging
-from itertools import chain
 
 from .errors import *
 from .utils import *
@@ -17,58 +16,7 @@ from .assets import copy_asset_to_tempfile
 from .constants import *
 from .hooks import run_hooks
 
-def generate_archive(orig_prog, copied_prog, interp, tmpdir, extra_libs=None, strip=False, compress=True, debug=False):
-    """ Generate a StaticX archive
 
-    Args:
-        orig_prog: Path to original user program
-        copied_prog: Path to user program which has been prepped
-        interp: Original program interpreter
-        tmpdir: Temporary directory to use for stripping libraries
-        extra_libs: Additional libraries to add to the archive
-        strip: Whether or not to strip libraries
-        compress: Whether or not to create a compressed archive
-
-    Returns:
-        A handle to the created file object
-    """
-    logging.info("Program interpreter: " + interp)
-
-    if extra_libs is None:
-        extra_libs = []
-
-    f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-    with SxArchive(fileobj=f, mode='w', compress=compress) as ar:
-        run_hooks(
-                archive = ar,
-                orig_prog = orig_prog,
-                copied_prog = copied_prog,
-                debug = debug,
-                )
-
-        ar.add_program(copied_prog, basename(orig_prog))
-        ar.add_interp_symlink(interp)
-
-        # Add all of the libraries
-        for libpath in chain(get_shobj_deps(orig_prog), extra_libs):
-            if strip:
-                # Copy the library to the temp dir before stripping
-                tmplib = os.path.join(tmpdir, basename(libpath))
-                logging.info("Copying {} to {}".format(libpath, tmplib))
-                shutil.copy(libpath, tmplib)
-
-                # Strip the library
-                logging.info("Stripping binary {}".format(tmplib))
-                strip_elf(tmplib)
-
-                libpath = tmplib
-
-            # Add the library to the archive
-            ar.add_library(libpath, exist_ok=True)
-
-
-    f.flush()
-    return f
 
 
 def _get_bootloader(debug=False):
@@ -86,6 +34,184 @@ def _check_bootloader_compat(bootloader, prog):
         raise FormatMismatchError("Bootloader machine ({}) doesn't match "
                 "program machine ({})".format(bldr_mach, prog_mach))
 
+class StaticxGenerator:
+    """StaticxGenerator is responsible for producing a staticx-ified executable.
+    """
+
+    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True):
+        """
+        Parameters:
+        prog:   Dynamic executable to staticx
+        debug:  Run in debug mode (use debug bootloader)
+        """
+        self.orig_prog = prog
+        self.strip = strip
+        self.compress = compress
+        self.debug = debug
+        self.cleanup = cleanup
+
+        self._generate_called = False
+        self._added_libs = {}
+
+        self.tmpoutput = None
+        self.tmpprog = None
+        self.tmpdir = None
+
+        f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
+        self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        if self.cleanup:
+            self._cleanup()
+
+    def _cleanup(self):
+        if self.tmpoutput:
+            os.remove(self.tmpoutput)
+            self.tmpoutput = None
+
+        if self.tmpprog:
+            os.remove(self.tmpprog)
+            self.tmpprog = None
+
+        if self.tmpdir:
+            shutil.rmtree(self.tmpdir)
+            self.tmpdir = None
+
+        if self.sxar:
+            self.sxar.close()
+            self.sxar = None
+
+
+
+    def generate(self, output):
+        """Generate a Staticx program
+
+        Parameters:
+        output: Path where output file is written
+        """
+        # Only allow generate() to be called once per instance.
+        # In the future we might relax this, but YAGNI for now.
+        if self._generate_called:
+            raise InternalError("generate() already called")
+        self._generate_called = True
+
+        # Work on a temp copy of the bootloader which becomes the output program
+        self.tmpoutput = _get_bootloader(self.debug)
+
+        _check_bootloader_compat(self.tmpoutput, self.orig_prog)
+
+        # First, learn things about the original program
+        orig_interp = get_prog_interp(self.orig_prog)
+        logging.info("Program interpreter: " + orig_interp)
+
+        # Now modify a copy of the user prog
+        self.tmpprog = copy_to_tempfile(self.orig_prog, prefix='staticx-prog-', delete=False).name
+        self._fixup_prog()
+
+        if self.strip:
+            # TODO: Now that we have ship separate debug/release bootloaders
+            # do we ever want and need to do this at staticx-time?
+            logging.info("Stripping bootloader {}".format(self.tmpoutput))
+            strip_elf(self.tmpoutput)
+
+
+        # Build the archive to be appended
+        self.tmpdir = mkdtemp(prefix='staticx-archive-')
+        with self.sxar as ar:
+            run_hooks(self)
+
+            ar.add_program(self.tmpprog, basename(self.orig_prog))
+            ar.add_interp_symlink(orig_interp)
+
+            # Add all of the libraries
+            for libpath in get_shobj_deps(self.orig_prog):
+                self.add_library(libpath, exist_ok=True)
+
+        # errr...
+        arf = self.sxar.fileobj
+        arf.flush()
+
+        # Starting from the bootloader, append archive
+        elf_add_section(self.tmpoutput, ARCHIVE_SECTION, arf.name)
+
+        # Move the temporary output file to its final place
+        move_file(self.tmpoutput, output)
+        self.tmpoutput = None
+
+
+    def add_library(self, libpath, exist_ok=False):
+        """Add a library to the archive
+
+        The library will be added with its base name.
+        Symlinks will also be added and followed.
+        """
+        libname = basename(libpath)
+        if libname in self._added_libs:
+            if exist_ok:
+                return
+            raise LibExistsError(libname)
+
+        # Copy the library to the temp dir before stripping
+        tmplib = os.path.join(self.tmpdir, basename(libpath))
+        logging.info("Copying {} to {}".format(libpath, tmplib))
+        shutil.copy(libpath, tmplib)
+
+        if self.strip:
+            # Strip the library
+            logging.info("Stripping binary {}".format(tmplib))
+            strip_elf(tmplib)
+
+            libpath = tmplib
+
+        # Add the library to the archive.
+        # "Recursively" step through any symbolic links,
+        # generating local links inside the archive.
+        linklib = libpath
+        while islink(linklib):
+            arcname = basename(linklib)
+            linklib = get_symlink_target(linklib)
+
+            # Add a symlink.
+            # At this point the target probably doesn't exist, but that doesn't matter yet.
+            logging.info("    Adding Symlink {} => {}".format(arcname, basename(linklib)))
+            self.sxar.add_symlink(arcname, basename(linklib))
+            if arcname in self._added_libs:
+                raise InternalError("libname {} absent from _added_libs but"
+                        " symlink {} present".format(libname, arcname))
+            self._added_libs[arcname] = None    # Don't care about real target for symlinks
+
+        # We're left with a real file at this point, add it to the archive.
+        arcname = basename(linklib)
+        logging.info("    Adding {} as {}".format(linklib, arcname))
+        self.sxar.add_file(linklib, arcname=arcname)
+        if arcname in self._added_libs:
+            raise InternalError("libname {} absent from _added_libs but"
+                    " library {} present".format(libname, arcname))
+        self._added_libs[arcname] = linklib
+
+
+
+
+    def _fixup_prog(self):
+        """Fixup our temporary copy of the user's program"""
+
+        # Strip user prog before modifying it
+        if self.strip:
+            logging.info("Stripping prog {}".format(self.tmpprog))
+            strip_elf(self.tmpprog)
+
+        # Set long dummy INTERP and RPATH in the executable to allow plenty of space
+        # for bootloader to patch them at runtime, without the reording complexity
+        # that patchelf has to do.
+        new_interp = 'i' * MAX_INTERP_LEN
+        new_rpath = 'r' * MAX_RPATH_LEN
+        patch_elf(self.tmpprog, interpreter=new_interp, rpath=new_rpath,
+                  force_rpath=True, no_default_lib=True)
+
 
 def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """Main API: Generate a staticx executable
@@ -97,56 +223,14 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
+    gen = StaticxGenerator(
+            prog=prog,
+            strip=strip,
+            compress=compress,
+            debug=debug,
+            )
+    with gen:
+        for lib in (libs or []):
+            gen.add_library(lib)
 
-    tmpoutput = None
-    tmpprog = None
-    tmpdir = None
-
-    # Work on a temp copy of the bootloader which becomes the output program
-    tmpoutput = _get_bootloader(debug)
-
-    try:
-        _check_bootloader_compat(tmpoutput, prog)
-
-        # First, learn things about the original program
-        orig_interp = get_prog_interp(prog)
-
-        # Now modify a copy of the user prog
-        tmpprog = copy_to_tempfile(prog, prefix='staticx-prog-', delete=False).name
-
-        # Strip user prog before modifying it
-        if strip:
-            logging.info("Stripping prog {}".format(tmpprog))
-            strip_elf(tmpprog)
-
-        # Set long dummy INTERP and RPATH in the executable to allow plenty of space
-        # for bootloader to patch them at runtime, without the reording complexity
-        # that patchelf has to do.
-        new_interp = 'i' * MAX_INTERP_LEN
-        new_rpath = 'r' * MAX_RPATH_LEN
-        patch_elf(tmpprog, interpreter=new_interp, rpath=new_rpath,
-                  force_rpath=True, no_default_lib=True)
-
-        if strip:
-            logging.info("Stripping bootloader {}".format(tmpoutput))
-            strip_elf(tmpoutput)
-
-        # Starting from the bootloader, append archive
-        tmpdir = mkdtemp(prefix='staticx-archive-')
-        with generate_archive(prog, tmpprog, orig_interp, tmpdir, libs,
-                strip=strip, compress=compress, debug=debug) as ar:
-            elf_add_section(tmpoutput, ARCHIVE_SECTION, ar.name)
-
-        # Move the temporary output file to its final place
-        move_file(tmpoutput, output)
-        tmpoutput = None
-
-    finally:
-        if tmpprog:
-            os.remove(tmpprog)
-
-        if tmpdir:
-            shutil.rmtree(tmpdir)
-
-        if tmpoutput:
-            os.remove(tmpoutput)
+        gen.generate(output=output)
