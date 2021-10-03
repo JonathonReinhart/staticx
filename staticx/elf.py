@@ -201,7 +201,7 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
         # first before --force-rpath is effective.
         # https://github.com/NixOS/patchelf/issues/94
         # This was fixed in v0.11 but that's newer than Debian Buster.
-        tool_patchelf.run_check('--remove-rpath', path)
+        remove_rpath(path)
 
         args.append('--force-rpath')
     if add_needed:
@@ -217,6 +217,8 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
     if no_default_lib:
         tool_patchelf.run_check('--no-default-lib', path)
 
+def remove_rpath(path):
+    tool_patchelf.run_check('--remove-rpath', path)
 
 def strip_elf(path):
     tool_strip.run_check(path)
