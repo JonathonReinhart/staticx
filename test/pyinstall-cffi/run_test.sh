@@ -2,10 +2,11 @@
 set -e
 outfile=./dist/app.staticx
 
-# Only run if PyInstaller is installed
+# Only run if PyInstaller and CFFI are installed
 # By gracefully failing here, we can control which versions of Python this test
 # runs under in requirements.txt
 pyinstaller --version 2>/dev/null || { echo "PyInstaller not installed"; exit 0; }
+python3 -c 'import cffi' 2>/dev/null || { echo "CFFI not installed"; exit 0; }
 
 
 echo -e "\n\n--------------------------------------------------------------------------------"
