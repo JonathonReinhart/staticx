@@ -5,11 +5,11 @@ echo -e "\n\nEnsure StaticX detects unsupported libraries using RUNPATH"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-app="dist/bin/app"
-outfile="dist/app.staticx"
+app="dist.runpath/bin/app"
+outfile="dist.runpath/app.staticx"
 
 # Build the application
-scons --quiet
+scons -f SConstruct.runpath --quiet
 
 # Ensure this test uses DT_RUNPATH and not DT_RPATH
 if (readelf -d $app | grep -q '(RPATH)'); then

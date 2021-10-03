@@ -1,6 +1,6 @@
 env = Environment(
-    BUILD_DIR = Dir('#build'),
-    DIST_DIR = Dir('#dist'),
+    BUILD_DIR = Dir('#build.runpath'),
+    DIST_DIR = Dir('#dist.runpath'),
     LIB_DIR = '$DIST_DIR/lib',
     BIN_DIR = '$DIST_DIR/bin',
 
