@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-echo -e "\n\nTest StaticX sets STATICX_* vars"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX sets STATICX_* vars"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

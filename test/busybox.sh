@@ -3,7 +3,9 @@ set -e
 outfile=./busybox.staticx
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-echo -e "\n\nTest StaticX against 'busybox'"
+
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against 'busybox'"
 
 infile=$(which busybox || echo "")
 

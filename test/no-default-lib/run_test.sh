@@ -1,7 +1,10 @@
 #!/bin/bash
-echo -e "\n\nVerify StaticX can't link against target system libs"
+set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
+
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Verify StaticX can't link against target system libs"
 
 app="./app"
 outfile="./app.staticx"

@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-echo -e "\n\nTest StaticX against application using RUNPATH \$ORIGIN"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against application using RUNPATH \$ORIGIN"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 source ../funcs.sh

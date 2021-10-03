@@ -5,7 +5,8 @@ CCFLAGS="-Wall -Werror -Os -s"
 
 outfile=./app.staticx
 
-echo -e "\n\nTest StaticX against a musl-libc-linked executable"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against a musl-libc-linked executable"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

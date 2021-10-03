@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-echo -e "\n\nVerify StaticX rejects PyInstalled application with library using RUNPATH"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Verify StaticX rejects PyInstalled application with library using RUNPATH"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 source ../funcs.sh

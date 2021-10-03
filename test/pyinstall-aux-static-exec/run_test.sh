@@ -12,7 +12,8 @@ outfile=./dist/app.staticx
 pyinstaller --version 2>/dev/null || { echo "PyInstaller not installed"; exit 0; }
 
 
-echo -e "\n\nTest StaticX against PyInstalled application which includes a statically-linked aux app"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against PyInstalled application which includes a statically-linked aux app"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

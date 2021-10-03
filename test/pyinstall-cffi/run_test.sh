@@ -8,7 +8,8 @@ outfile=./dist/app.staticx
 pyinstaller --version 2>/dev/null || { echo "PyInstaller not installed"; exit 0; }
 
 
-echo -e "\n\nTest StaticX against PyInstalled application"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against PyInstalled application using CFFI"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
