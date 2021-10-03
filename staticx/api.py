@@ -161,13 +161,13 @@ class StaticxGenerator:
         logging.info("Copying {} to {}".format(libpath, tmplib))
         shutil.copy(libpath, tmplib)
 
-
-        self.audit_library(libpath)
-        # TODO: Is it safe to just remove DT_RPATH/DT_RUNPATH?
-        #try:
-        #    self.audit_library(libpath)
-        #except UnsupportedRunpathError:
-        #    tool_patchelf.run_check('--remove-rpath', tmplib)
+        # Audit library to check for problems
+        try:
+            self.check_library_rpath(libpath)
+        except (UnsupportedRpathError, UnsupportedRunpathError):
+            # Fix it by removing
+            logging.info("Removing RPATH/RUNPATH from library {}".format(tmplib))
+            remove_rpath(tmplib)
 
         if self.strip:
             # Strip the library
@@ -203,11 +203,10 @@ class StaticxGenerator:
         self._added_libs[arcname] = linklib
 
 
-    def audit_library(self, path):
-        """Audit a shared library to check for problems
+    def check_library_rpath(self, path):
+        """Inspect a library to see if it uses problematic RPATH/RUNPATH
 
-        Specifically:
-        - See if it uses the problematic DT_RUNPATH (seee #172)
+        See https://github.com/JonathonReinhart/staticx/issues/172
         """
         with open_elf(path) as elf:
             rp = elf.get_rpath()
