@@ -209,10 +209,15 @@ class StaticxGenerator:
         Specifically:
         - See if it uses the problematic DT_RUNPATH (seee #172)
         """
-        # TODO: Is RPATH a potential problem here, too?
-        rp = get_runpath(path)
-        if rp:
-            raise UnsupportedRunpathError(path, rp.runpath)
+        with open_elf(path) as elf:
+            rp = elf.get_rpath()
+            if rp:
+                raise UnsupportedRpathError(path, rp.rpath)
+
+            rp = elf.get_runpath()
+            if rp:
+                raise UnsupportedRunpathError(path, rp.runpath)
+
 
 
     def _fixup_prog(self):
