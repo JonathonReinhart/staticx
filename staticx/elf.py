@@ -277,14 +277,19 @@ class ELFFileX(ELFFile):
         return bool(self.get_dynamic_segment())
 
 
-    def get_runpath(self):
-        """Returns the value of the DT_RUPATH tag of the ELF file"""
+    def get_single_dynamic_tag(self, name):
         dyn = self.get_dynamic_segment()
         if dyn:
-            for tag in dyn.iter_tags('DT_RUNPATH'):
-                return tag
+            return single(dyn.iter_tags(name), default=None)
         return None
 
+    def get_rpath(self):
+        """Returns the value of the DT_RPATH tag of the ELF file"""
+        return self.get_single_dynamic_tag('DT_RPATH')
+
+    def get_runpath(self):
+        """Returns the value of the DT_RUNPATH tag of the ELF file"""
+        return self.get_single_dynamic_tag('DT_RUNPATH')
 
 
 def open_elf(path, mode='rb'):
