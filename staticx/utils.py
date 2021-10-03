@@ -53,3 +53,40 @@ def coerce_sequence(x, t=list):
     if not is_iterable(x):
         x = [x]
     return t(x)
+
+_SENTINEL = object()
+_NO_DEFAULT = object()
+
+def single(iterable, key=None, default=_NO_DEFAULT):
+    """Returns a single item from iterable
+
+    Arguments:
+      iterable: Iterable sequence from which item is taken
+      key:      Optional function to select item
+      default:  Optional default value to return if no items match,
+                otherwise KeyError is raised
+    Returns:
+      A single item from iterable matching key (if given)
+    Raises:
+      KeyError if multiple items in sequence match key
+      KeyError if no items in sequence match key and default is not given
+    """
+
+    if key is None:
+        key = lambda _: True
+
+    result = _SENTINEL
+
+    for i in iterable:
+        if key(i):
+            if result is not _SENTINEL:
+                raise KeyError("Multiple items match key")
+            result = i
+
+    if result is not _SENTINEL:
+        return result
+
+    if default is not _NO_DEFAULT:
+        return default
+
+    raise KeyError("No items match key")

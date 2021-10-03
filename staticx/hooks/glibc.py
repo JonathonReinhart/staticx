@@ -1,6 +1,6 @@
 from ..assets import copy_asset_to_tempfile
 from ..errors import InternalError
-from ..elf import open_elf, get_section, get_shobj_deps, patch_elf
+from ..elf import open_elf, get_shobj_deps, patch_elf
 from elftools.elf.gnuversions import GNUVerNeedSection
 import logging
 
@@ -37,7 +37,7 @@ def process_glibc_prog(sx):
 
 def is_linked_against_glibc(prog):
     with open_elf(prog) as elf:
-        sec = get_section(elf, GNUVerNeedSection)
+        sec = elf.get_single_section(GNUVerNeedSection)
         if not sec:
             return False
         for verneed, vernaux_iter in sec.iter_versions():

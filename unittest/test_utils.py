@@ -1,5 +1,6 @@
 import tempfile
 import os
+import pytest
 
 from staticx import utils
 
@@ -35,3 +36,30 @@ def test_coerce_sequence_tuple_input():
 
 def test_coerce_sequence_tuple_output():
     assert utils.coerce_sequence([69, 420], tuple) == (69, 420)
+
+
+# single
+def test_single_success():
+    assert utils.single(['ok']) == 'ok'
+
+def test_single_empty():
+    with pytest.raises(KeyError, match='No items match key'):
+        utils.single([])
+
+def test_single_multiple():
+    with pytest.raises(KeyError, match='Multiple items match key'):
+        utils.single(['a', 'b'])
+
+def test_single_key_none():
+    with pytest.raises(KeyError, match='No items match key'):
+        utils.single([1, 2, 3], key=lambda x: x<0)
+
+def test_single_key_multiple():
+    with pytest.raises(KeyError, match='Multiple items match key'):
+        utils.single([1, 2, 3], key=lambda x: x>0)
+
+def test_single_empty_default():
+    assert utils.single([], default='ok') == 'ok'
+
+def test_single_key_none_default():
+    assert utils.single([1, 2, 3], key=lambda x: x<0, default='ok') == 'ok'

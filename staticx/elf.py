@@ -11,7 +11,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 
 from .errors import *
-from .utils import coerce_sequence
+from .utils import coerce_sequence, single
 
 class ExternTool:
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding=None):
@@ -231,29 +231,53 @@ class StaticELFError(Error):
         super().__init__(message)
 
 
-class ELFCloser:
-    def __init__(self, path, mode):
-        self.f = open(path, mode)
-        self.elf = ELFFile(self.f)
+class ELFFileX(ELFFile):
+    def __init__(self, stream, path=None):
+        self.__path = path
+        super().__init__(stream)
+
+    @classmethod
+    def open(cls, path, mode='rb'):
+        return cls(open(path, mode), path=path)
 
     def __enter__(self):
-        return self.elf
+        return self
 
     def __exit__(self, *exc_info):
-        self.f.close()
+        self.stream.close()
+
+    def get_single_section(self, sectype):
+        """Returns the only section of a given type, or None if absent"""
+        def key(sec):
+            return isinstance(sec, sectype)
+        return single(self.iter_sections(), key=key, default=None)
+
+    def get_prog_interp(self):
+        for seg in self.iter_segments():
+            # Amazingly, this is slightly faster than
+            # if isinstance(seg, InterpSegment):
+            try:
+                return seg.get_interp_name()
+            except AttributeError:
+                continue
+
+        raise InvalidInputError("{}: not a dynamic executable "
+                                "(no interp segment)".format(self.__path))
+
+    def is_dynamic(self):
+        for seg in self.iter_segments():
+            if seg['p_type'] == 'PT_DYNAMIC':
+                # seg is an instance of DynamicSegment
+                return True
+        return False
+
+
 
 def open_elf(path, mode='rb'):
     try:
-        return ELFCloser(path, mode)
+        return ELFFileX.open(path, mode)
     except ELFError as e:
         raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
-
-
-def get_section(elf, sectype):
-    for sec in elf.iter_sections():
-        if isinstance(sec, sectype):
-            return sec
-    return None
 
 
 def get_machine(path):
@@ -262,26 +286,11 @@ def get_machine(path):
 
 def get_prog_interp(path):
     with open_elf(path) as elf:
-        for seg in elf.iter_segments():
-            # Amazingly, this is slightly faster than
-            # if isinstance(seg, InterpSegment):
-            try:
-                return seg.get_interp_name()
-            except AttributeError:
-                continue
-        else:
-            raise InvalidInputError("{}: not a dynamic executable "
-                                    "(no interp segment)".format(path))
-
+        return elf.get_prog_interp()
 
 def is_dynamic(path):
     with open_elf(path) as elf:
-        for seg in elf.iter_segments():
-            if seg['p_type'] == 'PT_DYNAMIC':
-                # seg is an instance of DynamicSegment
-                return True
-        return False
-
+        return elf.is_dynamic()
 
 def ensure_dynamic(path):
     if not is_dynamic(path):
