@@ -11,6 +11,16 @@ outfile="dist/app.staticx"
 # Build the application
 scons --quiet
 
+# Ensure this test uses DT_RPATH and not DT_RUNPATH
+if (readelf -d $app | grep -q '(RUNPATH)'); then
+    echo "TEST ERROR: app uses DT_RUNPATH instead of DT_RPATH"
+    exit 66
+fi
+if ! (readelf -d $app | grep -q '(RPATH)'); then
+    echo "TEST ERROR: app is missing DT_RPATH"
+    exit 66
+fi
+
 # Run the application normally
 echo -e "\nApp run normally:"
 $app

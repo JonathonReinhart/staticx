@@ -8,6 +8,10 @@ env = Environment(
     LINKFLAGS = [
         '-z', 'origin',
         '-Wl,-rpath-link', '$LIB_DIR',
+
+        # Force use of RPATH, not RUNPATH
+        # https://stackoverflow.com/a/52020177/119527
+        '-Wl,--disable-new-dtags',
     ],
 
     # Programs look for shared libs in ../lib
