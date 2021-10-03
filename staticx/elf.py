@@ -232,9 +232,13 @@ class StaticELFError(Error):
 
 
 class ELFFileX(ELFFile):
+    def __init__(self, stream, path=None):
+        self.__path = path
+        super().__init__(stream)
+
     @classmethod
     def open(cls, path, mode='rb'):
-        return cls(open(path, mode))
+        return cls(open(path, mode), path=path)
 
     def __enter__(self):
         return self
