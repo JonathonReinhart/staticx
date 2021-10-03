@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo -e "\n\nEnsure StaticX detects unsupported libraries using RUNPATH"
+echo -e "\n\nTest StaticX against application using RUNPATH \$ORIGIN"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
@@ -28,10 +28,9 @@ echo -e "\nApp run normally:"
 $app
 
 # Make a staticx executable from it
-# This is an expected failure!
-echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS) [EXPECTED FAILURE]:"
-if (staticx $STATICX_FLAGS $app $outfile) ; then
-    echo "FAIL: Staticx permitted a problematic library using RUNPATH"
-    exit 66
-fi
-echo "Success"
+echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS):"
+staticx $STATICX_FLAGS $app $outfile
+
+# Run that executable
+echo -e "\nRunning staticx executable"
+$outfile
