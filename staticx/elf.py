@@ -231,20 +231,20 @@ class StaticELFError(Error):
         super().__init__(message)
 
 
-class ELFCloser:
-    def __init__(self, path, mode):
-        self.f = open(path, mode)
-        self.elf = ELFFile(self.f)
+class ELFFileX(ELFFile):
+    @classmethod
+    def open(cls, path, mode='rb'):
+        return cls(open(path, mode))
 
     def __enter__(self):
-        return self.elf
+        return self
 
     def __exit__(self, *exc_info):
-        self.f.close()
+        self.stream.close()
 
 def open_elf(path, mode='rb'):
     try:
-        return ELFCloser(path, mode)
+        return ELFFileX.open(path, mode)
     except ELFError as e:
         raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
 
