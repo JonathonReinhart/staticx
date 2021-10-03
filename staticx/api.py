@@ -7,7 +7,6 @@ from tempfile import NamedTemporaryFile, mkdtemp
 import os
 from os.path import basename
 import logging
-from itertools import chain
 
 from .errors import *
 from .utils import *
@@ -87,17 +86,12 @@ class StaticxGenerator:
 
 
 
-    def generate(self, output, extra_libs=None):
+    def generate(self, output):
         """Generate a Staticx program
 
         Parameters:
         output: Path where output file is written
-        extra_libs:   Extra libraries to include
         """
-        # TODO: Remove extra_libs and use an add_library() method
-        if extra_libs is None:
-            extra_libs = []
-
         # Only allow generate() to be called once per instance.
         # In the future we might relax this, but YAGNI for now.
         if self._generate_called:
@@ -138,7 +132,7 @@ class StaticxGenerator:
             ar.add_interp_symlink(orig_interp)
 
             # Add all of the libraries
-            for libpath in chain(get_shobj_deps(self.orig_prog), extra_libs):
+            for libpath in get_shobj_deps(self.orig_prog):
                 self.add_library(libpath, exist_ok=True)
 
         # errr...
@@ -210,4 +204,7 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
             debug=debug,
             )
     with gen:
-        gen.generate(output=output, extra_libs=libs)
+        for lib in (libs or []):
+            gen.add_library(lib)
+
+        gen.generate(output=output)
