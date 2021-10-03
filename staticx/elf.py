@@ -252,6 +252,24 @@ class ELFFileX(ELFFile):
             return isinstance(sec, sectype)
         return single(self.iter_sections(), key=key, default=None)
 
+    def get_prog_interp(self):
+        for seg in self.iter_segments():
+            # Amazingly, this is slightly faster than
+            # if isinstance(seg, InterpSegment):
+            try:
+                return seg.get_interp_name()
+            except AttributeError:
+                continue
+
+        raise InvalidInputError("{}: not a dynamic executable "
+                                "(no interp segment)".format(self.__path))
+
+    def is_dynamic(self):
+        for seg in self.iter_segments():
+            if seg['p_type'] == 'PT_DYNAMIC':
+                # seg is an instance of DynamicSegment
+                return True
+        return False
 
 
 
@@ -268,26 +286,11 @@ def get_machine(path):
 
 def get_prog_interp(path):
     with open_elf(path) as elf:
-        for seg in elf.iter_segments():
-            # Amazingly, this is slightly faster than
-            # if isinstance(seg, InterpSegment):
-            try:
-                return seg.get_interp_name()
-            except AttributeError:
-                continue
-        else:
-            raise InvalidInputError("{}: not a dynamic executable "
-                                    "(no interp segment)".format(path))
-
+        return elf.get_prog_interp()
 
 def is_dynamic(path):
     with open_elf(path) as elf:
-        for seg in elf.iter_segments():
-            if seg['p_type'] == 'PT_DYNAMIC':
-                # seg is an instance of DynamicSegment
-                return True
-        return False
-
+        return elf.is_dynamic()
 
 def ensure_dynamic(path):
     if not is_dynamic(path):
