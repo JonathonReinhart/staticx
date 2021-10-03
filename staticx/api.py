@@ -156,13 +156,22 @@ class StaticxGenerator:
             raise LibExistsError(libname)
 
         # Copy the library to the temp dir before stripping
+        # TODO: Do this lazily if stripping, or if patchelf-ing
         tmplib = os.path.join(self.tmpdir, basename(libpath))
         logging.info("Copying {} to {}".format(libpath, tmplib))
         shutil.copy(libpath, tmplib)
 
+
+        self.audit_library(libpath)
+        # TODO: Is it safe to just remove DT_RPATH/DT_RUNPATH?
+        #try:
+        #    self.audit_library(libpath)
+        #except UnsupportedRunpathError:
+        #    tool_patchelf.run_check('--remove-rpath', tmplib)
+
         if self.strip:
             # Strip the library
-            logging.info("Stripping binary {}".format(tmplib))
+            logging.info("Stripping library {}".format(tmplib))
             strip_elf(tmplib)
 
             libpath = tmplib
@@ -194,6 +203,16 @@ class StaticxGenerator:
         self._added_libs[arcname] = linklib
 
 
+    def audit_library(self, path):
+        """Audit a shared library to check for problems
+
+        Specifically:
+        - See if it uses the problematic DT_RUNPATH (seee #172)
+        """
+        # TODO: Is RPATH a potential problem here, too?
+        rp = get_runpath(path)
+        if rp:
+            raise UnsupportedRunpathError(path, rp.runpath)
 
 
     def _fixup_prog(self):

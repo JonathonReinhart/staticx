@@ -25,6 +25,16 @@ class InvalidInputError(Error):
     """Input provided by the user is invalid"""
     pass
 
+class UnsupportedRunpathError(InvalidInputError):
+    """A library uses the unsupported RUNPATH dynamic entry
+
+    See https://github.com/JonathonReinhart/staticx/issues/172
+    """
+    def __init__(self, libpath, runpath):
+        super().__init__("{} uses unsupported DT_RUNPATH ({!r}).\n"
+                "See https://github.com/JonathonReinhart/staticx/issues/188"
+                .format(libpath, runpath))
+
 class FormatMismatchError(Error):
     pass
 
