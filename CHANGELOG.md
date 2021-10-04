@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   `RPATH`/`RUNPATH`. Libraries now have `RPATH`/`RUNPATH` removed while being
   added, unless those libraries come from a PyInstalled application. ([#173])
 
+### Changed
+- Rework library-adding code to lazily copy libraries before modifying ([#192])
+
 
 ## [0.12.3] - 2021-09-04
 ### Added
@@ -250,3 +253,4 @@ Initial release
 [#179]: https://github.com/JonathonReinhart/staticx/pull/179
 [#180]: https://github.com/JonathonReinhart/staticx/pull/180
 [#185]: https://github.com/JonathonReinhart/staticx/pull/185
+[#192]: https://github.com/JonathonReinhart/staticx/pull/192
