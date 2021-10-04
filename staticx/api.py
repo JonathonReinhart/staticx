@@ -149,58 +149,81 @@ class StaticxGenerator:
         The library will be added with its base name.
         Symlinks will also be added and followed.
         """
+        # See if we've already handled this library
         libname = basename(libpath)
         if libname in self._added_libs:
             if exist_ok:
                 return
             raise LibExistsError(libname)
 
-        # Copy the library to the temp dir before stripping
-        # TODO: Do this lazily if stripping, or if patchelf-ing
-        tmplib = os.path.join(self.tmpdir, basename(libpath))
-        logging.info("Copying {} to {}".format(libpath, tmplib))
-        shutil.copy(libpath, tmplib)
+        logging.info("Processing library {} ({})".format(libname, libpath))
+
+        # Handle symlinks
+        libpath = self._handle_lib_symlinks(libpath)
+
+        # We're left with a real file at this point
+        assert not islink(libpath)
+
+        # Lazily make a copy of the library before modifying it
+        def work_on_copy():
+            nonlocal libpath
+
+            tmplib = os.path.join(self.tmpdir, basename(libpath))
+            logging.info("Copying {} to {}".format(libpath, tmplib))
+            shutil.copy(libpath, tmplib)
+            libpath = tmplib
+
+            nonlocal work_on_copy
+            def work_on_copy(): pass
+
 
         # Audit library to check for problems
         try:
             self.check_library_rpath(libpath)
         except (UnsupportedRpathError, UnsupportedRunpathError):
             # Fix it by removing
-            logging.info("Removing RPATH/RUNPATH from library {}".format(tmplib))
-            remove_rpath(tmplib)
+            work_on_copy()
+            logging.info("Removing RPATH/RUNPATH from library {}".format(libpath))
+            remove_rpath(libpath)
 
+        # Strip the library
         if self.strip:
-            # Strip the library
-            logging.info("Stripping library {}".format(tmplib))
-            strip_elf(tmplib)
+            work_on_copy()
+            logging.info("Stripping library {}".format(libpath))
+            strip_elf(libpath)
 
-            libpath = tmplib
 
-        # Add the library to the archive.
-        # "Recursively" step through any symbolic links,
-        # generating local links inside the archive.
-        linklib = libpath
-        while islink(linklib):
-            arcname = basename(linklib)
-            linklib = get_symlink_target(linklib)
+        # Finally, add it to the archive.
+        arcname = basename(libpath)
+        logging.info("Adding {} as {}".format(libpath, arcname))
+        self.sxar.add_file(libpath, arcname=arcname)
+        if arcname in self._added_libs:
+            raise InternalError("libname {} absent from _added_libs but"
+                    " library {} present".format(libname, arcname))
+        self._added_libs[arcname] = libpath
+
+
+    def _handle_lib_symlinks(self, libpath):
+        """Recursively process symlinks along path to library
+
+        Generate local symlinks inside the archive reflecting these.
+
+        Return the fully-resolved path to the actual library.
+        """
+        while islink(libpath):
+            arcname = basename(libpath)
+            libpath = get_symlink_target(libpath)
 
             # Add a symlink.
             # At this point the target probably doesn't exist, but that doesn't matter yet.
-            logging.info("    Adding Symlink {} => {}".format(arcname, basename(linklib)))
-            self.sxar.add_symlink(arcname, basename(linklib))
+            logging.info("Adding Symlink {} => {}".format(arcname, basename(libpath)))
+            self.sxar.add_symlink(arcname, basename(libpath))
             if arcname in self._added_libs:
                 raise InternalError("libname {} absent from _added_libs but"
                         " symlink {} present".format(libname, arcname))
             self._added_libs[arcname] = None    # Don't care about real target for symlinks
 
-        # We're left with a real file at this point, add it to the archive.
-        arcname = basename(linklib)
-        logging.info("    Adding {} as {}".format(linklib, arcname))
-        self.sxar.add_file(linklib, arcname=arcname)
-        if arcname in self._added_libs:
-            raise InternalError("libname {} absent from _added_libs but"
-                    " library {} present".format(libname, arcname))
-        self._added_libs[arcname] = linklib
+        return libpath
 
 
     def check_library_rpath(self, path, dangerous_only=False):
