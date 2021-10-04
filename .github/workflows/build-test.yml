@@ -1,0 +1,52 @@
+name: Build and Test
+
+# Run this workflow whenever a PR is created or pushed to.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+      fail-fast: False
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+    - run: git fetch --prune --unshallow
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        docker version
+
+        sudo apt-get update
+        sudo apt-get install -y busybox musl-tools scons
+
+        pip install wheel
+
+    - name: Run tests
+      run: |
+        # Build and install a wheel
+        python setup.py bdist_wheel
+        pip install dist/staticx-*-py3-none-manylinux1_x86_64.whl
+        staticx --version
+
+        # Run unit tests
+        pytest -v
+
+        # Run inegration tests
+        test/run_all.sh
+        STATICX_FLAGS='--no-compress' test/run_all.sh
+        STATICX_FLAGS='--strip' test/run_all.sh
