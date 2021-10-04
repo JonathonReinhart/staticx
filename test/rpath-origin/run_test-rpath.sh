@@ -4,6 +4,7 @@ set -e
 echo -e "\n\nTest StaticX against application using RPATH \$ORIGIN"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
+source ../funcs.sh
 
 app="dist.rpath/bin/app"
 outfile="dist.rpath/app.staticx"
@@ -13,15 +14,7 @@ outfile="dist.rpath/app.staticx"
 # https://stackoverflow.com/a/52020177/119527
 scons --quiet name=rpath LINKFLAGS='-Wl,--disable-new-dtags'
 
-# Ensure this test uses DT_RPATH and not DT_RUNPATH
-if (readelf -d $app | grep -q '(RUNPATH)'); then
-    echo "TEST ERROR: app uses DT_RUNPATH instead of DT_RPATH"
-    exit 66
-fi
-if ! (readelf -d $app | grep -q '(RPATH)'); then
-    echo "TEST ERROR: app is missing DT_RPATH"
-    exit 66
-fi
+verify_uses_rpath $app
 
 # Run the application normally
 echo -e "\nApp run normally:"
