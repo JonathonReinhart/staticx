@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-echo -e "\n\nTest StaticX in a broken NSS target environment"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX in a broken NSS target environment"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

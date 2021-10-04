@@ -3,7 +3,8 @@ set -e
 app=./date
 outfile=./date.staticx
 
-echo -e "\n\nTest StaticX against 'date'"
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against 'date'"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
