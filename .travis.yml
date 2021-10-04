@@ -10,14 +10,13 @@ env:
   - BOOTLOADER_CC=musl-gcc     # Default to musl libc
 matrix:
   include:
-    - python: "3.5"
     - python: "3.6"
     - python: "3.7"
     - python: "3.8"
     - python: "3.9"
 
     # Test using glibc
-    - python: "3.5"
+    - python: "3.9"
       env: BOOTLOADER_CC=
 
     - python: "nightly"
