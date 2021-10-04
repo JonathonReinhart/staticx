@@ -1,0 +1,62 @@
+name: Build and Test
+
+# Run this workflow whenever a PR is created or pushed to.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04  # See #245
+    strategy:
+      matrix:
+        python-version: ["3.7"]
+      fail-fast: False
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+    - run: git fetch --prune --unshallow
+
+    # We use Python from deadsnakes/action because the Python from
+    # actions/setup-python links with RUNPATH which is not compatible
+    # with StaticX. See #224.
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: deadsnakes/action@v3.0.1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        docker version
+
+        sudo apt-get update
+        sudo apt-get install -y busybox musl-tools scons
+
+        pip install wheel
+
+    - name: Build and install
+      run: |
+        python setup.py bdist_wheel
+        pip install dist/staticx-*-py3-none-manylinux1_x86_64.whl
+        staticx --version
+
+    - name: Run unit tests
+      run: |
+        pytest -v
+
+    - name: Run integration tests
+      run: |
+        test/run_all.sh
+
+    - name: Run integration tests (w/o compression)
+      run: |
+        STATICX_FLAGS='--no-compress' test/run_all.sh
+
+    - name: Run integration tests (w/ strip)
+      run: |
+        STATICX_FLAGS='--strip' test/run_all.sh
