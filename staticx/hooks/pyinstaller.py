@@ -2,7 +2,7 @@ import os
 import logging
 import tempfile
 
-from ..elf import get_shobj_deps, StaticELFError, LddError
+from ..elf import get_shobj_deps, is_dynamic, LddError
 from ..utils import make_executable, mkdirs_for
 
 def process_pyinstaller_archive(sx):
@@ -79,17 +79,25 @@ class PyInstallHook:
     def _add_required_deps(self, lib):
         """Add dependencies of lib to staticx archive"""
 
-        # Silence "you do not have execution permission" warning from ldd
-        make_executable(lib)
-
-        # Assume this is a shared library, and
-        # try to get any dependencies of this file
-        try:
-            deps = get_shobj_deps(lib, libpath=[self.tmpdir.name])
-        except StaticELFError:
+        # Verify this is a shared library
+        if not is_dynamic(lib):
             # It's okay if there's a static executable in the PyInstaller
             # archive. See issue #78
             return
+
+        # Silence "you do not have execution permission" warning from ldd
+        make_executable(lib)
+
+        # Check for RPATH/RUNPATH, but only "dangerous" values and let
+        # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
+        self.sx.check_library_rpath(lib, dangerous_only=True)
+        # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
+        # here, because staticx is not about to to modify the library and
+        # re-pack the PyInstaller archive itself.
+
+        # Try to get any dependencies of this file
+        try:
+            deps = get_shobj_deps(lib, libpath=[self.tmpdir.name])
         except LddError as e:
             # In certain cases, ldd might get upset about binary files
             # (probably added by the user via .spec file). This can happen

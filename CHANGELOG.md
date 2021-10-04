@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased] - 2021-10-03
+### Added
+- Added auditing of all shared libraries to detect problematic usages of
+  `RPATH`/`RUNPATH`. Libraries now have `RPATH`/`RUNPATH` removed while being
+  added, unless those libraries come from a PyInstalled application. ([#173])
+
+
 ## [0.12.3] - 2021-09-04
 ### Added
 - Added `STATICX_LDD` environment variable to override the `ldd` executable
@@ -238,6 +245,7 @@ Initial release
 [#154]: https://github.com/JonathonReinhart/staticx/pull/154
 [#157]: https://github.com/JonathonReinhart/staticx/pull/157
 [#168]: https://github.com/JonathonReinhart/staticx/pull/168
+[#173]: https://github.com/JonathonReinhart/staticx/pull/173
 [#175]: https://github.com/JonathonReinhart/staticx/pull/175
 [#179]: https://github.com/JonathonReinhart/staticx/pull/179
 [#180]: https://github.com/JonathonReinhart/staticx/pull/180

@@ -8,6 +8,7 @@ import os
 from pprint import pformat
 
 from elftools.elf.elffile import ELFFile
+from elftools.elf.dynamic import DynamicSegment
 from elftools.common.exceptions import ELFError
 
 from .errors import *
@@ -200,7 +201,7 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
         # first before --force-rpath is effective.
         # https://github.com/NixOS/patchelf/issues/94
         # This was fixed in v0.11 but that's newer than Debian Buster.
-        tool_patchelf.run_check('--remove-rpath', path)
+        remove_rpath(path)
 
         args.append('--force-rpath')
     if add_needed:
@@ -216,6 +217,8 @@ def patch_elf(path, interpreter=None, rpath=None, force_rpath=False, no_default_
     if no_default_lib:
         tool_patchelf.run_check('--no-default-lib', path)
 
+def remove_rpath(path):
+    tool_patchelf.run_check('--remove-rpath', path)
 
 def strip_elf(path):
     tool_strip.run_check(path)
@@ -264,13 +267,31 @@ class ELFFileX(ELFFile):
         raise InvalidInputError("{}: not a dynamic executable "
                                 "(no interp segment)".format(self.__path))
 
-    def is_dynamic(self):
+
+    def get_dynamic_segment(self):
         for seg in self.iter_segments():
             if seg['p_type'] == 'PT_DYNAMIC':
-                # seg is an instance of DynamicSegment
-                return True
-        return False
+                assert isinstance(seg, DynamicSegment)
+                return seg
+        return None
 
+    def is_dynamic(self):
+        return bool(self.get_dynamic_segment())
+
+
+    def get_single_dynamic_tag(self, name):
+        dyn = self.get_dynamic_segment()
+        if dyn:
+            return single(dyn.iter_tags(name), default=None)
+        return None
+
+    def get_rpath(self):
+        """Returns the value of the DT_RPATH tag of the ELF file"""
+        return self.get_single_dynamic_tag('DT_RPATH')
+
+    def get_runpath(self):
+        """Returns the value of the DT_RUNPATH tag of the ELF file"""
+        return self.get_single_dynamic_tag('DT_RUNPATH')
 
 
 def open_elf(path, mode='rb'):
