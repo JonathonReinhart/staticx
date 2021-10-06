@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Log staticx version and arguments at startup.
+
+
 ## [0.13.0] - 2021-10-04
 ### Added
 - Added auditing of all shared libraries to detect problematic usages of
