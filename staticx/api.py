@@ -15,7 +15,7 @@ from .archive import SxArchive
 from .assets import copy_asset_to_tempfile
 from .constants import *
 from .hooks import run_hooks
-
+from .version import __version__
 
 
 
@@ -287,6 +287,16 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     strip: Strip binaries to reduce size
     debug: Run in debug mode (use debug bootloader)
     """
+
+    logging.info("Running StaticX version {}".format(__version__))
+    logging.debug("Arguments:")
+    logging.debug("  prog:      {!r}".format(prog))
+    logging.debug("  output:    {!r}".format(output))
+    logging.debug("  libs:      {!r}".format(libs))
+    logging.debug("  strip:     {!r}".format(strip))
+    logging.debug("  compress:  {!r}".format(compress))
+    logging.debug("  debug:     {!r}".format(debug))
+
     gen = StaticxGenerator(
             prog=prog,
             strip=strip,
