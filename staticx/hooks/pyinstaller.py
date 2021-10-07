@@ -116,5 +116,4 @@ class PyInstallHook:
                 logging.debug("{} already in pyinstaller archive".format(dep))
                 continue
 
-            logging.debug("Adding {} to archive".format(dep))
             self.sx.add_library(deppath, exist_ok=True)
