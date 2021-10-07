@@ -2,9 +2,9 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.13.1] - 2021-10-06
 ### Added
-- Log staticx version and arguments at startup.
+- Log staticx version and arguments at startup ([#197])
 
 
 ## [0.13.0] - 2021-10-04
@@ -187,7 +187,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/JonathonReinhart/staticx/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/JonathonReinhart/staticx/compare/v0.12.3...v0.13.0
 [0.12.3]: https://github.com/JonathonReinhart/staticx/compare/v0.12.2...v0.12.3
 [0.12.2]: https://github.com/JonathonReinhart/staticx/compare/v0.12.1...v0.12.2
@@ -260,3 +261,4 @@ Initial release
 [#180]: https://github.com/JonathonReinhart/staticx/pull/180
 [#185]: https://github.com/JonathonReinhart/staticx/pull/185
 [#192]: https://github.com/JonathonReinhart/staticx/pull/192
+[#197]: https://github.com/JonathonReinhart/staticx/pull/197
