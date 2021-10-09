@@ -18,22 +18,6 @@ from .hooks import run_hooks
 from .version import __version__
 
 
-
-def _get_bootloader(debug=False):
-    """Get a temporary copy of the bootloader"""
-    fbl = copy_asset_to_tempfile('bootloader', debug, prefix='staticx-output-', delete=False)
-    make_executable(fbl.name)
-    return fbl.name
-
-
-def _check_bootloader_compat(bootloader, prog):
-    """Verify the bootloader machine matches that of the user program"""
-    bldr_mach = get_machine(bootloader)
-    prog_mach = get_machine(prog)
-    if bldr_mach != prog_mach:
-        raise FormatMismatchError("Bootloader machine ({}) doesn't match "
-                "program machine ({})".format(bldr_mach, prog_mach))
-
 class StaticxGenerator:
     """StaticxGenerator is responsible for producing a staticx-ified executable.
     """
@@ -53,6 +37,7 @@ class StaticxGenerator:
         self._generate_called = False
         self._added_libs = {}
 
+        # Temporary output file (bootloader copy)
         self.tmpoutput = None
         self.tmpprog = None
         self.tmpdir = None
@@ -86,6 +71,21 @@ class StaticxGenerator:
             self.sxar = None
 
 
+    def _get_bootloader(self):
+        # Get a temporary copy of the bootloader
+        fbl = copy_asset_to_tempfile('bootloader', self.debug,
+                                     prefix='staticx-output-', delete=False)
+        with fbl:
+            self.tmpoutput = bootloader = fbl.name
+        make_executable(bootloader)
+
+        # Verify the bootloader machine matches that of the user program
+        bldr_mach = get_machine(bootloader)
+        prog_mach = get_machine(self.orig_prog)
+        if bldr_mach != prog_mach:
+            raise FormatMismatchError("Bootloader machine ({}) doesn't match "
+                    "program machine ({})".format(bldr_mach, prog_mach))
+
 
     def generate(self, output):
         """Generate a Staticx program
@@ -100,9 +100,7 @@ class StaticxGenerator:
         self._generate_called = True
 
         # Work on a temp copy of the bootloader which becomes the output program
-        self.tmpoutput = _get_bootloader(self.debug)
-
-        _check_bootloader_compat(self.tmpoutput, self.orig_prog)
+        self._get_bootloader()
 
         # First, learn things about the original program
         orig_interp = get_prog_interp(self.orig_prog)
