@@ -408,11 +408,21 @@ get_real_prog_path(void)
     return result;
 }
 
+static void identify(void)
+{
+    debug_printf("bootloader version %s\n", STATICX_VERSION);
+    debug_printf("compiled %s at %s by %s version %s\n",
+            __DATE__, __TIME__, COMPILER_PATH, __VERSION__);
+
+    /* If we're invoked by staticx, just exit */
+    if (getenv("STATICX_BOOTLOADER_IDENTIFY"))
+        exit(0);
+}
+
 int
 main(int argc, char **argv)
 {
-    debug_printf("Version %s\n", STATICX_VERSION);
-
+    identify();
     xz_crc32_init();
 
     /* Create temporary directory where archive will be extracted */
