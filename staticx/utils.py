@@ -45,6 +45,15 @@ def copy_fileobj_to_tempfile(fsrc, **kwargs):
     fdst.seek(0)
     return fdst
 
+
+def which_exec(name, env=None):
+    for path in os.get_exec_path(env=env):
+        xp = os.path.join(path, name)
+        if os.access(xp, os.X_OK):
+            return xp
+    return None
+
+
 def is_iterable(x):
     """Returns true if x is iterable but not a string"""
     return isinstance(x, Iterable) and not isinstance(x, str)

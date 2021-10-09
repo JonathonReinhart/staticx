@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Log additional diagnostic information at startup ([#199])
+
+
 ## [0.13.1] - 2021-10-06
 ### Added
 - Log staticx version and arguments at startup ([#197])
@@ -262,3 +267,4 @@ Initial release
 [#185]: https://github.com/JonathonReinhart/staticx/pull/185
 [#192]: https://github.com/JonathonReinhart/staticx/pull/192
 [#197]: https://github.com/JonathonReinhart/staticx/pull/197
+[#199]: https://github.com/JonathonReinhart/staticx/pull/199

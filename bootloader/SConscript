@@ -2,6 +2,12 @@ import sys
 
 Import('env')
 
+def cppdef_stringify(s):
+    """Add quotes to a string suitable for a C preprocessor -D argument"""
+    s = '"' + s + '"'    # Add " for the C string literal
+    s = "'" + s + "'"    # Add ' for the shell
+    return s
+
 env.Append(
     CCFLAGS = ['-static'],
     LINKFLAGS = ['-static'],
@@ -9,6 +15,9 @@ env.Append(
         '#libtar',
         '#libxz',
     ],
+    CPPDEFINES = {
+        'COMPILER_PATH': cppdef_stringify(env['CC']),
+    }
 )
 
 bootloader = env.Program(
