@@ -7,12 +7,21 @@ import errno
 import os
 from pprint import pformat
 
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSegment
 from elftools.common.exceptions import ELFError
 
 from .errors import *
-from .utils import coerce_sequence, single
+from .utils import coerce_sequence, single, which_exec
+
+
+def verify_tools():
+    logging.info("Libraries:")
+    logging.info("  elftools: {}".format(elftools.__version__))
+
+    extern_tools_verify()
+
 
 class ExternTool:
     def __init__(self, cmd, os_pkg, stderr_ignore=[], encoding=None):
@@ -30,11 +39,12 @@ class ExternTool:
                 return True
         return False
 
-    def run(self, *args, **kw):
+    def run(self, *args, _internal=False, **kw):
         args = list(args)
         args.insert(0, self.cmd)
 
-        logging.debug("Running " + str(args))
+        if not _internal:
+            logging.debug("Running " + str(args))
         try:
             r = subprocess.run(
                 args = args,
@@ -52,10 +62,11 @@ class ExternTool:
         r.stderr = r.stderr.decode(self.encoding)
 
         # Hide ignored lines from stderr
-        for line in r.stderr.splitlines(True):
-            if self.__should_ignore(line):
-                continue
-            sys.stderr.write(line)
+        if not _internal:
+            for line in r.stderr.splitlines(True):
+                if self.__should_ignore(line):
+                    continue
+                sys.stderr.write(line)
 
         return r.returncode, r.stdout
 
@@ -68,6 +79,14 @@ class ExternTool:
 
         return stdout
 
+    def get_version(self):
+        rc, output = self.run('--version', _internal=True)
+        if rc == 0:
+            return output.splitlines()[0]
+        return "??? (exited {})".format(rc)
+
+    def which(self):
+        return which_exec(self.cmd)
 
 
 
@@ -81,6 +100,14 @@ tool_patchelf   = ExternTool('patchelf', 'patchelf',
                     encoding='utf-8',
                     )
 tool_strip      = ExternTool('strip', 'binutils')
+
+all_tools = (tool_ldd, tool_objcopy, tool_strip, tool_patchelf)
+
+def extern_tools_verify():
+    logging.debug("External tools:")
+    for t in all_tools:
+        logging.info("  {}: {}: {}".format(t.cmd, t.which(), t.get_version()))
+
 
 class LddError(ToolError):
     def __init__(self, message):

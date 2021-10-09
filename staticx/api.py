@@ -289,6 +289,7 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     """
 
     logging.info("Running StaticX version {}".format(__version__))
+    verify_tools()
     logging.debug("Arguments:")
     logging.debug("  prog:      {!r}".format(prog))
     logging.debug("  output:    {!r}".format(output))
