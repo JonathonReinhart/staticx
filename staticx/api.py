@@ -7,6 +7,7 @@ from tempfile import NamedTemporaryFile, mkdtemp
 import os
 from os.path import basename, islink
 import logging
+import subprocess
 
 from .errors import *
 from .utils import *
@@ -85,6 +86,17 @@ class StaticxGenerator:
         if bldr_mach != prog_mach:
             raise FormatMismatchError("Bootloader machine ({}) doesn't match "
                     "program machine ({})".format(bldr_mach, prog_mach))
+
+        # Run the bootloader for identification
+        r = subprocess.run(
+                args = [bootloader],
+                env = dict(STATICX_BOOTLOADER_IDENTIFY='1'),
+                stderr = subprocess.PIPE,
+                universal_newlines = True,  # TODO: 'text' in Python 3.7
+                )
+        r.check_returncode()
+        lines = (line.split(':', 1)[1].strip() for line in r.stderr.splitlines())
+        logging.debug("Bootloader: " + " ".join(lines))
 
 
     def generate(self, output):
