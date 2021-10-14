@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.13.3] - 2021-10-14
 ### Fixed
 - Fix ldd warning about libnssfix.so not being executable ([#204])
 
@@ -197,7 +197,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.2...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.3...HEAD
+[0.13.3]: https://github.com/JonathonReinhart/staticx/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/JonathonReinhart/staticx/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/JonathonReinhart/staticx/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/JonathonReinhart/staticx/compare/v0.12.3...v0.13.0
