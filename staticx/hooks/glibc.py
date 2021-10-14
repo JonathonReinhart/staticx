@@ -3,6 +3,7 @@ from ..errors import InternalError
 from ..elf import open_elf, get_shobj_deps, patch_elf
 from elftools.elf.gnuversions import GNUVerNeedSection
 import logging
+import os
 
 LIBNSSFIX = 'libnssfix.so'
 
@@ -13,6 +14,8 @@ def process_glibc_prog(sx):
     try:
         nssfix = copy_asset_to_tempfile(LIBNSSFIX, debug=sx.debug,
                 prefix='libnssfix-', suffix='.so')
+        umask=os.umask(0o755)
+        os.chmod(nssfix.name, 0o755&~umask)
     except KeyError:
         raise InternalError("GLIBC binary detected but libnssfix.so not available")
 
