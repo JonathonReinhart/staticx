@@ -1,6 +1,7 @@
 from ..assets import copy_asset_to_tempfile
 from ..errors import InternalError
 from ..elf import open_elf, get_shobj_deps, patch_elf
+from ..utils import make_executable
 from elftools.elf.gnuversions import GNUVerNeedSection
 import logging
 
@@ -29,6 +30,9 @@ def process_glibc_prog(sx):
     # operates on the *original* executable and not the copied/modified one,
     # (see dfa201b07e) so it doesn't see changes made here.
     with nssfix:
+        # Silence "you do not have execution permission" warning from ldd
+        make_executable(nssfix.name)
+
         # TODO: Don't use sxar
         sx.sxar.add_fileobj(LIBNSSFIX, nssfix)
         for libpath in get_shobj_deps(nssfix.name):
