@@ -11,9 +11,9 @@ app="./dist/app"
 outfile="./dist/app.staticx"
 
 # Build the shared library
-gcc -Wall -Werror -fPIC -c -o shlib.o shlib.c
-gcc -shared -Wl,-rpath=/bogus/absolute/path -Wl,--enable-new-dtags -o shlib.so shlib.o
-verify_uses_runpath shlib.so
+gcc -Wall -Werror -fPIC -c -o libfoo.o libfoo.c
+gcc -shared -Wl,-rpath=/bogus/absolute/path -Wl,--enable-new-dtags -o libfoo.so libfoo.o
+verify_uses_runpath libfoo.so
 
 # Run the application normally
 echo -e "\nPython app run normally:"

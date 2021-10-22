@@ -1,6 +1,6 @@
 # PyInstaller spec file
 
-binaries = [('shlib.so', '.')]
+binaries = [('libfoo.so', '.')]
 
 a = Analysis(['app.py'], binaries=binaries)
 
