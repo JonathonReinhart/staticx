@@ -9,7 +9,7 @@ PACKAGEPATH = abspath(dirname(__file__))
 PROJPATH = dirname(PACKAGEPATH)
 
 # Base version, which will be augmented with Git information
-BASE_VERSION = '0.13.3'
+BASE_VERSION = '0.13.4'
 
 # This string will be replaced by `git-archive`
 # with the abbreviated commit hash
