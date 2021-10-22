@@ -4,9 +4,15 @@ from pathlib import Path
 
 mydir = Path(__file__).parent
 
-dll = CDLL(mydir / 'shlib.so')
+libfoo = CDLL(mydir / 'libfoo.so')
+libbar = CDLL(mydir / 'libbar.so')
 
-dll.foo.argtypes = ()
-dll.foo.restype = c_int
+def setup_prototype(func, restype, *argtypes):
+    func.restype = restype
+    func.argtypes = argtypes
 
-print("foo() =>", dll.foo())
+setup_prototype(libfoo.foo, c_int)
+setup_prototype(libbar.bar, c_int)
+
+print("foo() =>", libfoo.foo())
+print("bar() =>", libbar.bar())

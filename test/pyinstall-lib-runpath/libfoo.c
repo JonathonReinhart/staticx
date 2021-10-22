@@ -1,4 +1,4 @@
-#include "shlib.h"
+#include "libfoo.h"
 
 int foo(void)
 {

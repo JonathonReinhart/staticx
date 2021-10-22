@@ -32,6 +32,8 @@ class UnsupportedDynTagError(InvalidInputError):
     See https://github.com/JonathonReinhart/staticx/issues/172
     """
     def __init__(self, libpath, value):
+        self.libpath = libpath
+        self.value = value
         super().__init__("{} uses unsupported {} ({!r}).\n"
                 "See https://github.com/JonathonReinhart/staticx/issues/188"
                 .format(libpath, self.tag, value))
