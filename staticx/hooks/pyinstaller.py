@@ -69,6 +69,9 @@ class PyInstallHook:
             with open(tmppath, 'wb') as f:
                 f.write(data)
 
+            # Silence "you do not have execution permission" warning from ldd
+            make_executable(tmppath)
+
             # We can't use yield here, because we need all of the libraries to be
             # extracted prior to running ldd (see #61)
             result.append(tmppath)
@@ -84,9 +87,6 @@ class PyInstallHook:
             # It's okay if there's a static executable in the PyInstaller
             # archive. See issue #78
             return
-
-        # Silence "you do not have execution permission" warning from ldd
-        make_executable(lib)
 
         # Check for RPATH/RUNPATH, but only "dangerous" values and let
         # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
