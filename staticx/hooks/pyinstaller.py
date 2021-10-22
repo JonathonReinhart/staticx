@@ -44,9 +44,13 @@ class PyInstallHook:
 
     def process(self):
         binaries = self._extract_binaries()
+
+        # These could be Python libraries, shared object dependencies, or
+        # anything else a user might add via `binaries` in the .spec file.
+        # Filter out everything except dynamic ELFs
+        binaries = [b for b in binaries if is_dynamic(b)]
+
         for binary in binaries:
-            # These could be Python libraries, shared object dependencies, or
-            # anything else a user might add via `binaries` in the .spec file.
             self._add_required_deps(binary)
 
 
@@ -81,12 +85,6 @@ class PyInstallHook:
 
     def _add_required_deps(self, lib):
         """Add dependencies of lib to staticx archive"""
-
-        # Verify this is a shared library
-        if not is_dynamic(lib):
-            # It's okay if there's a static executable in the PyInstaller
-            # archive. See issue #78
-            return
 
         # Check for RPATH/RUNPATH, but only "dangerous" values and let
         # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
