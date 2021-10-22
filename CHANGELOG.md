@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Perform RUNPATH auditing on all PyInstaller archive libraries before aborting ([#208])
+
+
 ## [0.13.3] - 2021-10-14
 ### Fixed
 - Fix ldd warning about libnssfix.so not being executable ([#204])
@@ -276,3 +281,4 @@ Initial release
 [#197]: https://github.com/JonathonReinhart/staticx/pull/197
 [#199]: https://github.com/JonathonReinhart/staticx/pull/199
 [#204]: https://github.com/JonathonReinhart/staticx/pull/204
+[#208]: https://github.com/JonathonReinhart/staticx/pull/208
