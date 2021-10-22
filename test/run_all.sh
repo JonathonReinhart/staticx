@@ -21,6 +21,9 @@ pyinstall-cffi/run_test.sh
 # Run test against app built with PyInstaller and includes a helper app
 pyinstall-aux-static-exec/run_test.sh
 
+# Test against a PyInstaller app that uses unsupported RUNPATH
+pyinstall-lib-runpath/run_test.sh
+
 # Verify that target system libs can't be loaded
 no-default-lib/run_test.sh
 
