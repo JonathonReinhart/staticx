@@ -3,6 +3,7 @@ import logging
 import tempfile
 
 from ..elf import get_shobj_deps, is_dynamic, LddError
+from ..errors import Error, UnsupportedRpathError, UnsupportedRunpathError
 from ..utils import make_executable, mkdirs_for
 
 def process_pyinstaller_archive(sx):
@@ -50,6 +51,8 @@ class PyInstallHook:
         # Filter out everything except dynamic ELFs
         binaries = [b for b in binaries if is_dynamic(b)]
 
+        self._audit_libs(binaries)
+
         for binary in binaries:
             self._add_required_deps(binary)
 
@@ -82,16 +85,31 @@ class PyInstallHook:
 
         return result
 
+    def _audit_libs(self, libs):
+        """Audit the dynamic libraries included in the PyInstaller archive"""
+        errors = []
+        for lib in libs:
+            # Check for RPATH/RUNPATH, but only "dangerous" values and let
+            # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
+            try:
+                self.sx.check_library_rpath(lib, dangerous_only=True)
+            except (UnsupportedRpathError, UnsupportedRunpathError) as e:
+                # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
+                # here, because staticx is not about to to modify the library and
+                # re-pack the PyInstaller archive itself.
+                errors.append(e)
+
+        if errors:
+            msg = "Unsupported PyInstaller input\n\n"
+            msg += "One or more libraries included in the PyInstaller"
+            msg += " archive uses unsupported RPATH/RUNPATH tags:\n\n"
+            for e in errors:
+                msg += "  {}: {}={!r}\n".format(e.libpath, e.tag, e.value)
+            msg += "\nSee https://github.com/JonathonReinhart/staticx/issues/188"
+            raise Error(msg)
 
     def _add_required_deps(self, lib):
         """Add dependencies of lib to staticx archive"""
-
-        # Check for RPATH/RUNPATH, but only "dangerous" values and let
-        # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
-        self.sx.check_library_rpath(lib, dangerous_only=True)
-        # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
-        # here, because staticx is not about to to modify the library and
-        # re-pack the PyInstaller archive itself.
 
         # Try to get any dependencies of this file
         try:

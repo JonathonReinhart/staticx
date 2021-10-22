@@ -35,7 +35,7 @@ if output=$(staticx $STATICX_FLAGS $app $outfile); then
     echo "FAIL: Staticx permitted a problematic library using RUNPATH"
     exit 66
 fi
-if ! (echo "$output" | grep -q "unsupported DT_RUNPATH"); then
+if ! (echo "$output" | grep -q "Unsupported PyInstaller input"); then
     echo "FAIL: Unexpected output text:"
     echo "$output"
     exit 66
