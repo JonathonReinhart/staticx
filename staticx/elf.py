@@ -123,7 +123,7 @@ def _parse_ldd_output(output):
     #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
     #     or
     #   /lib64/ld-linux-x86-64.so.2 => /usr/lib64/ld-linux-x86-64.so.2 (0x00007f1de63ac000)
-    pat = re.compile(r'\t([\w./+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
+    pat = re.compile(r'\t([\w./${}+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
 
     for line in output.splitlines():
         m = pat.match(line)
