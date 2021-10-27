@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.13.5] - 2021-10-26
+### Fixed
+- Handle variables in `DT_NEEDED` tags as seen in `ldd` output on RaspPI OS ([#210])
+
 ## [0.13.4] - 2021-10-22
 ### Changed
 - Perform RUNPATH auditing on all PyInstaller archive libraries before aborting ([#208])
@@ -202,7 +206,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.4...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.5...HEAD
+[0.13.5]: https://github.com/JonathonReinhart/staticx/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/JonathonReinhart/staticx/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/JonathonReinhart/staticx/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/JonathonReinhart/staticx/compare/v0.13.1...v0.13.2
@@ -283,3 +288,4 @@ Initial release
 [#199]: https://github.com/JonathonReinhart/staticx/pull/199
 [#204]: https://github.com/JonathonReinhart/staticx/pull/204
 [#208]: https://github.com/JonathonReinhart/staticx/pull/208
+[#210]: https://github.com/JonathonReinhart/staticx/pull/210
