@@ -95,3 +95,23 @@ class TestLdd:
 	    "/usr/lib64/ld-linux-x86-64.so.2",
         ]
         self._test(output, exp)
+
+    def test_raspios(self):
+        # https://github.com/JonathonReinhart/staticx/issues/209
+        output = (
+            "\tlinux-vdso.so.1 (0xbeee8000)\n"
+	    "\t/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so => /usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so (0xb6eeb000)\n"
+	    "\tlibdl.so.2 => /lib/arm-linux-gnueabihf/libdl.so.2 (0xb6ed7000)\n"
+	    "\tlibz.so.1 => /lib/arm-linux-gnueabihf/libz.so.1 (0xb6eac000)\n"
+	    "\tlibpthread.so.0 => /lib/arm-linux-gnueabihf/libpthread.so.0 (0xb6e80000)\n"
+	    "\tlibc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xb6d2c000)\n"
+	    "\t/lib/ld-linux-armhf.so.3 (0xb6f00000)\n")
+        exp = [
+            "/usr/lib/arm-linux-gnueabihf/libarmmem-v7l.so",
+            "/lib/arm-linux-gnueabihf/libdl.so.2",
+            "/lib/arm-linux-gnueabihf/libz.so.1",
+            "/lib/arm-linux-gnueabihf/libpthread.so.0",
+            "/lib/arm-linux-gnueabihf/libc.so.6",
+            "/lib/ld-linux-armhf.so.3",
+        ]
+        self._test(output, exp)
