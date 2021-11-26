@@ -12,4 +12,5 @@ anywhere, just like a static executable.
    installation
    usage
    troubleshooting
+   rpath
    changelog
