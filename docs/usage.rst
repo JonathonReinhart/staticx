@@ -29,6 +29,9 @@ Options:
 
                         Options: DEBUG,INFO,WARNING,ERROR,CRITICAL
 
+  --debug               Set loglevel to DEBUG and use a debug version of the
+                        bootloader
+
   -V, --version         Show StaticX version and exit
 
 

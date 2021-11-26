@@ -49,5 +49,5 @@ Or::
     BOOTLOADER_CC=/usr/local/musl/bin/musl-gcc pip3 install .
 
 
-.. _PyPI: https://pypi.python.org/pypi/staticx
+.. _PyPI: https://pypi.org/project/staticx/
 .. _musl libc: https://www.musl-libc.org/
