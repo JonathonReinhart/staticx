@@ -11,4 +11,5 @@ anywhere, just like a static executable.
    introduction
    installation
    usage
+   troubleshooting
    changelog
