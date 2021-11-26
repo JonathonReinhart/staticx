@@ -31,9 +31,7 @@ def parse_args():
     ap.add_argument('--loglevel', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
             help = 'Set the logging level (default: {})'.format(DEFAULT_LOGLEVEL))
 
-    # Hidden arguments (for development / testing)
-    ap.add_argument('--debug', action='store_true',
-            help = argparse.SUPPRESS)
+    ap.add_argument('--debug', action='store_true')
 
     args = ap.parse_args()
 

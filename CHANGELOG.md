@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Change --debug option to appear in CLI help output
+
 ## [0.13.5] - 2021-10-26
 ### Fixed
 - Handle variables in `DT_NEEDED` tags as seen in `ldd` output on RaspPI OS ([#210])
