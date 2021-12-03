@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.13.6] - 2021-12-02
 ### Changed
 - Change `--debug` option to appear in CLI help output
 
@@ -214,7 +214,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.5...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.6...HEAD
+[0.13.6]: https://github.com/JonathonReinhart/staticx/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/JonathonReinhart/staticx/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/JonathonReinhart/staticx/compare/v0.13.3...v0.13.4
 [0.13.3]: https://github.com/JonathonReinhart/staticx/compare/v0.13.2...v0.13.3
