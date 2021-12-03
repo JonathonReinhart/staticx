@@ -4,7 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Changed
-- Change --debug option to appear in CLI help output
+- Change `--debug` option to appear in CLI help output
+
+### Fixed
+- Fix bug sometimes causing a crash when `-l` is used ([#217])
+
 
 ## [0.13.5] - 2021-10-26
 ### Fixed
@@ -293,3 +297,4 @@ Initial release
 [#204]: https://github.com/JonathonReinhart/staticx/pull/204
 [#208]: https://github.com/JonathonReinhart/staticx/pull/208
 [#210]: https://github.com/JonathonReinhart/staticx/pull/210
+[#217]: https://github.com/JonathonReinhart/staticx/pull/217
