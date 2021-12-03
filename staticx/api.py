@@ -41,7 +41,7 @@ class StaticxGenerator:
         # Temporary output file (bootloader copy)
         self.tmpoutput = None
         self.tmpprog = None
-        self.tmpdir = None
+        self.tmpdir = mkdtemp(prefix='staticx-archive-')
 
         f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
         self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
@@ -130,7 +130,6 @@ class StaticxGenerator:
 
 
         # Build the archive to be appended
-        self.tmpdir = mkdtemp(prefix='staticx-archive-')
         with self.sxar as ar:
             run_hooks(self)
 
