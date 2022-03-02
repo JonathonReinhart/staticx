@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <sys/wait.h>
+#include <sys/statvfs.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -205,10 +206,25 @@ patch_app(const char *prog_path)
     free(interp_path);
 }
 
+static void
+check_tmpdir(const char *tmproot)
+{
+    struct statvfs st;
+    if (statvfs(tmproot, &st) != 0) {
+        error(2, errno, "Failed to get fs info for tmproot %s", tmproot);
+    }
+
+    if (st.f_flag & ST_NOEXEC) {
+        error(2, 0, "Temp root %s is mounted noexec", tmproot);
+    }
+}
+
 static char *
 create_tmpdir(void)
 {
     const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    check_tmpdir(tmproot);
+
     char *template = path_join(tmproot, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
