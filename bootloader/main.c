@@ -13,6 +13,8 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <libgen.h>
+#include <ctype.h>
+#include <string.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -29,6 +31,7 @@
 /* Keep temporary files */
 #define STATICX_KEEP_TEMPS      "STATICX_KEEP_TEMPS"
 #define TMPDIR                  "TMPDIR"
+#define TMPROOTDIR              "tmp_folder_define                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                "
 
 
 
@@ -225,10 +228,63 @@ mkpath(const char *dir, mode_t mode)
 	return mkdir(dir, mode);
 }
 
+const char *
+get_tmpdir(void)
+{
+    const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    return tmproot;
+}
+
+char *strtrim(char *str)
+{
+	char *start, *end;
+
+	if (!str) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	start = str;
+	while (isspace(*start))
+		start++;
+
+	if (*start == 0) {
+		str[0] = 0;
+		return str;
+	}
+
+	end = start + strlen(start) - 1;
+	while (end > start && isspace(*end))
+		end--;
+	*(++end) = 0;
+
+	memmove(str, start, end - start + 1);
+
+	return str;
+}
+
+void inPlaceStrTrim(char* str) {
+    int k = 0;
+    int i = 0;
+    for (i=0; str[i] != '\0';) {
+        if (isspace(str[i])) {
+            // we have got a space...
+            k = i;
+            for (int j=i; j<strlen(str)-1; j++) {
+                str[j] = str[j+1];
+            }
+            str[strlen(str)-1] = '\0';
+            i = k; // start the loop again where we ended..
+        } else {
+            i++;
+        }
+    }
+}
+
 static char *
 create_tmpdir(void)
 {
-    const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    const char *tmproot = get_tmpdir();
 	mkpath(tmproot, 0755);
     char *template = path_join(tmproot, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
@@ -429,20 +485,39 @@ get_real_prog_path(void)
     return result;
 }
 
+char *get_tmp_root(void)
+{
+    char *root_dir;
+    root_dir = TMPROOTDIR;
+
+    char *ret;
+	ret = (char*) malloc (strlen(root_dir)+1);
+	strcpy(ret, root_dir);
+    ret = strtrim(ret);
+    return ret;
+}
 static void identify(void)
 {
     debug_printf("bootloader version %s\n", STATICX_VERSION);
     debug_printf("compiled %s at %s by %s version %s\n",
             __DATE__, __TIME__, COMPILER_PATH, __VERSION__);
 
-    /* If we're invoked by staticx, just exit */
     if (getenv("STATICX_BOOTLOADER_IDENTIFY"))
         exit(0);
 }
+static void set_tmpdir(void)
+{
+    const char *tmproot = get_tmp_root();
+    debug_printf("tmproot: %s\n", tmproot);
 
+    if (strstr(tmproot, "tmp_folder_define") == NULL) {
+        setenv(TMPDIR, tmproot, 0);
+    }
+}
 int
 main(int argc, char **argv)
 {
+    set_tmpdir();
     identify();
     xz_crc32_init();
 
