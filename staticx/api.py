@@ -46,6 +46,8 @@ class StaticxGenerator:
         f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
         self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
 
+        self.bootloader_tmpdir_whitespace_cnt = 1024
+        self.bootloader_repl_str = "tmp_folder_define"
 
     def __enter__(self):
         return self
@@ -73,11 +75,13 @@ class StaticxGenerator:
 
     def _rewrite_tmpdir(self, bootloader):
         if self.tmprootdir:
-            f = open(bootloader, 'rb')
-            repl_str = "tmp_folder_define"
-            repl = self.tmprootdir
+            max_len = len(self.bootloader_repl_str) + 1024
+            if len(self.tmprootdir) > max_len:
+                raise InvalidInputError("tmprootdir needs to have maximum "+str(max_len)+" characters")
 
-            repl_str = repl_str + (" " * 1024)
+            f = open(bootloader, 'rb')
+            repl = self.tmprootdir
+            repl_str = self.bootloader_repl_str + (" " * self.bootloader_tmpdir_whitespace_cnt)
             repl = repl + (" " * (len(repl_str) - len(repl)))
             contents = f.read().replace(bytes(repl_str, 'ascii'), bytes(repl, 'ascii'))
             f.close()
