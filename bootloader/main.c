@@ -13,8 +13,6 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <libgen.h>
-#include <ctype.h>
-#include <string.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -233,34 +231,6 @@ get_tmpdir(void)
 {
     const char *tmproot = getenv(TMPDIR) ?: "/tmp";
     return tmproot;
-}
-
-char *strtrim(char *str)
-{
-	char *start, *end;
-
-	if (!str) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	start = str;
-	while (isspace(*start))
-		start++;
-
-	if (*start == 0) {
-		str[0] = 0;
-		return str;
-	}
-
-	end = start + strlen(start) - 1;
-	while (end > start && isspace(*end))
-		end--;
-	*(++end) = 0;
-
-	memmove(str, start, end - start + 1);
-
-	return str;
 }
 
 static char *
