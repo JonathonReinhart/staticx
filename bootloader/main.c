@@ -263,24 +263,6 @@ char *strtrim(char *str)
 	return str;
 }
 
-void inPlaceStrTrim(char* str) {
-    int k = 0;
-    int i = 0;
-    for (i=0; str[i] != '\0';) {
-        if (isspace(str[i])) {
-            // we have got a space...
-            k = i;
-            for (int j=i; j<strlen(str)-1; j++) {
-                str[j] = str[j+1];
-            }
-            str[strlen(str)-1] = '\0';
-            i = k; // start the loop again where we ended..
-        } else {
-            i++;
-        }
-    }
-}
-
 static char *
 create_tmpdir(void)
 {
