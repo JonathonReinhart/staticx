@@ -18,12 +18,11 @@ from .constants import *
 from .hooks import run_hooks
 from .version import __version__
 
-
 class StaticxGenerator:
     """StaticxGenerator is responsible for producing a staticx-ified executable.
     """
 
-    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True):
+    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True, tmprootdir=None):
         """
         Parameters:
         prog:   Dynamic executable to staticx
@@ -42,6 +41,7 @@ class StaticxGenerator:
         self.tmpoutput = None
         self.tmpprog = None
         self.tmpdir = mkdtemp(prefix='staticx-archive-')
+        self.tmprootdir = tmprootdir
 
         f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
         self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
@@ -71,6 +71,19 @@ class StaticxGenerator:
             self.sxar.close()
             self.sxar = None
 
+    def _rewrite_tmpdir(self, bootloader):
+        if self.tmprootdir:
+            f = open(bootloader, 'rb')
+            repl_str = "tmp_folder_define"
+            repl = self.tmprootdir
+
+            repl_str = repl_str + (" " * 1024)
+            repl = repl + (" " * (len(repl_str) - len(repl)))
+            contents = f.read().replace(bytes(repl_str, 'ascii'), bytes(repl, 'ascii'))
+            f.close()
+            f = open(bootloader, 'wb')
+            f.write(contents)
+            f.close()
 
     def _get_bootloader(self):
         # Get a temporary copy of the bootloader
@@ -78,6 +91,7 @@ class StaticxGenerator:
                                      prefix='staticx-output-', delete=False)
         with fbl:
             self.tmpoutput = bootloader = fbl.name
+            self._rewrite_tmpdir(bootloader)
         make_executable(bootloader)
 
         # Verify the bootloader machine matches that of the user program
@@ -286,7 +300,7 @@ class StaticxGenerator:
                   force_rpath=True, no_default_lib=True)
 
 
-def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
+def generate(prog, output, libs=None, strip=False, compress=True, debug=False, tmprootdir=None):
     """Main API: Generate a staticx executable
 
     Parameters:
@@ -306,12 +320,14 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     logging.debug("  strip:     {!r}".format(strip))
     logging.debug("  compress:  {!r}".format(compress))
     logging.debug("  debug:     {!r}".format(debug))
+    logging.debug("  tmprootdir:     {!r}".format(tmprootdir))
 
     gen = StaticxGenerator(
             prog=prog,
             strip=strip,
             compress=compress,
             debug=debug,
+            tmprootdir=tmprootdir,
             )
     with gen:
         for lib in (libs or []):
