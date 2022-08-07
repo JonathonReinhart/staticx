@@ -17,7 +17,6 @@
 #include <sys/sysmacros.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <utime.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
@@ -44,62 +43,6 @@ static int mkdirs_for(const char *filename)
 
 	free(fndup);
 	return rc;
-}
-
-static int
-tar_set_file_perms(TAR *t, const char *realname)
-{
-	mode_t mode;
-	uid_t uid;
-	gid_t gid;
-	struct utimbuf ut;
-	const char *filename;
-
-	filename = (realname ? realname : th_get_pathname(t));
-	mode = th_get_mode(t);
-	uid = th_get_uid(t);
-	gid = th_get_gid(t);
-	ut.modtime = ut.actime = th_get_mtime(t);
-
-	/* change owner/group */
-	if (geteuid() == 0)
-#ifdef HAVE_LCHOWN
-		if (lchown(filename, uid, gid) == -1)
-		{
-# ifdef DEBUG
-			fprintf(stderr, "lchown(\"%s\", %d, %d): %s\n",
-				filename, uid, gid, strerror(errno));
-# endif
-#else /* ! HAVE_LCHOWN */
-		if (!TH_ISSYM(t) && chown(filename, uid, gid) == -1)
-		{
-# ifdef DEBUG
-			fprintf(stderr, "chown(\"%s\", %d, %d): %s\n",
-				filename, uid, gid, strerror(errno));
-# endif
-#endif /* HAVE_LCHOWN */
-			return -1;
-		}
-
-	/* change access/modification time */
-	if (!TH_ISSYM(t) && utime(filename, &ut) == -1)
-	{
-#ifdef DEBUG
-		perror("utime()");
-#endif
-		return -1;
-	}
-
-	/* change permissions */
-	if (!TH_ISSYM(t) && chmod(filename, mode) == -1)
-	{
-#ifdef DEBUG
-		perror("chmod()");
-#endif
-		return -1;
-	}
-
-	return 0;
 }
 
 
@@ -145,9 +88,10 @@ tar_extract_file(TAR *t, const char *realname)
 	if (i != 0)
 		return i;
 
-	i = tar_set_file_perms(t, realname);
-	if (i != 0)
-		return i;
+	/**
+	 * staticx: removed tar_set_file_perms() here as we set the only
+	 * perms we care about in tar_extract_regfile().
+	 */
 
 	pathname_len = strlen(th_get_pathname(t)) + 1;
 	realname_len = strlen(realname) + 1;
@@ -177,8 +121,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 {
 	mode_t mode;
 	size_t size;
-	uid_t uid;
-	gid_t gid;
 	int fdout = -1;
 	const char *filename;
 	size_t to_read;
@@ -200,19 +142,13 @@ tar_extract_regfile(TAR *t, const char *realname)
 	filename = (realname ? realname : th_get_pathname(t));
 	mode = th_get_mode(t);
 	size = th_get_size(t);
-	uid = th_get_uid(t);
-	gid = th_get_gid(t);
-
-	(void)mode;
-	(void)uid;
-	(void)gid;
 
 	if (mkdirs_for(filename) == -1)
 		goto out;
 
 #ifdef DEBUG
-	printf("  ==> extracting: %s (mode %04o, uid %d, gid %d, %zd bytes)\n",
-	       filename, mode, uid, gid, size);
+	printf("  ==> extracting: %s (mode %04o, %zd bytes)\n",
+	       filename, mode, size);
 #endif
 	fdout = open(filename, O_WRONLY | O_CREAT | O_TRUNC
 #ifdef O_BINARY
@@ -227,17 +163,8 @@ tar_extract_regfile(TAR *t, const char *realname)
 		goto out;
 	}
 
-#if 0
-	/* change the owner.  (will only work if run as root) */
-	if (fchown(fdout, uid, gid) == -1 && errno != EPERM)
-	{
-#ifdef DEBUG
-		perror("fchown()");
-#endif
-		goto out;
-	}
+	/* NOTE: We do not change owner, as that would require root */
 
-	/* make sure the mode isn't inheritted from a file we're overwriting */
 	if (fchmod(fdout, mode & 07777) == -1)
 	{
 #ifdef DEBUG
@@ -245,7 +172,6 @@ tar_extract_regfile(TAR *t, const char *realname)
 #endif
 		goto out;
 	}
-#endif
 
 	/* extract the file */
 

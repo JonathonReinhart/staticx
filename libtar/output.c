@@ -11,8 +11,6 @@
 */
 
 #include <stdio.h>
-#include <pwd.h>
-#include <grp.h>
 #include <time.h>
 #include <limits.h>
 #include <sys/param.h>
@@ -30,12 +28,6 @@ void
 th_print_long_ls(const TAR *t, FILE *f)
 {
 	char modestring[12];
-	struct passwd *pw;
-	struct group *gr;
-	uid_t uid;
-	gid_t gid;
-	char username[_POSIX_LOGIN_NAME_MAX];
-	char groupname[_POSIX_LOGIN_NAME_MAX];
 	time_t mtime;
 	struct tm *mtm;
 
@@ -48,22 +40,8 @@ th_print_long_ls(const TAR *t, FILE *f)
 	};
 #endif
 
-	uid = th_get_uid(t);
-	pw = getpwuid(uid);
-	if (pw == NULL)
-		snprintf(username, sizeof(username), "%d", uid);
-	else
-		strlcpy(username, pw->pw_name, sizeof(username));
-
-	gid = th_get_gid(t);
-	gr = getgrgid(gid);
-	if (gr == NULL)
-		snprintf(groupname, sizeof(groupname), "%d", gid);
-	else
-		strlcpy(groupname, gr->gr_name, sizeof(groupname));
-
 	strmode(th_get_mode(t), modestring);
-	fprintf(f, "%.10s %-8.8s %-8.8s ", modestring, username, groupname);
+	fprintf(f, "%.10s %-8.8s %-8.8s ", modestring, t->th_buf.uname, t->th_buf.gname);
 
 	if (TH_ISCHR(t) || TH_ISBLK(t))
 		fprintf(f, " %3d, %3d ", th_get_devmajor(t), th_get_devminor(t));

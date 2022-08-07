@@ -73,7 +73,7 @@ tartype_t;
 
 typedef struct
 {
-	tartype_t *type;
+	const tartype_t *type;
 	void *context;
 	int options;
 	struct tar_header th_buf;
@@ -94,7 +94,7 @@ TAR;
 
 
 /* make a tarfile handle */
-TAR *tar_new(void *context, tartype_t *type, int options);
+TAR *tar_new(void *context, const tartype_t *type, int options);
 
 /* close tarfile handle */
 int tar_close(TAR *t);
@@ -145,8 +145,6 @@ int th_read(TAR *t);
                             : (t)->th_buf.linkname)
 const char *th_get_pathname(const TAR *t);
 mode_t th_get_mode(const TAR *t);
-uid_t th_get_uid(const TAR *t);
-gid_t th_get_gid(const TAR *t);
 
 
 /***** extract.c ***********************************************************/

@@ -12,8 +12,6 @@
 
 #include <stdio.h>
 #include <sys/param.h>
-#include <pwd.h>
-#include <grp.h>
 #include <string.h>
 #include "libtar.h"
 
@@ -37,38 +35,6 @@ th_get_pathname(const TAR *t)
 
 	snprintf(filename, sizeof(filename), "%.100s", t->th_buf.name);
 	return filename;
-}
-
-
-uid_t
-th_get_uid(const TAR *t)
-{
-	int uid;
-	struct passwd *pw;
-
-	pw = getpwnam(t->th_buf.uname);
-	if (pw != NULL)
-		return pw->pw_uid;
-
-	/* if the password entry doesn't exist */
-	sscanf(t->th_buf.uid, "%o", &uid);
-	return uid;
-}
-
-
-gid_t
-th_get_gid(const TAR *t)
-{
-	int gid;
-	struct group *gr;
-
-	gr = getgrnam(t->th_buf.gname);
-	if (gr != NULL)
-		return gr->gr_gid;
-
-	/* if the group entry doesn't exist */
-	sscanf(t->th_buf.gid, "%o", &gid);
-	return gid;
 }
 
 

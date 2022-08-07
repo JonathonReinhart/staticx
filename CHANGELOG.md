@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed an issue where library symlinks with the same basename would present
   problems ([#225])
 - Don't crash if .git/ dir is present but git is not installed ([#226])
+- Fixed potential issue where bootloader linked against glibc could result in
+  target NSS libraries being loaded and causing a cash at startup ([#228])
 
 ## [0.13.6] - 2021-12-02
 ### Changed
