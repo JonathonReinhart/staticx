@@ -27,7 +27,7 @@ python3 app.py
 
 # Build a PyInstaller "onefile" application
 echo -e "\nBuilding PyInstaller 'one-file' application:"
-pyinstaller -F app.spec
+pyinstaller app.spec
 
 # Run the PyInstalled application
 echo -e "\nPyInstalled application run:"
