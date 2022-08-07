@@ -85,6 +85,8 @@ class SxArchive:
 
     def add_symlink(self, name, target):
         """Add a symlink to the archive"""
+        if name == target:
+            raise ValueError("Refusing to add self-referential symlink")
         t = tarfile.TarInfo()
         t.type = tarfile.SYMTYPE
         t.name = name

@@ -222,11 +222,19 @@ class StaticxGenerator:
         while islink(libpath):
             arcname = basename(libpath)
             libpath = get_symlink_target(libpath)
+            target = basename(libpath)
+
+            # Skip symlinks that point to a file with the same name but in a
+            # different path. We strip path info (and keep just basenames) so
+            # this would be self-referential.
+            if arcname == target:
+                continue
 
             # Add a symlink.
             # At this point the target probably doesn't exist, but that doesn't matter yet.
-            logging.info("Adding Symlink {} => {}".format(arcname, basename(libpath)))
-            self.sxar.add_symlink(arcname, basename(libpath))
+            logging.info("Adding Symlink {} => {}".format(arcname, target))
+            self.sxar.add_symlink(arcname, target)
+
             if arcname in self._added_libs:
                 raise InternalError("libname {} absent from _added_libs but"
                         " symlink {} present".format(libname, arcname))

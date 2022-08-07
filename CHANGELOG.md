@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Fixed an issue where library symlinks with the same basename would present
+  problems ([#225])
+
 ## [0.13.6] - 2021-12-02
 ### Changed
 - Change `--debug` option to appear in CLI help output
@@ -299,3 +304,4 @@ Initial release
 [#208]: https://github.com/JonathonReinhart/staticx/pull/208
 [#210]: https://github.com/JonathonReinhart/staticx/pull/210
 [#217]: https://github.com/JonathonReinhart/staticx/pull/217
+[#225]: https://github.com/JonathonReinhart/staticx/pull/225
