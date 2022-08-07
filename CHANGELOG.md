@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - Fixed an issue where library symlinks with the same basename would present
   problems ([#225])
+- Don't crash if .git/ dir is present but git is not installed ([#226])
 
 ## [0.13.6] - 2021-12-02
 ### Changed
@@ -305,3 +306,4 @@ Initial release
 [#210]: https://github.com/JonathonReinhart/staticx/pull/210
 [#217]: https://github.com/JonathonReinhart/staticx/pull/217
 [#225]: https://github.com/JonathonReinhart/staticx/pull/225
+[#226]: https://github.com/JonathonReinhart/staticx/pull/226

@@ -1,12 +1,12 @@
-from os.path import abspath, dirname, exists, join, normpath
+from pathlib import Path
 import subprocess
 import sys
 
 # This logic has been adapted from that of PyInstaller
 # https://github.com/pyinstaller/pyinstaller/
 
-PACKAGEPATH = abspath(dirname(__file__))
-PROJPATH = dirname(PACKAGEPATH)
+PACKAGEPATH = Path(__file__).absolute().parent
+PROJPATH = PACKAGEPATH.parent
 
 # Base version, which will be augmented with Git information
 BASE_VERSION = '0.13.6'
@@ -32,19 +32,23 @@ def get_version():
 
     # Git repo
     # If a local git repository is present, use `git describe` to provide a rich version
-    gitdir = normpath(join(PROJPATH, '.git'))
-    if exists(gitdir):
-        tag, commits, rev = git_describe()
+    gitdir = PROJPATH / '.git'
+    if gitdir.exists():
+        try:
+            tag, commits, rev = git_describe()
+        except FileNotFoundError:
+            # git not installed
+            pass
+        else:
+            # Ensure the base version matches the Git tag
+            if tag != BASE_VERSION:
+                raise Exception('Git revision different from base version')
 
-        # Ensure the base version matches the Git tag
-        if tag != BASE_VERSION:
-            raise Exception('Git revision different from base version')
+            # No local version if we're on a tag
+            if commits == 0 and not rev.endswith('dirty'):
+                return BASE_VERSION
 
-        # No local version if we're on a tag
-        if commits == 0 and not rev.endswith('dirty'):
-            return BASE_VERSION
-
-        return '{}+{}-{}'.format(BASE_VERSION, commits, rev)
+            return '{}+{}-{}'.format(BASE_VERSION, commits, rev)
 
 
     # Git archive
