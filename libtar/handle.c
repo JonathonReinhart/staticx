@@ -19,7 +19,7 @@
 
 
 TAR *
-tar_new(void *context, tartype_t *type, int options)
+tar_new(void *context, const tartype_t *type, int options)
 {
 	TAR *t;
 
