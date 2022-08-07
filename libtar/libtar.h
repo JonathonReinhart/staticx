@@ -145,8 +145,6 @@ int th_read(TAR *t);
                             : (t)->th_buf.linkname)
 const char *th_get_pathname(const TAR *t);
 mode_t th_get_mode(const TAR *t);
-uid_t th_get_uid(const TAR *t);
-gid_t th_get_gid(const TAR *t);
 
 
 /***** extract.c ***********************************************************/
