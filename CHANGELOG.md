@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.13.7] - 2022-08-07
 ### Fixed
 - Fixed an issue where library symlinks with the same basename would present
   problems ([#225])
@@ -222,7 +222,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.6...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.7...HEAD
+[0.13.7]: https://github.com/JonathonReinhart/staticx/compare/v0.13.6...v0.13.7
 [0.13.6]: https://github.com/JonathonReinhart/staticx/compare/v0.13.5...v0.13.6
 [0.13.5]: https://github.com/JonathonReinhart/staticx/compare/v0.13.4...v0.13.5
 [0.13.4]: https://github.com/JonathonReinhart/staticx/compare/v0.13.3...v0.13.4

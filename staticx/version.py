@@ -9,7 +9,7 @@ PACKAGEPATH = Path(__file__).absolute().parent
 PROJPATH = PACKAGEPATH.parent
 
 # Base version, which will be augmented with Git information
-BASE_VERSION = '0.13.6'
+BASE_VERSION = '0.13.7'
 
 # This string will be replaced by `git-archive`
 # with the abbreviated commit hash
