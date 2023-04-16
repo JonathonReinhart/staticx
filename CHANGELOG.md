@@ -2,9 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Updated to support PyInstaller 5.10 archive API changes ([#236], [#237])
+
+
 ## [0.13.8] - 2022-08-07
 ### Fixed
 - Fixed a problem with 0.13.7 release whl (PyPI won't allow re-uploads)
+
 
 ## [0.13.7] - 2022-08-07
 ### Fixed
@@ -315,3 +321,5 @@ Initial release
 [#217]: https://github.com/JonathonReinhart/staticx/pull/217
 [#225]: https://github.com/JonathonReinhart/staticx/pull/225
 [#226]: https://github.com/JonathonReinhart/staticx/pull/226
+[#236]: https://github.com/JonathonReinhart/staticx/pull/236
+[#237]: https://github.com/JonathonReinhart/staticx/pull/237

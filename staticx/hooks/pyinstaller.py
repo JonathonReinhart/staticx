@@ -33,17 +33,19 @@ def process_pyinstaller_archive(sx):
         return
     logging.info("Opened PyInstaller archive!")
 
-    with PyInstallHook(sx, pyi_ar, pre_510) as h:
+    if pre_510:
+        # Adapt the CArchiveReader from PyInstaller before 5.10
+        # to the new 5.10+ API.
+        pyi_ar = CArchiveReaderPre510Adapter(pyi_ar)
+
+    with PyInstallHook(sx, pyi_ar) as h:
         h.process()
 
 
 class PyInstallHook:
-    def __init__(self, sx, pyi_archive, pre_510):
+    def __init__(self, sx, pyi_archive):
         self.sx = sx
         self.pyi_ar = pyi_archive
-        # if this pyinstaller archive is from before 5.10, we need to use a different method
-        # to extract the binaries
-        self.pre_510 = pre_510
 
         self.tmpdir = tempfile.TemporaryDirectory(prefix="staticx-pyi-")
 
@@ -68,13 +70,9 @@ class PyInstallHook:
 
     def _extract_binaries(self):
         result = []
-        if self.pre_510:
-            toc_data = self.pyi_ar.toc.data
-        else:
-            toc_data = [entry + (name,) for name, entry in self.pyi_ar.toc.items()]
 
-        for n, item in enumerate(toc_data):
-            (dpos, dlen, ulen, flag, typcd, name) = item
+        for name, item in self.pyi_ar.toc.items():
+            (dpos, dlen, ulen, flag, typcd) = item
 
             # Only process binary files
             # See xformdict in PyInstaller.building.api.PKG
@@ -82,10 +80,7 @@ class PyInstallHook:
                 continue
 
             # Extract it to a temporary location
-            if self.pre_510:
-                _, data = self.pyi_ar.extract(n)
-            else:
-                data = self.pyi_ar.extract(name)
+            data = self.pyi_ar.extract(name)
             tmppath = os.path.join(self.tmpdir.name, name)
             logging.debug("Extracting to {}".format(tmppath))
             mkdirs_for(tmppath)
@@ -143,13 +138,23 @@ class PyInstallHook:
         for deppath in deps:
             dep = os.path.basename(deppath)
 
-            if self.pre_510:
-                if self.pyi_ar.toc.find(dep) != -1:
-                    logging.debug("{} already in pyinstaller archive".format(dep))
-                    continue
-            else:
-                if dep in self.pyi_ar.toc:
-                    logging.debug("{} already in pyinstaller archive".format(dep))
-                    continue
+            if dep in self.pyi_ar.toc:
+                logging.debug("{} already in pyinstaller archive".format(dep))
+                continue
 
             self.sx.add_library(deppath, exist_ok=True)
+
+
+class CArchiveReaderPre510Adapter:
+    """Adapts a pre-5.10 CArchiveReader to 5.10+ API"""
+
+    def __init__(self, old_archive):
+        self._old_archive = old_archive
+
+        self.toc = {
+            name: tuple(entry) for *entry, name in self._old_archive.toc.data
+        }
+
+    def extract(self, name):
+        _, data = self._old_archive.extract(name)
+        return data
