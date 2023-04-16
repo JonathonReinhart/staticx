@@ -12,18 +12,14 @@ def process_pyinstaller_archive(sx):
 
     # If PyInstaller is not installed, do nothing
     try:
-        from PyInstaller.archive.readers import CArchiveReader, NotAnArchiveError
+        import PyInstaller
     except ImportError:
+        logging.info("PyInstaller not installed; skipping hook")
         return
+    from PyInstaller.archive.readers import CArchiveReader
 
-    pre_510 = False
-    try:
-        from PyInstaller.archive.readers import CTOCReader
-
-        # if CTocReader is available, we're running PyInstaller before 5.10 or later
-        pre_510 = True
-    except ImportError:
-        pass
+    logging.info("Using PyInstaller version %s", PyInstaller.__version__)
+    pyi_version = tuple(int(x) for x in PyInstaller.__version__.split("."))
 
     # Attempt to open the program as PyInstaller archive
     try:
@@ -33,7 +29,18 @@ def process_pyinstaller_archive(sx):
         return
     logging.info("Opened PyInstaller archive!")
 
-    if pre_510:
+    # Refuse to process files if running PyInstaller 4.1 - 4.2.
+    # This assumes that the current version of PyInstaller was the same one
+    # used to build the input file. This isn't necessarily the case, but likely
+    # enough to detect this way.
+    # We do this after opening the archive to avoid failing for non-pyinstalled
+    # input files.
+    if pyi_version[:2] in ((4, 1), (4, 2)):
+        msg = "PyInstaller v{} is unsupported\n".format(PyInstaller.__version__)
+        msg += "(See https://github.com/JonathonReinhart/staticx/issues/170)"
+        raise Error(msg)
+
+    if pyi_version < (5, 10, 0):
         # Adapt the CArchiveReader from PyInstaller before 5.10
         # to the new 5.10+ API.
         pyi_ar = CArchiveReaderPre510Adapter(pyi_ar)
