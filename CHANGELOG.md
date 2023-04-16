@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.13.9] - 2023-04-16
 ### Fixed
 - Updated to support PyInstaller 5.10 archive API changes ([#236], [#237])
 - Refuse to process files with PyInstaller 4.1 or 4.2 ([#238])
@@ -235,7 +235,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.8...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.13.9...HEAD
+[0.13.9]: https://github.com/JonathonReinhart/staticx/compare/v0.13.8...v0.13.9
 [0.13.8]: https://github.com/JonathonReinhart/staticx/compare/v0.13.7...v0.13.8
 [0.13.7]: https://github.com/JonathonReinhart/staticx/compare/v0.13.6...v0.13.7
 [0.13.6]: https://github.com/JonathonReinhart/staticx/compare/v0.13.5...v0.13.6
