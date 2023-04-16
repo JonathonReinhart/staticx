@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Updated to support PyInstaller 5.10 archive API changes ([#236], [#237])
+- Refuse to process files with PyInstaller 4.1 or 4.2 ([#238])
+  - Note: This applies even if the files were built with a different version of
+    PyInstaller; if that version is 4.1 or 4.2, the original bug will manifest.
 
 
 ## [0.13.8] - 2022-08-07
@@ -323,3 +326,4 @@ Initial release
 [#226]: https://github.com/JonathonReinhart/staticx/pull/226
 [#236]: https://github.com/JonathonReinhart/staticx/pull/236
 [#237]: https://github.com/JonathonReinhart/staticx/pull/237
+[#238]: https://github.com/JonathonReinhart/staticx/pull/238
