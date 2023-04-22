@@ -33,6 +33,8 @@ def parse_args():
 
     ap.add_argument('--debug', action='store_true')
 
+    ap.add_argument('--tmprootdir', action="store", help="Set temp dir at compile time")
+
     args = ap.parse_args()
 
     if args.loglevel is None:
@@ -51,6 +53,7 @@ def main():
                 strip = args.strip,
                 compress = not args.no_compress,
                 debug = args.debug,
+                tmprootdir=args.tmprootdir
                 )
     except Error as e:
         if args.debug:

@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <ftw.h>            /* file tree walk */
 #include <sys/stat.h>
+#include <string.h>
+#include <ctype.h>
 #include "util.h"
 
 
@@ -29,4 +31,32 @@ remove_tree(const char *pathname)
 
     errno = 0;
     return nftw(pathname, remove_tree_fn, max_open_fd, flags);
+}
+
+char *strtrim(char *str)
+{
+	char *start, *end;
+
+	if (!str) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	start = str;
+	while (isspace(*start))
+		start++;
+
+	if (*start == 0) {
+		str[0] = 0;
+		return str;
+	}
+
+	end = start + strlen(start) - 1;
+	while (end > start && isspace(*end))
+		end--;
+	*(++end) = 0;
+
+	memmove(str, start, end - start + 1);
+
+	return str;
 }

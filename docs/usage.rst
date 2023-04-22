@@ -32,6 +32,9 @@ Options:
   --debug               Set loglevel to DEBUG and use a debug version of the
                         bootloader
 
+  --tmprootdir          Set tmprootdir (where the files will be unpacked
+                        default /tmp/staticx-XXXXXX)
+
   -V, --version         Show StaticX version and exit
 
 

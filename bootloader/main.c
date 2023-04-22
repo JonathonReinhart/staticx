@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <libgen.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -27,6 +29,7 @@
 /* Keep temporary files */
 #define STATICX_KEEP_TEMPS      "STATICX_KEEP_TEMPS"
 #define TMPDIR                  "TMPDIR"
+#define TMPROOTDIR              "tmp_folder_define                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                "
 
 
 
@@ -205,10 +208,36 @@ patch_app(const char *prog_path)
     free(interp_path);
 }
 
+int
+mkpath(const char *dir, mode_t mode)
+{
+	struct stat sb;
+
+	if (!dir) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (!stat(dir, &sb))
+		return 0;
+
+	mkpath(dirname(strdupa(dir)), mode);
+
+	return mkdir(dir, mode);
+}
+
+const char *
+get_tmpdir(void)
+{
+    const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    return tmproot;
+}
+
 static char *
 create_tmpdir(void)
 {
-    const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+    const char *tmproot = get_tmpdir();
+	mkpath(tmproot, 0755);
     char *template = path_join(tmproot, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
@@ -408,20 +437,39 @@ get_real_prog_path(void)
     return result;
 }
 
+char *get_tmp_root(void)
+{
+    char *root_dir;
+    root_dir = TMPROOTDIR;
+
+    char *ret;
+	ret = (char*) malloc (strlen(root_dir)+1);
+	strcpy(ret, root_dir);
+    ret = strtrim(ret);
+    return ret;
+}
 static void identify(void)
 {
     debug_printf("bootloader version %s\n", STATICX_VERSION);
     debug_printf("compiled %s at %s by %s version %s\n",
             __DATE__, __TIME__, COMPILER_PATH, __VERSION__);
 
-    /* If we're invoked by staticx, just exit */
     if (getenv("STATICX_BOOTLOADER_IDENTIFY"))
         exit(0);
 }
+static void set_tmpdir(void)
+{
+    const char *tmproot = get_tmp_root();
+    debug_printf("tmproot: %s\n", tmproot);
 
+    if (strstr(tmproot, "tmp_folder_define") == NULL) {
+        setenv(TMPDIR, tmproot, 0);
+    }
+}
 int
 main(int argc, char **argv)
 {
+    set_tmpdir();
     identify();
     xz_crc32_init();
 
