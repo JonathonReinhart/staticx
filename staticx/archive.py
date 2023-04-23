@@ -3,32 +3,23 @@ import logging
 import lzma
 from os.path import basename
 
-from .bcjfilter import get_bcj_filter_arch
+from .bcjfilter import BCJFilter
 from .utils import get_symlink_target, make_mode_executable
 from .constants import *
 from .errors import *
 
-
-def get_bcj_filter():
-    arch = get_bcj_filter_arch()
-    if not arch:
-        return None, ''
-
-    # Get the lzma module constant name and value
-    filt_name = 'FILTER_' + arch
-    filt = getattr(lzma, filt_name)
-
-    return filt, filt_name
-
-
 def get_xz_filters():
+    """Get lzma XZ filter chain
+
+    See https://docs.python.org/3/library/lzma.html#filter-chain-specs
+    """
     filters = []
 
     # Get a BCJ filter for the current architecture
-    bcj_filter, bcj_filter_name = get_bcj_filter()
+    bcj_filter = BCJFilter.for_current_arch()
     if bcj_filter:
-        logging.info("Using XZ BCJ filter {}".format(bcj_filter_name))
-        filters.append(dict(id=bcj_filter))
+        logging.info("Using XZ BCJ filter {}".format(bcj_filter))
+        filters.append(dict(id=bcj_filter.lzma_filter_id))
 
     # The last filter in the chain must be a compression filter.
     filters.append(dict(id=lzma.FILTER_LZMA2))
