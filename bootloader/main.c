@@ -243,6 +243,11 @@ static pid_t child_pid;
 
 static void sig_handler(int signum)
 {
+    /**
+     * XXX: If we're running interactively, the process probably also gets the
+     * signal (from the terminal driver?). How do we detect this and avoid
+     * sending a duplicate signal?
+     */
     if (child_pid) {
         /* Forward received signal to child */
         debug_printf("Forwarding signal %d to child %d\n", signum, child_pid);
@@ -279,6 +284,17 @@ static void adjust_signals(bool forward)
         }
         adjust_signal(signum, forward);
     }
+    
+    /**
+     * XXX: musl reserves 32,33,34 and SIGRTMIN=35
+     * but glibc reserves 32,33 and SIGRTMIN=34.
+     *
+     * If the bootloader is built with musl, but the host uses glibc kill,
+     * not only will they not be able to send 34, but SIGRTMIN+x will be
+     * off by one!
+     *
+     * This is a general musl-vs-glibc issue but manifests itself here.
+     */
 
     /**
      * Realtime signals range from SIGRTMIN to SIGRTMAX.

@@ -2,6 +2,7 @@
 # and are only used for development and testing.
 patchelf-wrapper
 pyinstaller==4.0; (python_version <= '3.7')
+pyinstaller; (python_version > '3.7')
 
 # https://github.com/pypa/setuptools/issues/1963
 # Exclude from 45.0.0 until 49.1.1
