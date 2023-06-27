@@ -238,37 +238,83 @@ make_argv(int orig_argc, char **orig_argv, char *argv0)
     return argv;
 }
 
+/* XXX Should be volatile, but is used in too many places */
 static pid_t child_pid;
 
 static void sig_handler(int signum)
 {
-    /* Forward received signal to child */
-    debug_printf("Forwarding signal %d to child %d\n", signum, child_pid);
-    kill(child_pid, signum);
+    /**
+     * XXX: If we're running interactively, the process probably also gets the
+     * signal (from the terminal driver?). How do we detect this and avoid
+     * sending a duplicate signal?
+     */
+    if (child_pid) {
+        /* Forward received signal to child */
+        debug_printf("Forwarding signal %d to child %d\n", signum, child_pid);
+        kill(child_pid, signum);
+    }
 }
 
-static void
-setup_sig_handler(int signum)
+static void adjust_signal(int signum, bool forward)
 {
     struct sigaction sa = {
-        .sa_handler = sig_handler,
+        .sa_handler = forward ? sig_handler : SIG_DFL,
     };
     sigemptyset(&sa.sa_mask);
 
-    if (sigaction(signum, &sa, NULL) < 0)
-        error(2, errno, "Error establishing handler for signal %d", signum);
+    if (sigaction(signum, &sa, NULL) < 0) {
+        error(2, errno, "Error %s handler for signal %d",
+                forward ? "establishing" : "restoring",
+                signum);
+    }
 }
 
-static void
-restore_sig_handler(int signum)
+static void adjust_signals(bool forward)
 {
-    struct sigaction sa = {
-        .sa_handler = SIG_DFL,
-    };
-    sigemptyset(&sa.sa_mask);
+    int signum;
 
-    if (sigaction(signum, &sa, NULL) < 0)
-        error(2, errno, "Error restoring handler for signal %d", signum);
+    /* As indicated in signal(7), standard signals range from 1-31 */
+    for (signum = 1; signum <= 31; signum++) {
+        switch (signum) {
+        case SIGKILL:   /* Can't be caught */
+        case SIGSTOP:   /* Can't be caught */
+        case SIGCHLD:   /* Interferes with wait(); doesn't make sense */
+        case SIGSEGV:   /* Doesn't make sense to forward */
+            continue;
+        }
+        adjust_signal(signum, forward);
+    }
+    
+    /**
+     * XXX: musl reserves 32,33,34 and SIGRTMIN=35
+     * but glibc reserves 32,33 and SIGRTMIN=34.
+     *
+     * If the bootloader is built with musl, but the host uses glibc kill,
+     * not only will they not be able to send 34, but SIGRTMIN+x will be
+     * off by one!
+     *
+     * This is a general musl-vs-glibc issue but manifests itself here.
+     */
+
+    /**
+     * Realtime signals range from SIGRTMIN to SIGRTMAX.
+     * Note that SIGRTMIN might not be 32, so we run a separate loop.
+     */
+    for (signum = SIGRTMIN; signum <= SIGRTMAX; signum++) {
+        adjust_signal(signum, forward);
+    }
+}
+
+static void forward_signals(void)
+{
+    debug_printf("Setting up signal handlers...\n");
+    adjust_signals(true);
+}
+
+static void restore_signals(void)
+{
+    debug_printf("Restoring signal handlers...\n");
+    adjust_signals(false);
 }
 
 static void
@@ -342,11 +388,8 @@ run_app(int argc, char **argv, char *prog_path)
 
     /*** Parent ***/
 
-    /* Forward terminating signals to child */
-    setup_sig_handler(SIGINT);
-    setup_sig_handler(SIGTERM);
-    /* SIGKILL can't be caught */
-
+    /* Forward (most) all signals to the child. */
+    forward_signals();
 
     /* Wait for child to exit */
     int wstatus;
@@ -355,11 +398,15 @@ run_app(int argc, char **argv, char *prog_path)
             continue;
         error(2, errno, "Failed to wait for child process %d", child_pid);
     }
+    /**
+     * XXX There is a race here, where we could get a signal and fail to
+     * deliver it to the dead child. One solution might be to handle SIGCHLD
+     * (ensuring it is configured to mask all forwardable signals) and clear
+     * this variable there.
+     */
     child_pid = 0;
 
-    /* Restore signal handlers */
-    restore_sig_handler(SIGINT);
-    restore_sig_handler(SIGTERM);
+    restore_signals();
 
     debug_printf("Child process terminated with wstatus=%d\n", wstatus);
 
