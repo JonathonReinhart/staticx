@@ -1,4 +1,6 @@
-StaticX [![Build Status](https://travis-ci.org/JonathonReinhart/staticx.svg?branch=master)](https://travis-ci.org/JonathonReinhart/staticx) [![PyPI](https://img.shields.io/pypi/v/staticx.svg)](https://pypi.python.org/pypi/staticx)
+StaticX
+[![Build Status](https://github.com/JonathonReinhart/staticx/actions/workflows/build-test.yml/badge.svg)](https://github.com/JonathonReinhart/staticx/actions/workflows/build-test.yml)
+[![PyPI](https://img.shields.io/pypi/v/staticx.svg)](https://pypi.python.org/pypi/staticx)
 [![Docs](https://readthedocs.org/projects/staticx/badge/?version=latest)](https://staticx.readthedocs.io/)
 -----
 
