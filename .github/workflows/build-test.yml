@@ -25,6 +25,7 @@ jobs:
     # with StaticX. See #224.
     - name: Set up Python ${{ matrix.python-version }}
       uses: deadsnakes/action@v3.0.1
+      if: "(matrix.python-version != '3.8')"  # Already installed in ubuntu-20.04
       with:
         python-version: ${{ matrix.python-version }}
 
