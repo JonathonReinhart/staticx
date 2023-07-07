@@ -1,11 +1,12 @@
 #!/bin/bash
 set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
+source ../funcs.sh
+
+verify_pyinstaller
 
 echo -e "\n\n--------------------------------------------------------------------------------"
 echo -e "Verify StaticX rejects PyInstalled application with library using RUNPATH"
-
-cd "$(dirname "${BASH_SOURCE[0]}")"
-source ../funcs.sh
 
 app="./dist/app"
 outfile="./dist/app.staticx"

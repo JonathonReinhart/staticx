@@ -1,17 +1,14 @@
 #!/bin/bash
 set -e
-outfile=./dist/app.staticx
+cd "$(dirname "${BASH_SOURCE[0]}")"
+source ../funcs.sh
 
-# Only run if PyInstaller is installed
-# By gracefully failing here, we can control which versions of Python this test
-# runs under in requirements.txt
-pyinstaller --version 2>/dev/null || { echo "PyInstaller not installed"; exit 0; }
-
+verify_pyinstaller
 
 echo -e "\n\n--------------------------------------------------------------------------------"
 echo -e "Test StaticX against PyInstalled application"
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+outfile=./dist/app.staticx
 
 # Run the application normally
 echo -e "\nPython app run normally:"

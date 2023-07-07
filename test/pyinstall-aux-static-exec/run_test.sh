@@ -1,22 +1,17 @@
 #!/bin/bash
 set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
+source ../funcs.sh
+
+verify_pyinstaller
+
+echo -e "\n\n--------------------------------------------------------------------------------"
+echo -e "Test StaticX against PyInstalled application which includes a statically-linked aux app"
 
 CCFLAGS="-Wall -Werror -Os -s"
 CCFLAGS_STATIC="$CCFLAGS -static -DSTATIC=1"
 
 outfile=./dist/app.staticx
-
-# Only run if PyInstaller is installed
-# By gracefully failing here, we can control which versions of Python this test
-# runs under in requirements.txt
-pyinstaller --version 2>/dev/null || { echo "PyInstaller not installed"; exit 0; }
-
-
-echo -e "\n\n--------------------------------------------------------------------------------"
-echo -e "Test StaticX against PyInstalled application which includes a statically-linked aux app"
-
-cd "$(dirname "${BASH_SOURCE[0]}")"
-
 
 # Build our auxiliary app
 echo "Building aux app with gcc"

@@ -29,3 +29,5 @@ no-default-lib/run_test.sh
 
 # Run test against broken NSS
 nss-isolated/run_test.sh
+
+echo "All tests successful!"

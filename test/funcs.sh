@@ -27,3 +27,20 @@ function verify_uses_runpath() {
         exit 66
     fi
 }
+
+# Check to see if PyInstaller is installed.
+# If not, then fail gracefully. By doing so, we can control which versions of
+# Python this test runs under in requirements.txt.
+function verify_pyinstaller() {
+    pyinstaller --version >/dev/null 2>/dev/null || {
+        echo "PyInstaller not installed"
+        exit 0
+    }
+
+    # If "pyinstaller" is in $PATH, but PyInstaller is not in sys.path,
+    # then we need to abort because this is not expected.
+    python3 -m PyInstaller --version >/dev/null 2>/dev/null || {
+        echo "PyInstaller installed, but not in this (virtual?) environment!"
+        exit 66
+    }
+}
