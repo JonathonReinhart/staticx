@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Removed
+- Dropped support for Python 3.5 and 3.6 ([#247])
+
+
 ## [0.13.9] - 2023-04-16
 ### Fixed
 - Updated to support PyInstaller 5.10 archive API changes ([#236], [#237])
@@ -328,3 +333,4 @@ Initial release
 [#236]: https://github.com/JonathonReinhart/staticx/pull/236
 [#237]: https://github.com/JonathonReinhart/staticx/pull/237
 [#238]: https://github.com/JonathonReinhart/staticx/pull/238
+[#247]: https://github.com/JonathonReinhart/staticx/pull/247
