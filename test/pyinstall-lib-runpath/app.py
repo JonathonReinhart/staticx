@@ -4,8 +4,14 @@ from pathlib import Path
 
 mydir = Path(__file__).parent
 
-libfoo = CDLL(mydir / 'libfoo.so')
-libbar = CDLL(mydir / 'libbar.so')
+libfoo_path = (mydir / 'libfoo.so').absolute()
+libbar_path = (mydir / 'libbar.so').absolute()
+
+assert libfoo_path.exists()
+assert libbar_path.exists()
+
+libfoo = CDLL(libfoo_path)
+libbar = CDLL(libbar_path)
 
 def setup_prototype(func, restype, *argtypes):
     func.restype = restype
