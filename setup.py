@@ -123,7 +123,7 @@ setup(
     name = 'staticx',
     version = get_dynamic_version(),
     description = 'Build static self-extracting app from dynamic executable',
-    python_requires='>=3.5',
+    python_requires='>=3.7',
     long_description = read_project_file('README.md'),
     long_description_content_type = 'text/markdown',
     classifiers = [
@@ -134,8 +134,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
