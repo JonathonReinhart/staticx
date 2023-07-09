@@ -36,7 +36,7 @@ def process_pyinstaller_archive(sx):
     # We do this after opening the archive to avoid failing for non-pyinstalled
     # input files.
     if pyi_version[:2] in ((4, 1), (4, 2)):
-        msg = "PyInstaller v{} is unsupported\n".format(PyInstaller.__version__)
+        msg = f"PyInstaller v{PyInstaller.__version__} is unsupported\n"
         msg += "(See https://github.com/JonathonReinhart/staticx/issues/170)"
         raise Error(msg)
 
@@ -89,7 +89,7 @@ class PyInstallHook:
             # Extract it to a temporary location
             data = self.pyi_ar.extract(name)
             tmppath = os.path.join(self.tmpdir.name, name)
-            logging.debug("Extracting to {}".format(tmppath))
+            logging.debug(f"Extracting to {tmppath}")
             mkdirs_for(tmppath)
             with open(tmppath, "wb") as f:
                 f.write(data)
@@ -122,7 +122,7 @@ class PyInstallHook:
             msg += "One or more libraries included in the PyInstaller"
             msg += " archive uses unsupported RPATH/RUNPATH tags:\n\n"
             for e in errors:
-                msg += "  {}: {}={!r}\n".format(e.libpath, e.tag, e.value)
+                msg += f"  {e.libpath}: {e.tag}={e.value!r}\n"
             msg += "\nSee https://github.com/JonathonReinhart/staticx/issues/188"
             raise Error(msg)
 
@@ -146,7 +146,7 @@ class PyInstallHook:
             dep = os.path.basename(deppath)
 
             if dep in self.pyi_ar.toc:
-                logging.debug("{} already in pyinstaller archive".format(dep))
+                logging.debug(f"{dep} already in pyinstaller archive")
                 continue
 
             self.sx.add_library(deppath, exist_ok=True)
