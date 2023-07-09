@@ -27,7 +27,7 @@ def get_xz_filters():
     # Get a BCJ filter for the current architecture
     bcj_filter, bcj_filter_name = get_bcj_filter()
     if bcj_filter:
-        logging.info("Using XZ BCJ filter {}".format(bcj_filter_name))
+        logging.info(f"Using XZ BCJ filter {bcj_filter_name}")
         filters.append(dict(id=bcj_filter))
 
     # The last filter in the chain must be a compression filter.
@@ -95,7 +95,7 @@ class SxArchive:
         self.tar.addfile(t)
 
     def add_fileobj(self, name, fileobj):
-        logging.info("Adding {}".format(name))
+        logging.info(f"Adding {name}")
         tarinfo = self.tar.gettarinfo(arcname=name, fileobj=fileobj)
         tarinfo.mode = make_mode_executable(tarinfo.mode)
         self.tar.addfile(tarinfo, fileobj)
@@ -117,7 +117,7 @@ class SxArchive:
             tarinfo.mode = make_mode_executable(tarinfo.mode)
             return tarinfo
 
-        logging.info("Adding {} as {}".format(path, name))
+        logging.info(f"Adding {path} as {name}")
         self.tar.add(path, arcname=name, filter=make_exec)
 
         # Store a link to the program so the bootloader knows what to execute

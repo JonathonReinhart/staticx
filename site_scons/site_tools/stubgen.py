@@ -20,8 +20,8 @@ def ShlibStubGen(env, target, symbols):
     lines = ['// Auto-generated stub']
     for sym in symbols:
         lines += [
-            'void {}(void);'.format(sym),       # for strict prototypes
-            'void {}(void) {{}}'.format(sym),
+            f'void {sym}(void);',       # for strict prototypes
+            f'void {sym}(void) {{}}',
             '',
         ]
 

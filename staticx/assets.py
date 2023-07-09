@@ -7,7 +7,7 @@ def locate_asset(name, debug):
     try:
         return pkg_resources.resource_stream(__name__, path)
     except FileNotFoundError:
-        raise KeyError("Asset not found: {!r} (mode={!r})".format(name, mode))
+        raise KeyError(f"Asset not found: {name!r} (mode={mode!r})")
 
 
 def copy_asset_to_tempfile(assetname, debug, **kwargs):

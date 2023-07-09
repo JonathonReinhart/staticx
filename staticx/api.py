@@ -84,15 +84,15 @@ class StaticxGenerator:
         bldr_mach = get_machine(bootloader)
         prog_mach = get_machine(self.orig_prog)
         if bldr_mach != prog_mach:
-            raise FormatMismatchError("Bootloader machine ({}) doesn't match "
-                    "program machine ({})".format(bldr_mach, prog_mach))
+            raise FormatMismatchError(
+                f"Bootloader machine ({bldr_mach}) doesn't match program machine ({prog_mach})")
 
         # Run the bootloader for identification
         r = subprocess.run(
                 args = [bootloader],
                 env = dict(STATICX_BOOTLOADER_IDENTIFY='1'),
                 stderr = subprocess.PIPE,
-                universal_newlines = True,  # TODO: 'text' in Python 3.7
+                text = True,
                 )
         r.check_returncode()
         lines = (line.split(':', 1)[1].strip() for line in r.stderr.splitlines())
@@ -125,7 +125,7 @@ class StaticxGenerator:
         if self.strip:
             # TODO: Now that we have ship separate debug/release bootloaders
             # do we ever want and need to do this at staticx-time?
-            logging.info("Stripping bootloader {}".format(self.tmpoutput))
+            logging.info(f"Stripping bootloader {self.tmpoutput}")
             strip_elf(self.tmpoutput)
 
 
@@ -165,7 +165,7 @@ class StaticxGenerator:
                 return
             raise LibExistsError(libname)
 
-        logging.info("Processing library {} ({})".format(libname, libpath))
+        logging.info(f"Processing library {libname} ({libpath})")
 
         # Handle symlinks
         libpath = self._handle_lib_symlinks(libpath)
@@ -178,7 +178,7 @@ class StaticxGenerator:
             nonlocal libpath
 
             tmplib = os.path.join(self.tmpdir, basename(libpath))
-            logging.info("Copying {} to {}".format(libpath, tmplib))
+            logging.info(f"Copying {libpath} to {tmplib}")
             shutil.copy(libpath, tmplib)
             libpath = tmplib
 
@@ -192,23 +192,23 @@ class StaticxGenerator:
         except (UnsupportedRpathError, UnsupportedRunpathError):
             # Fix it by removing
             work_on_copy()
-            logging.info("Removing RPATH/RUNPATH from library {}".format(libpath))
+            logging.info(f"Removing RPATH/RUNPATH from library {libpath}")
             remove_rpath(libpath)
 
         # Strip the library
         if self.strip:
             work_on_copy()
-            logging.info("Stripping library {}".format(libpath))
+            logging.info(f"Stripping library {libpath}")
             strip_elf(libpath)
 
 
         # Finally, add it to the archive.
         arcname = basename(libpath)
-        logging.info("Adding {} as {}".format(libpath, arcname))
+        logging.info(f"Adding {libpath} as {arcname}")
         self.sxar.add_file(libpath, arcname=arcname)
         if arcname in self._added_libs:
-            raise InternalError("libname {} absent from _added_libs but"
-                    " library {} present".format(libname, arcname))
+            raise InternalError(
+                f"libname {libname} absent from _added_libs but library {arcname} present")
         self._added_libs[arcname] = libpath
 
 
@@ -232,12 +232,12 @@ class StaticxGenerator:
 
             # Add a symlink.
             # At this point the target probably doesn't exist, but that doesn't matter yet.
-            logging.info("Adding Symlink {} => {}".format(arcname, target))
+            logging.info(f"Adding Symlink {arcname} => {target}")
             self.sxar.add_symlink(arcname, target)
 
             if arcname in self._added_libs:
-                raise InternalError("libname {} absent from _added_libs but"
-                        " symlink {} present".format(libname, arcname))
+                raise InternalError(
+                    f"libname {libname} absent from _added_libs but symlink {arcname} present")
             self._added_libs[arcname] = None    # Don't care about real target for symlinks
 
         return libpath
@@ -282,7 +282,7 @@ class StaticxGenerator:
 
         # Strip user prog before modifying it
         if self.strip:
-            logging.info("Stripping prog {}".format(self.tmpprog))
+            logging.info(f"Stripping prog {self.tmpprog}")
             strip_elf(self.tmpprog)
 
         # Set long dummy INTERP and RPATH in the executable to allow plenty of space
@@ -305,15 +305,15 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
     debug: Run in debug mode (use debug bootloader)
     """
 
-    logging.info("Running StaticX version {}".format(__version__))
+    logging.info(f"Running StaticX version {__version__}")
     verify_tools()
     logging.debug("Arguments:")
-    logging.debug("  prog:      {!r}".format(prog))
-    logging.debug("  output:    {!r}".format(output))
-    logging.debug("  libs:      {!r}".format(libs))
-    logging.debug("  strip:     {!r}".format(strip))
-    logging.debug("  compress:  {!r}".format(compress))
-    logging.debug("  debug:     {!r}".format(debug))
+    logging.debug(f"  prog:      {prog!r}")
+    logging.debug(f"  output:    {output!r}")
+    logging.debug(f"  libs:      {libs!r}")
+    logging.debug(f"  strip:     {strip!r}")
+    logging.debug(f"  compress:  {compress!r}")
+    logging.debug(f"  debug:     {debug!r}")
 
     gen = StaticxGenerator(
             prog=prog,

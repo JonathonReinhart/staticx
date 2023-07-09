@@ -5,7 +5,6 @@ import locale
 import logging
 import errno
 import os
-from pprint import pformat
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -18,7 +17,7 @@ from .utils import coerce_sequence, single, which_exec
 
 def verify_tools():
     logging.info("Libraries:")
-    logging.info("  elftools: {}".format(elftools.__version__))
+    logging.info(f"  elftools: {elftools.__version__}")
 
     extern_tools_verify()
 
@@ -48,18 +47,11 @@ class ExternTool:
         try:
             r = subprocess.run(
                 args = args,
-
-                #capture_output = True,         # TODO: Python 3.7
-                stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE,
-
+                capture_output = True,
+                encoding = self.encoding,
                 **kw)
         except FileNotFoundError:
             raise MissingToolError(self.cmd, self.os_pkg)
-
-        # TODO: Python 3.6: Simply set encoding in run() call
-        r.stdout = r.stdout.decode(self.encoding)
-        r.stderr = r.stderr.decode(self.encoding)
 
         # Hide ignored lines from stderr
         if not _internal:
@@ -75,7 +67,7 @@ class ExternTool:
         rc, stdout = self.run(*args, **kw)
 
         if rc != 0:
-            raise ToolError(self.cmd, '{} returned {}'.format(self.cmd, rc))
+            raise ToolError(self.cmd, f'{self.cmd} returned {rc}')
 
         return stdout
 
@@ -83,7 +75,7 @@ class ExternTool:
         rc, output = self.run('--version', _internal=True)
         if rc == 0:
             return output.splitlines()[0]
-        return "??? (exited {})".format(rc)
+        return f"??? (exited {rc})"
 
     def which(self):
         return which_exec(self.cmd)
@@ -106,7 +98,7 @@ all_tools = (tool_ldd, tool_objcopy, tool_strip, tool_patchelf)
 def extern_tools_verify():
     logging.debug("External tools:")
     for t in all_tools:
-        logging.info("  {}: {}: {}".format(t.cmd, t.which(), t.get_version()))
+        logging.info(f"  {t.cmd}: {t.which()}: {t.get_version()}")
 
 
 class LddError(ToolError):
@@ -192,7 +184,7 @@ def get_shobj_deps(path, libpath=None):
         # produced by musl-libc
         #
         # We simply raise a specific exception and let the caller deal with it.
-        message = "Unexpected ldd error ({}):\n{}".format(rc, output.strip('\n'))
+        message = f"Unexpected ldd error ({rc}):\n" + output.strip('\n')
         if "invalid ELF header" in output:
             message += "\nHint: try setting STATICX_LDD to the appropriate ldd for this executable"
         raise LddError(message)
@@ -203,7 +195,7 @@ def get_shobj_deps(path, libpath=None):
 
 def elf_add_section(elfpath, secname, secfilename):
     tool_objcopy.run_check(
-        '--add-section', '{}={}'.format(secname, secfilename),
+        '--add-section', f'{secname}={secfilename}',
         elfpath)
 
 
@@ -212,7 +204,7 @@ def elf_dump_section(elfpath, secname, outpath):
     tool_objcopy.run_check(
         '-O', 'binary',
         '--only-section', secname,
-        '--set-section-flags', '{}={}'.format(secname, 'alloc'),
+        '--set-section-flags', f"{secname}=alloc",
         elfpath, outpath)
 
 
@@ -257,7 +249,7 @@ def strip_elf(path):
 class StaticELFError(Error):
     """Dynamic operation requested on static executable"""
     def __init__(self, path):
-        message = "{} is a static ELF file".format(path)
+        message = f"{path} is a static ELF file"
         super().__init__(message)
 
 
@@ -291,8 +283,8 @@ class ELFFileX(ELFFile):
             except AttributeError:
                 continue
 
-        raise InvalidInputError("{}: not a dynamic executable "
-                                "(no interp segment)".format(self.__path))
+        raise InvalidInputError(
+            f"{self.__path}: not a dynamic executable (no interp segment)")
 
 
     def get_dynamic_segment(self):
@@ -325,7 +317,7 @@ def open_elf(path, mode='rb'):
     try:
         return ELFFileX.open(path, mode)
     except ELFError as e:
-        raise InvalidInputError("{}: Invalid ELF image: {}".format(path, e))
+        raise InvalidInputError(f"{path}: Invalid ELF image: {e}")
 
 
 def get_machine(path):

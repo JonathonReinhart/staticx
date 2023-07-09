@@ -15,8 +15,7 @@ def open_archive(archive):
 
     size = os.stat(f.name).st_size
     if size == 0:
-        raise ArchiveError("{} does not appear to contain a staticx archive section"
-                .format(archive))
+        raise ArchiveError(f"{archive} does not appear to contain a staticx archive section")
     return tarfile.open(fileobj=f, mode='r', format=tarfile.GNU_FORMAT)
 
 

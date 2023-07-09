@@ -29,7 +29,7 @@ def parse_args():
     ap.add_argument('-V', '--version', action='version',
             version = '%(prog)s ' + __version__)
     ap.add_argument('--loglevel', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-            help = 'Set the logging level (default: {})'.format(DEFAULT_LOGLEVEL))
+            help = f'Set the logging level (default: {DEFAULT_LOGLEVEL})')
 
     ap.add_argument('--debug', action='store_true')
 
