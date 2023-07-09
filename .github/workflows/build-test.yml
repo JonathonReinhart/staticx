@@ -37,8 +37,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y busybox musl-tools scons
 
-        pip install wheel
-
     - name: List version info
       run: |
         echo "Installed version info:"
