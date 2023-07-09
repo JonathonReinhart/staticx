@@ -92,7 +92,7 @@ class StaticxGenerator:
                 args = [bootloader],
                 env = dict(STATICX_BOOTLOADER_IDENTIFY='1'),
                 stderr = subprocess.PIPE,
-                universal_newlines = True,  # TODO: 'text' in Python 3.7
+                text = True,
                 )
         r.check_returncode()
         lines = (line.split(':', 1)[1].strip() for line in r.stderr.splitlines())
