@@ -1,7 +1,7 @@
 # These requirements are in addition to install_requires from setup.py
 # and are only used for development and testing.
 patchelf-wrapper
-pyinstaller==4.0; (python_version <= '3.7')
+pyinstaller
 
 # https://github.com/pypa/setuptools/issues/1963
 # Exclude from 45.0.0 until 49.1.1

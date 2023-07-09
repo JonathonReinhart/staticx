@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-20.04  # See #245
     strategy:
       matrix:
-        python-version: ["3.7"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
       fail-fast: False
 
     steps:
@@ -25,6 +25,7 @@ jobs:
     # with StaticX. See #224.
     - name: Set up Python ${{ matrix.python-version }}
       uses: deadsnakes/action@v3.0.1
+      if: "(matrix.python-version != '3.8')"  # Already installed in ubuntu-20.04
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -32,12 +33,32 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        docker version
 
         sudo apt-get update
         sudo apt-get install -y busybox musl-tools scons
 
-        pip install wheel
+    - name: List version info
+      run: |
+        echo "Installed version info:"
+
+        echo -e "\nPython:"
+        python --version
+        python -c "import sys; assert '.'.join(str(v) for v in sys.version_info[:2]) == sys.argv[1]" ${{ matrix.python-version }}
+
+        echo -e "\nPip:"
+        pip --version
+
+        echo -e "\nDocker:"
+        docker version
+
+        echo -e "\nGCC:"
+        gcc --version
+
+        echo -e "\nLD:"
+        ld --version
+
+        echo -e "\npatchelf:"
+        patchelf --version
 
     - name: Build and install
       run: |
