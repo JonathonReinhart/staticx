@@ -47,18 +47,11 @@ class ExternTool:
         try:
             r = subprocess.run(
                 args = args,
-
-                #capture_output = True,         # TODO: Python 3.7
-                stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE,
-
+                capture_output = True,
+                encoding = self.encoding,
                 **kw)
         except FileNotFoundError:
             raise MissingToolError(self.cmd, self.os_pkg)
-
-        # TODO: Python 3.6: Simply set encoding in run() call
-        r.stdout = r.stdout.decode(self.encoding)
-        r.stderr = r.stderr.decode(self.encoding)
 
         # Hide ignored lines from stderr
         if not _internal:
