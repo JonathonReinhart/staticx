@@ -19,7 +19,7 @@ def get_dynamic_version():
     build_num = os.getenv('TRAVIS_BUILD_NUMBER')
     build_tag = os.getenv('TRAVIS_TAG')
     if (not build_tag) and (build_num != None):
-        return '{}.{}'.format(staticx.version.BASE_VERSION, build_num)
+        return f'{staticx.version.BASE_VERSION}.{build_num}'
 
     return staticx.version.__version__
 
@@ -40,7 +40,7 @@ class build_bootloader(Command):
         args = [
             'scons',
             '-Q',       # Quiet output (except for build status)
-            'STATICX_VERSION={}'.format(get_dynamic_version()),
+            f'STATICX_VERSION={get_dynamic_version()}',
         ]
         check_call(args)
 
@@ -95,7 +95,7 @@ def get_platform():
     # Check compatibility
     if osname != "linux":
         # Right now staticx only supports Linux
-        raise UnsupportedPlatformError("OS {!r} unsupported by staticx".format(osname))
+        raise UnsupportedPlatformError(f"OS {osname!r} unsupported by staticx")
 
     # Adjust machine if necessary
     #
@@ -109,7 +109,7 @@ def get_platform():
     if machine == "x86_64" and sys.maxsize == 0x7fffffff:
         machine = "i686"
 
-    return 'manylinux1_{}'.format(machine)
+    return f'manylinux1_{machine}'
 
 ################################################################################
 
