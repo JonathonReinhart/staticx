@@ -15,11 +15,12 @@ def _gen_nsswitch_conf_h(target, source, env):
     conf = read_nsswitch_conf(source[0].get_path())
     with open(target[0].get_path(), 'w') as tgtf:
         for dbname, svcs in conf:
-            tgtf.write('NSSWITCH_CONF("{}", "{}")\n'.format(dbname, ' '.join(svcs)))
+            svc_line = " ".join(svcs)
+            tgtf.write(f'NSSWITCH_CONF("{dbname}", "{svc_line}")\n')
 
 
 def _strfunc(target, source, env):
-    return "Creating '%s'" % target[0]
+    return f"Creating '{target[0]}'"
 
 def NsswitchConfH(env, target, source):
     return env.Command(
