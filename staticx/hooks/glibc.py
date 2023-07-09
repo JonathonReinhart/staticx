@@ -49,7 +49,7 @@ def is_linked_against_glibc(prog):
                 continue
             for vernaux in vernaux_iter:
                 if vernaux.name.startswith('GLIBC_'):
-                    logging.debug("Program linked with GLIBC: Found {} {}".format(
-                        verneed.name, vernaux.name))
+                    logging.debug(
+                        f"Program linked with GLIBC: Found {verneed.name} {vernaux.name}")
                     return True
     return False
