@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- Fixed issue causing libnssfix link failure when building on GLIBC 2.34 ([#255])
+
 ### Removed
 - Dropped support for Python 3.5 and 3.6 ([#247])
 
@@ -334,3 +337,4 @@ Initial release
 [#237]: https://github.com/JonathonReinhart/staticx/pull/237
 [#238]: https://github.com/JonathonReinhart/staticx/pull/238
 [#247]: https://github.com/JonathonReinhart/staticx/pull/247
+[#255]: https://github.com/JonathonReinhart/staticx/pull/255

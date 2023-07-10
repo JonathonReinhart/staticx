@@ -59,10 +59,26 @@ def BuildSubdir(env, dirname):
 base_env.AddMethod(BuildSubdir)
 
 
+###########
+# Configure
 conf = base_env.Configure(custom_tests=custom_tests)
-has_nss = conf.CheckNSS()
-conf.Finish()
 
+# Does our default libc have NSS?
+conf.env["HAS_NSS"] = conf.CheckNSS()
+
+# Starting in GLIBC 2.34, some NSS modules (files, dns) can be built-in to
+# libc.so. Determine which ones are builtin. See #245.
+conf.env["NSS_MODS_BUILTIN"] = []
+if conf.env["HAS_NSS"]:
+    maybe_builtin_nss_modules = ["files", "dns"]
+    for mod in maybe_builtin_nss_modules:
+        libname = "libnss_" + mod
+        # It the library doesn't exist, assume it is built-in.
+        if not conf.BasicCheckLib(libname):
+            conf.env.Append(NSS_MODS_BUILTIN=libname)
+    print("Builtin NSS modules:", conf.env["NSS_MODS_BUILTIN"])
+
+base_env = conf.Finish()
 
 ################################################################################
 # Bootloader
@@ -79,7 +95,7 @@ for env in bootloader_env.ModeEnvs():
 
 ################################################################################
 # nssfix
-if has_nss:
+if env['HAS_NSS']:
     for env in base_env.ModeEnvs():
         env.InstallAs('#staticx/assets/$MODE/libnssfix.so', env.BuildSubdir('libnssfix'))
 else:

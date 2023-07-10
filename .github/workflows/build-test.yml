@@ -7,12 +7,26 @@ on:
 
 jobs:
   build:
-
-    runs-on: ubuntu-20.04  # See #245
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        # It's undocumented, but matrix variable arrays can be maps, too!
+        # https://stackoverflow.com/a/68940067/119527
+        os:
+          - version: "ubuntu-20.04"
+            native-python: "3.8"
+          - version: "ubuntu-22.04"
+            native-python: "3.10"
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
       fail-fast: False
+
+    name: "${{matrix.os.version}}: Python ${{matrix.python-version}}"
+
+    runs-on: ${{ matrix.os.version }}
 
     steps:
     - uses: actions/checkout@v3
@@ -25,7 +39,7 @@ jobs:
     # with StaticX. See #224.
     - name: Set up Python ${{ matrix.python-version }}
       uses: deadsnakes/action@v3.0.1
-      if: "(matrix.python-version != '3.8')"  # Already installed in ubuntu-20.04
+      if: "(matrix.python-version != matrix.os.native-python)"  # Already installed
       with:
         python-version: ${{ matrix.python-version }}
 
