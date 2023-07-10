@@ -59,10 +59,14 @@ def BuildSubdir(env, dirname):
 base_env.AddMethod(BuildSubdir)
 
 
+###########
+# Configure
 conf = base_env.Configure(custom_tests=custom_tests)
-has_nss = conf.CheckNSS()
-conf.Finish()
 
+# Does our default libc have NSS?
+conf.env["HAS_NSS"] = conf.CheckNSS()
+
+base_env = conf.Finish()
 
 ################################################################################
 # Bootloader
@@ -79,7 +83,7 @@ for env in bootloader_env.ModeEnvs():
 
 ################################################################################
 # nssfix
-if has_nss:
+if env['HAS_NSS']:
     for env in base_env.ModeEnvs():
         env.InstallAs('#staticx/assets/$MODE/libnssfix.so', env.BuildSubdir('libnssfix'))
 else:
