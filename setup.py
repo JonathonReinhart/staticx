@@ -14,13 +14,13 @@ from subprocess import check_call
 def get_dynamic_version():
     import staticx.version
 
-    # Travis builds
-    # If we're not building for a tag, then append the build number
-    build_num = os.getenv('TRAVIS_BUILD_NUMBER')
-    build_tag = os.getenv('TRAVIS_TAG')
-    if (not build_tag) and (build_num != None):
+    # CI builds
+    # If CI_VERSION_BUILD_NUMBER is set, append that to the base version
+    build_num = os.getenv("CI_VERSION_BUILD_NUMBER")
+    if build_num:
         return f'{staticx.version.BASE_VERSION}.{build_num}'
 
+    # Otherwise, use the auto-versioning
     return staticx.version.__version__
 
 

@@ -1,0 +1,127 @@
+name: Publish to PyPI
+
+on:
+  # On every push to main, push to Test PyPI
+  push:
+    branches:
+      - main
+
+  # On new releases, push to PyPI
+  release:
+    types: [published]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Map a step output to a job output
+    outputs:
+      ENV_NAME: ${{ steps.environment_select.outputs.ENV_NAME }}
+      PKG_VERSION: ${{ steps.environment_select.outputs.PKG_VERSION }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
+    - name: Unshallow checkout
+      run: git fetch --prune --unshallow
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel
+
+        sudo apt-get update
+        sudo apt-get install -y musl-tools scons
+
+    - name: Build
+      env:
+        BOOTLOADER_CC: /usr/bin/musl-gcc
+        CI_VERSION_BUILD_NUMBER: ${{ github.run_id }}
+      run: python setup.py sdist bdist_wheel
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-dist
+        path: dist/
+
+    - name: Environment select
+      # https://www.codewrecks.com/post/github/choose-environment-from-branch/
+      # https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+      # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+      id: environment_select
+      run: |
+        # Determine environment to publish to
+        echo "github.event_name=\"${{ github.event_name }}\""
+        echo "github.ref_type=\"${{ github.ref_type }}\""
+        echo "github.ref=\"${{ github.ref }}\""
+
+        case "${{ github.event_name }}" in
+          push)
+            echo "Triggered by push to ${{ github.ref }}"
+            if [ "${{ github.ref_type }}" == "branch" ]; then
+              if [ "${{ github.ref_name }}" == "main" ]; then
+                echo "Will deploy to TestPyPI"
+                echo "ENV_NAME=TestPyPI" >> $GITHUB_OUTPUT
+              else
+                echo "Unexpected ref_name: \"${{ github.ref_name }}\""
+                exit 6
+              fi
+            else
+              echo "Unexpected ref_type: \"${{ github.ref_type}}\""
+              exit 6
+            fi
+            ;;
+
+          release)
+            echo "Triggered by release to ${{ github.ref }}"
+            if [ "${{ github.ref_type }}" == "tag" ]; then
+              echo "Will deploy to PyPI"
+              echo "ENV_NAME=PyPI" >> $GITHUB_OUTPUT
+            else
+              echo "Unexpected ref_type: \"${{ github.ref_type}}\""
+              exit 6
+            fi
+            ;;
+
+          *)
+            echo "Unexpected trigger: ${{ github.event_name }}"
+            exit 6
+            ;;
+        esac
+
+        # Determine built package version
+        pkg_version=$(awk '{ if ($1 == "Version:") print $2 }' <staticx.egg-info/PKG-INFO)
+        echo "Package version: $pkg_version"
+        echo "PKG_VERSION=$pkg_version" >> $GITHUB_OUTPUT
+
+
+  pypi-publish:
+    name: Upload release to PyPI
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.build.outputs.ENV_NAME }}
+      url: ${{ format('{0}{1}', vars.PROJECT_URL, needs.build.outputs.PKG_VERSION) }}  # from environment
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: python-dist
+        path: dist/
+
+    - name: Publish
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        print-hash: true
+        repository-url: ${{ vars.UPLOAD_URL }}  # from environment
