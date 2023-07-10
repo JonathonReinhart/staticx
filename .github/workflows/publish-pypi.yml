@@ -44,8 +44,13 @@ jobs:
     - name: Build
       env:
         BOOTLOADER_CC: /usr/bin/musl-gcc
-        CI_VERSION_BUILD_NUMBER: ${{ github.run_id }}
-      run: python setup.py sdist bdist_wheel
+      run: |
+        # For 'main' branch builds, set append the run ID to the version
+        if [ "${{ github.ref_type }}" == "branch" ]; then
+          export CI_VERSION_BUILD_NUMBER=${{ github.run_id }}
+        fi
+
+        python setup.py sdist bdist_wheel
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
