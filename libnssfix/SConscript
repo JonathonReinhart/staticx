@@ -22,6 +22,18 @@ env.NsswitchConfH(
     source = nsswitch_conf,
 )
 
+def ld_lib_filename(libname):
+    # From ld(1):
+    #   If namespec is of the form `:filename`, ld will search
+    #   the library path for a file called `filename`.
+    return ":" + libname
+
+# Link against the configured NSS module libraries.
+# These aren't needed directly for the library itself, but this ensures
+# that they will be available for nss at runtime (via dlopen), and
+# allows their paths to be easily discovered via ldd(1).
+nss_libs = [ld_lib_filename(libname) for libname in env.GetNsswitchLibs(nsswitch_conf)]
+
 # Build libnssfix.so
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
@@ -50,12 +62,7 @@ libnssfix = env.SharedLibrary(
     ],
     LIBS = [
         libc_stub,
-
-        # These aren't needed directly for the library itself, but this ensures
-        # that they will be available for nss at runtime (via dlopen), and
-        # allows their paths to be easily discovered via ldd(1).
-        env.GetNsswitchLibs(nsswitch_conf),
-    ],
+    ] + nss_libs,
 )
 
 Return('libnssfix')
