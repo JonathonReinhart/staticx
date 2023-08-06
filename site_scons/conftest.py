@@ -14,26 +14,6 @@ int main(void)
     return ok
 
 
-def BasicCheckLib(context, libname):
-    """Check for a C library.
-
-    Similar to built-in CheckLib but works around
-    https://github.com/SCons/scons/issues/4373.
-    """
-    context.Message("Checking for library %s... " % libname)
-
-    oldLIBS = context.AppendLIBS([libname])
-    ok = context.TryLink(
-        "int main(void) { return 0; }",
-        ".c"
-    )
-    context.SetLIBS(oldLIBS)
-
-    context.Result(ok)
-    return ok
-
-
 custom_tests = dict(
     CheckNSS = CheckNSS,
-    BasicCheckLib = BasicCheckLib,
 )
