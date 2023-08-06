@@ -26,6 +26,9 @@ jobs:
 
     runs-on: ${{ matrix.os.version }}
 
+    env:
+      TEST_DOCKER_IMAGE: "centos:5"
+
     steps:
     - uses: actions/checkout@v3
 
@@ -48,6 +51,8 @@ jobs:
 
         sudo apt-get update
         sudo apt-get install -y busybox musl-tools scons
+
+        docker pull $TEST_DOCKER_IMAGE
 
     - name: List version info
       run: |

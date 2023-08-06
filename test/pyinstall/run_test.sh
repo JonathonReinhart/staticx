@@ -33,15 +33,10 @@ $outfile
 # Run it under an old distro
 if [ -n "$TEST_DOCKER_IMAGE" ]; then
     echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
-    docker run --rm -it \
-        -v "$(pwd):$(pwd):ro" -w $(pwd) \
-        $TEST_DOCKER_IMAGE \
-        $outfile
+    scuba --image $TEST_DOCKER_IMAGE $outfile
 
     echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE with broken NSS"
-    docker run --rm -it \
-        -v "$(pwd):$(pwd):ro" -w $(pwd) \
-        -v "$(realpath ./bad_nsswitch.conf):/etc/nsswitch.conf:ro" \
-        $TEST_DOCKER_IMAGE \
+    scuba --image $TEST_DOCKER_IMAGE \
+        --docker-arg="-v $(realpath ./bad_nsswitch.conf):/etc/nsswitch.conf:ro" \
         $outfile
 fi
