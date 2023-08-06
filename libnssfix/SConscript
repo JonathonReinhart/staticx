@@ -22,16 +22,6 @@ env.NsswitchConfH(
     source = nsswitch_conf,
 )
 
-
-# Link against the configured NSS module libraries.
-# These aren't needed directly for the library itself, but this ensures
-# that they will be available for nss at runtime (via dlopen), and
-# allows their paths to be easily discovered via ldd(1).
-nss_libs = set(env.GetNsswitchLibs(nsswitch_conf))
-
-# Exclude those already built-in to glibc.
-nss_libs -= set(env["NSS_MODS_BUILTIN"])
-
 # Build libnssfix.so
 libnssfix = env.SharedLibrary(
     target = 'nssfix',
@@ -60,7 +50,12 @@ libnssfix = env.SharedLibrary(
     ],
     LIBS = [
         libc_stub,
-    ] + list(nss_libs),
+
+        # These aren't needed directly for the library itself, but this ensures
+        # that they will be available for nss at runtime (via dlopen), and
+        # allows their paths to be easily discovered via ldd(1).
+        env.GetNsswitchLibs(nsswitch_conf),
+    ],
 )
 
 Return('libnssfix')
