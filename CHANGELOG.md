@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Reverted invalid fix ([#255]) for libnssfix link failure ([#262])
+- Fixed issue causing libnssfix link failure when building on GLIBC 2.34 again,
+  by linking against versioned SONAME (.2) ([#259])
 
 
 ## [0.14.0] - 2023-07-10
@@ -344,4 +346,5 @@ Initial release
 [#238]: https://github.com/JonathonReinhart/staticx/pull/238
 [#247]: https://github.com/JonathonReinhart/staticx/pull/247
 [#255]: https://github.com/JonathonReinhart/staticx/pull/255
+[#259]: https://github.com/JonathonReinhart/staticx/pull/259
 [#262]: https://github.com/JonathonReinhart/staticx/pull/262
