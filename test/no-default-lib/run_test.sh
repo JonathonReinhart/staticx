@@ -29,10 +29,9 @@ $outfile $libname 1 || exit $?
 ### Docker
 libname="libcrack.so"
 
-# Run the original app under docker
 if [ -n "$TEST_DOCKER_IMAGE" ]; then
-    echo -e "\nRunning original app under $TEST_DOCKER_IMAGE"
-    scuba --image $TEST_DOCKER_IMAGE $app $libname 0
+    echo -e "\nVerifying target library is loadable under $TEST_DOCKER_IMAGE"
+    scuba --image $TEST_DOCKER_IMAGE /bin/bash -c "ldd /usr/sbin/cracklib-check | grep libcrack.so"
 
     echo -e "\nRunning staticx executable under $TEST_DOCKER_IMAGE"
     scuba --image $TEST_DOCKER_IMAGE $outfile $libname 1
