@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.14.1] - 2023-08-07
 ### Fixed
 - Reverted invalid fix ([#255]) for libnssfix link failure ([#262])
 - Fixed issue causing libnssfix link failure when building on GLIBC 2.34 again,
@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 
 ## [0.14.0] - 2023-07-10
+*This release was pulled from PyPI due to an incorrect fix in #255.*
+
 ### Fixed
 - Fixed issue causing libnssfix link failure when building on GLIBC 2.34 ([#255])
 
@@ -250,7 +252,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 Initial release
 
 
-[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/JonathonReinhart/staticx/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/JonathonReinhart/staticx/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/JonathonReinhart/staticx/compare/v0.13.9...v0.14.0
 [0.13.9]: https://github.com/JonathonReinhart/staticx/compare/v0.13.8...v0.13.9
 [0.13.8]: https://github.com/JonathonReinhart/staticx/compare/v0.13.7...v0.13.8
