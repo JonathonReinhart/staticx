@@ -113,62 +113,22 @@ def get_platform():
 
 ################################################################################
 
-def read_project_file(path):
-    proj_dir = os.path.dirname(__file__)
-    path = os.path.join(proj_dir, path)
-    with open(path, 'r') as f:
-        return f.read()
-
 setup(
-    name = 'staticx',
+    #####
+    # Dynamic core metadata, in addition to pyproject.toml [project]
     version = get_dynamic_version(),
-    description = 'Build static self-extracting app from dynamic executable',
-    python_requires='>=3.7',
-    long_description = read_project_file('README.md'),
-    long_description_content_type = 'text/markdown',
-    classifiers = [
-        'Development Status :: 3 - Alpha',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
-        'Natural Language :: English',
-        'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Topic :: Software Development :: Build Tools',
-    ],
-    license = 'GPL v2 with special exception allowing StaticX to build and'
-              ' distribute non-free programs',
-    author = 'Jonathon Reinhart',
-    author_email = 'jonathon.reinhart@gmail.com',
-    url = 'https://github.com/JonathonReinhart/staticx',
-    packages = find_packages(),
+    #####
+    # Setuptools-specific config
+    # We could put this in pyproject.toml [tool.setuptools], but choose not to:
+    # - The functionality is still in beta and requires setuptools >= 61.0.0
+    # - We need setup.py to provide build_hook, so we might as well keep all
+    #   setuptools-specific config here, in one file.
+    packages=find_packages(),
     package_data = {
         'staticx': ['assets/*/*'],
     },
-
-    # Ugh.
-    # https://github.com/JonathonReinhart/staticx/issues/22
-    # https://github.com/JonathonReinhart/scuba/issues/77
-    # https://github.com/pypa/setuptools/issues/1064
-    include_package_data = True,
-
+    include_package_data=True,  # https://github.com/pypa/setuptools/issues/1064
     zip_safe = False,   # http://stackoverflow.com/q/24642788/119527
-    entry_points = {
-        'console_scripts': [
-            'staticx = staticx.__main__:main',
-            'sx-extract = staticx.extract:main',
-        ]
-    },
-    install_requires = [
-        'pyelftools',
-    ],
-
     # http://stackoverflow.com/questions/17806485
     # http://stackoverflow.com/questions/21915469
     # PyInstaller setup.py

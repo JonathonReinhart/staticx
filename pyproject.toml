@@ -1,0 +1,47 @@
+[project]
+name = "staticx"
+dynamic = ["version"]
+
+authors = [
+    {name = "Jonathon Reinhart", email="jonathon.reinhart@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "pyelftools",
+]
+description = "Build static self-extracting app from dynamic executable"
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+requires-python = ">=3.7"
+
+[project.scripts]
+staticx = "staticx.__main__:main"
+sx-extract = "staticx.extract:main"
+
+[project.urls]
+documentation = "https://staticx.readthedocs.io/"
+repository = "https://github.com/JonathonReinhart/staticx"
+changelog = "https://github.com/JonathonReinhart/staticx/blob/main/CHANGELOG.md"
+
+[build-system]
+# Tells pip to install wheel before trying to install
+# from an sdist or from Github.
+requires = [
+    "wheel",
+    "setuptools >= 42.0.0",
+]
