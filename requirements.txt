@@ -1,14 +1,9 @@
 # These requirements are in addition to install_requires from setup.py
 # and are only used for development and testing.
+build
 patchelf-wrapper
 pyinstaller
-
-# https://github.com/pypa/setuptools/issues/1963
-# Exclude from 45.0.0 until 49.1.1
-setuptools !=45.*, !=46.*, !=47.*, !=48.*, !=49.1.0
-
 scuba
-wheel
 cffi        # Used for test/pyinstall-cffi/
 pytest
 -r docs/requirements.txt
