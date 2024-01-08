@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Added
+- Added support for Python 3.12 (#272)
+
+### Changed
+- Introduced `pyproject.toml` and moved metadata from `setup.py` (#267)
+- Removed use of deprecated `pkg_resources` (#271)
+
+### Fixed
+- Fixed an issue with non-ELF "binary" files in PyInstaller archives causing a crash (#270)
+
+
 ## [0.14.1] - 2023-08-07
 ### Fixed
 - Reverted invalid fix ([#255]) for libnssfix link failure ([#262])
