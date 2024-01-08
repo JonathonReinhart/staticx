@@ -23,6 +23,8 @@ classifiers = [
 ]
 dependencies = [
     "pyelftools",
+    # TODO(#264): Remove when Python 3.7 support is removed.
+    "importlib_metadata; python_version<'3.8'",
 ]
 description = "Build static self-extracting app from dynamic executable"
 license = {file = "LICENSE.txt"}
@@ -44,4 +46,6 @@ changelog = "https://github.com/JonathonReinhart/staticx/blob/main/CHANGELOG.md"
 requires = [
     "wheel",
     "setuptools >= 42.0.0",
+    # TODO(#264): Remove when Python 3.7 support is removed.
+    "importlib_metadata; python_version<'3.8'",
 ]
