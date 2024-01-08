@@ -81,9 +81,12 @@ jobs:
 
     - name: Build and install
       run: |
-        python setup.py bdist_wheel
+        python -m build
         pip install dist/staticx-*-py3-none-manylinux1_x86_64.whl
         staticx --version
+
+        # Make sure we only use the installed wheel
+        rm -r staticx bootloader
 
     - name: Run unit tests
       run: |
