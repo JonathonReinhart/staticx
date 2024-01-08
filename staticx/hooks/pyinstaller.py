@@ -2,7 +2,7 @@ import os
 import logging
 import tempfile
 
-from ..elf import get_shobj_deps, is_dynamic, LddError
+from ..elf import get_shobj_deps, is_dynamic_elf, LddError
 from ..errors import Error, UnsupportedRpathError, UnsupportedRunpathError
 from ..utils import make_executable, mkdirs_for
 
@@ -68,7 +68,7 @@ class PyInstallHook:
         # These could be Python libraries, shared object dependencies, or
         # anything else a user might add via `binaries` in the .spec file.
         # Filter out everything except dynamic ELFs
-        binaries = [b for b in binaries if is_dynamic(b)]
+        binaries = [b for b in binaries if is_dynamic_elf(b)]
 
         self._audit_libs(binaries)
 

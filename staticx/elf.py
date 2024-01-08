@@ -154,7 +154,8 @@ def get_shobj_deps(path, libpath=None):
     """
 
     # First verify we're dealing with a dynamic ELF file
-    ensure_dynamic(path)
+    if not is_dynamic_elf(path):
+        raise StaticELFError(path=path)
 
     # Prepare the environment
     keep_vars = {'LD_LIBRARY_PATH'}
@@ -328,10 +329,9 @@ def get_prog_interp(path):
     with open_elf(path) as elf:
         return elf.get_prog_interp()
 
-def is_dynamic(path):
-    with open_elf(path) as elf:
-        return elf.is_dynamic()
-
-def ensure_dynamic(path):
-    if not is_dynamic(path):
-        raise StaticELFError(path=path)
+def is_dynamic_elf(path):
+    try:
+        with ELFFileX.open(path, mode='rb') as elf:
+            return elf.is_dynamic()
+    except ELFError as e:
+        return False
