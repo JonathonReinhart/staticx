@@ -11,3 +11,4 @@ scuba
 wheel
 cffi        # Used for test/pyinstall-cffi/
 pytest
+-r docs/requirements.txt
