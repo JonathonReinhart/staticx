@@ -121,8 +121,8 @@ class PyInstallHook:
             msg = "Unsupported PyInstaller input\n\n"
             msg += "One or more libraries included in the PyInstaller"
             msg += " archive uses unsupported RPATH/RUNPATH tags:\n\n"
-            for e in errors:
-                msg += f"  {e.libpath}: {e.tag}={e.value!r}\n"
+            for err in errors:
+                msg += f"  {err.libpath}: {err.tag}={err.value!r}\n"
             msg += "\nSee https://github.com/JonathonReinhart/staticx/issues/188"
             raise Error(msg)
 
