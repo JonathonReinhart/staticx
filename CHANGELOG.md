@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - Introduced `pyproject.toml` and moved metadata from `setup.py` (#267)
-- Removed use of deprecated `pkg_resources` (#271)
+- Removed use of deprecated `pkg_resources` (#271, #274)
 
 ### Fixed
 - Fixed an issue with non-ELF "binary" files in PyInstaller archives causing a crash (#270)
