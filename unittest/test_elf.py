@@ -115,3 +115,15 @@ class TestLdd:
             "/lib/ld-linux-armhf.so.3",
         ]
         self._test(output, exp)
+
+
+def test_is_dynamic_elf_handles_non_elf():
+    with NamedTemporaryFile('wb', suffix='.bin') as f:
+        f.write(b"\x11\x22\x33\x44")
+        f.flush()
+
+        assert not elf.is_dynamic_elf(f.name)
+
+
+def test_is_dynamic_elf_handles_elf():
+    assert elf.is_dynamic_elf("/bin/true")
