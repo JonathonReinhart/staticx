@@ -80,6 +80,10 @@ jobs:
         echo -e "\npatchelf:"
         patchelf --version
 
+    - name: Static checks
+      run: |
+        mypy
+
     - name: Build and install
       run: |
         python -m build
