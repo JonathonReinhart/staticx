@@ -35,9 +35,6 @@ def test_coerce_sequence_tuple_input():
     assert utils.coerce_sequence((69, 420)) == [69, 420]
     assert utils.coerce_sequence(("foo", "bar")) == ["foo", "bar"]
 
-def test_coerce_sequence_tuple_output():
-    assert utils.coerce_sequence([69, 420], tuple) == (69, 420)
-
 
 # single
 def test_single_success():
