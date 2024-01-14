@@ -63,6 +63,7 @@ warn_return_any = true
 modules = [
     "staticx",  # __init__.py
     "staticx.constants",
+    "staticx.errors",
 ]
 # TODO: Remove when all modules have been updated.
 follow_imports = 'silent'
