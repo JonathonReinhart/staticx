@@ -5,6 +5,7 @@ import locale
 import logging
 import errno
 import os
+import shutil
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -12,7 +13,7 @@ from elftools.elf.dynamic import DynamicSegment
 from elftools.common.exceptions import ELFError
 
 from .errors import *
-from .utils import coerce_sequence, single, which_exec
+from .utils import coerce_sequence, single
 
 
 def verify_tools():
@@ -78,7 +79,7 @@ class ExternTool:
         return f"??? (exited {rc})"
 
     def which(self):
-        return which_exec(self.cmd)
+        return shutil.which(self.cmd)
 
 
 

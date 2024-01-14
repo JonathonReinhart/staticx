@@ -64,14 +64,3 @@ def test_single_empty_default():
 
 def test_single_key_none_default():
     assert utils.single([1, 2, 3], key=lambda x: x<0, default='ok') == 'ok'
-
-# which_exec
-def test_which_exec_common():
-    def ext_which(name):
-        return subprocess.check_output(['which', name]).decode().strip()
-
-    for name in ('true', 'date', 'bash', 'python3'):
-        assert ext_which(name) == utils.which_exec(name)
-
-def test_which_exec_bogus():
-    assert utils.which_exec('zZzZzZzZzZzZzZz') == None
