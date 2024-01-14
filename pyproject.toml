@@ -61,4 +61,5 @@ warn_unused_configs = true
 modules = [
     "staticx",  # __init__.py
     "staticx.errors",
+    "staticx.utils",
 ]

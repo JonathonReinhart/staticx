@@ -1,36 +1,43 @@
 import os
 import errno
 import shutil
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from pathlib import Path
 from tempfile import NamedTemporaryFile
+from tempfile import _TemporaryFileWrapper
+from typing import cast, BinaryIO, TypeVar
 from .errors import *
 
-def make_mode_executable(mode):
+
+Pathlike = Path | str
+T = TypeVar("T")
+
+def make_mode_executable(mode: int) -> int:
     mode |= (mode & 0o444) >> 2    # copy R bits to X
     return mode
 
 
-def make_executable(path):
+def make_executable(path: Pathlike) -> None:
     mode = os.stat(path).st_mode
     mode = make_mode_executable(mode)
     os.chmod(path, mode)
 
-def get_symlink_target(path):
+def get_symlink_target(path: Pathlike) -> str:
     dirpath = os.path.dirname(os.path.abspath(path))
     return os.path.join(dirpath, os.readlink(path))
 
-def move_file(src, dst):
+def move_file(src: Pathlike, dst: Pathlike) -> None:
     if os.path.isdir(dst):
         raise DirectoryExistsError(dst)
     shutil.move(src, dst)
 
 
-def mkdirs_for(filename):
+def mkdirs_for(filename: Pathlike) -> None:
     dirname = os.path.dirname(filename)
     os.makedirs(dirname, exist_ok=True)
 
 
-def copy_to_tempfile(srcpath, **kwargs):
+def copy_to_tempfile(srcpath: Pathlike, **kwargs) -> _TemporaryFileWrapper:
     with open(srcpath, 'rb') as fsrc:
         fdst = copy_fileobj_to_tempfile(fsrc, **kwargs)
 
@@ -38,7 +45,7 @@ def copy_to_tempfile(srcpath, **kwargs):
     return fdst
 
 
-def copy_fileobj_to_tempfile(fsrc, **kwargs):
+def copy_fileobj_to_tempfile(fsrc: BinaryIO, **kwargs) -> _TemporaryFileWrapper:
     fdst = NamedTemporaryFile(**kwargs)
     shutil.copyfileobj(fsrc, fdst)
     fdst.flush()
@@ -46,19 +53,26 @@ def copy_fileobj_to_tempfile(fsrc, **kwargs):
     return fdst
 
 
-def is_iterable(x):
+def is_iterable(x: object) -> bool:
     """Returns true if x is iterable but not a string"""
+    # TODO: Return typing.TypeGuard
     return isinstance(x, Iterable) and not isinstance(x, str)
 
-def coerce_sequence(x, t=list):
-    if not is_iterable(x):
-        x = [x]
-    return t(x)
+def coerce_sequence(x: T | Iterable[T]) -> list[T]:
+    if is_iterable(x):
+        return list(cast(Iterable, x))
+    return [cast(T, x)]
 
-_SENTINEL = object()
-_NO_DEFAULT = object()
+class _Sentinel:
+    pass
 
-def single(iterable, key=None, default=_NO_DEFAULT):
+_NO_DEFAULT = _Sentinel()
+
+def single(
+    iterable: Iterable[T],
+    key: Callable[[T], bool] | None = None,
+    default: T | None | _Sentinel = _NO_DEFAULT,
+) -> T | None:
     """Returns a single item from iterable
 
     Arguments:
@@ -76,18 +90,20 @@ def single(iterable, key=None, default=_NO_DEFAULT):
     if key is None:
         key = lambda _: True
 
-    result = _SENTINEL
+    result: T
+    have_result = False
 
     for i in iterable:
         if key(i):
-            if result is not _SENTINEL:
+            if have_result:
                 raise KeyError("Multiple items match key")
             result = i
 
-    if result is not _SENTINEL:
+    if have_result:
         return result
 
     if default is not _NO_DEFAULT:
+        assert not isinstance(default, _Sentinel)
         return default
 
     raise KeyError("No items match key")
