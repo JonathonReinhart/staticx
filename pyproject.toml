@@ -26,6 +26,8 @@ dependencies = [
     "pyelftools",
     # TODO(#264): Remove when Python 3.7 support is removed.
     "importlib_metadata; python_version<'3.8'",
+    # TODO(#265): Remove when Python 3.8 support is removed.
+    "importlib_resources; python_version<'3.9'",
 ]
 description = "Build static self-extracting app from dynamic executable"
 license = {file = "LICENSE.txt"}

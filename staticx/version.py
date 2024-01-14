@@ -62,7 +62,7 @@ def get_version():
     # Otherwise, we're either installed (e.g. via pip), or running from
     # an 'sdist' source distribution, and have a local PKG_INFO file.
 
-    # TODO(#242): Remove backport when Python 3.7 support is removed.
+    # TODO(#264): Remove backport when Python 3.7 support is removed.
     if sys.version_info >= (3, 8):
         import importlib.metadata as importlib_metadata
     else:
