@@ -64,6 +64,7 @@ modules = [
     "staticx",  # __init__.py
     "staticx.constants",
     "staticx.errors",
+    "staticx.utils",
 ]
 # TODO: Remove when all modules have been updated.
 follow_imports = 'silent'
