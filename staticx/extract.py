@@ -4,10 +4,9 @@ import os
 
 from .constants import *
 from .elf import *
+from .errors import ArchiveError
 from .utils import *
 
-class ArchiveError(Exception):
-    pass
 
 def open_archive(archive):
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
