@@ -52,3 +52,24 @@ requires = [
     # TODO(#264): Remove when Python 3.7 support is removed.
     "importlib_metadata; python_version<'3.8'",
 ]
+
+# mypy
+[tool.mypy]
+python_version = "3.7"
+warn_unused_configs = true
+warn_return_any = true
+# TODO: Use staticx package when all modules have been updated.
+#packages = ["staticx"]
+modules = [
+    "staticx",  # __init__.py
+    "staticx.constants",
+]
+# TODO: Remove when all modules have been updated.
+follow_imports = 'silent'
+
+
+[[tool.mypy.overrides]]
+module = "staticx.*"
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
