@@ -1,14 +1,13 @@
-from tempfile import NamedTemporaryFile, mkdtemp
+from tempfile import NamedTemporaryFile
 import tarfile
 import os
 
-from .constants import *
-from .elf import *
+from .constants import ARCHIVE_SECTION
+from .elf import elf_dump_section
 from .errors import ArchiveError
-from .utils import *
 
 
-def open_archive(archive):
+def open_archive(archive: str) -> tarfile.TarFile:
     f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
     elf_dump_section(archive, ARCHIVE_SECTION, f.name)
 
@@ -18,7 +17,7 @@ def open_archive(archive):
     return tarfile.open(fileobj=f, mode='r', format=tarfile.GNU_FORMAT)
 
 
-def main():
+def main() -> None:
     import argparse
     ap = argparse.ArgumentParser(
             description='StaticX archive extractor/browser')
