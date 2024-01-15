@@ -1,4 +1,6 @@
+import dataclasses
 from pathlib import Path
+from typing import Optional
 import subprocess
 import sys
 
@@ -17,47 +19,57 @@ BASE_VERSION = '0.14.1'
 # with the abbreviated commit hash
 git_archive_rev = "$Format:%h$"
 
-def git_describe():
+
+@dataclasses.dataclass(frozen=True)
+class GitDescribe:
+    tag: str
+    commits: int
+    rev: str
+
+
+def git_describe() -> Optional[GitDescribe]:
     # Get the version from the local Git repository
-    subprocess.check_call(['git', 'update-index', '-q', '--refresh'], cwd=PROJPATH)
+    try:
+        subprocess.run(["git", "update-index", "-q", "--refresh"], check=True, cwd=PROJPATH)
+    except FileNotFoundError:  # git not installed
+        return None
 
-    desc = subprocess.check_output(['git', 'describe', '--long', '--dirty', '--tag'], cwd=PROJPATH)
-    desc = desc.decode('utf-8').strip()
+    result = subprocess.run(
+        ["git", "describe", "--long", "--dirty", "--tag"],
+        check=True,
+        cwd=PROJPATH,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+    )
+    parts = result.stdout.rstrip().split("-", 2)
+    return GitDescribe(
+        tag=parts[0].lstrip("v"),
+        commits=int(parts[1]),
+        rev=parts[2],
+    )
 
-    tag, commits, rev = desc.split('-', 2)
-    tag = tag.lstrip('v')
-    commits = int(commits)
 
-    return tag, commits, rev
-
-def get_version():
-
+def get_version() -> str:
     # Git repo
     # If a local git repository is present, use `git describe` to provide a rich version
     gitdir = PROJPATH / '.git'
     if gitdir.exists():
-        try:
-            tag, commits, rev = git_describe()
-        except FileNotFoundError:
-            # git not installed
-            pass
-        else:
+        desc = git_describe()
+        if desc:
             # Ensure the base version matches the Git tag
-            if tag != BASE_VERSION:
+            if desc.tag != BASE_VERSION:
                 raise Exception('Git revision different from base version')
 
             # No local version if we're on a tag
-            if commits == 0 and not rev.endswith('dirty'):
+            if desc.commits == 0 and not desc.rev.endswith('dirty'):
                 return BASE_VERSION
 
-            return f'{BASE_VERSION}+{commits}-{rev}'
-
+            return f'{BASE_VERSION}+{desc.commits}-{desc.rev}'
 
     # Git archive
     # If this was produced via `git archive`, we'll use the version it provides
     if not git_archive_rev.startswith('$'):
         return f'{BASE_VERSION}+g{git_archive_rev}'
-
 
     # Otherwise, we're either installed (e.g. via pip), or running from
     # an 'sdist' source distribution, and have a local PKG_INFO file.

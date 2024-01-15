@@ -7,4 +7,5 @@ scuba
 cffi        # Used for test/pyinstall-cffi/
 pytest
 mypy
+importlib-metadata  # Needed for mypy --python-version=3.7
 -r docs/requirements.txt

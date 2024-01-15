@@ -65,6 +65,7 @@ modules = [
     "staticx.constants",
     "staticx.errors",
     "staticx.utils",
+    "staticx.version",
 ]
 # TODO: Remove when all modules have been updated.
 follow_imports = 'silent'
