@@ -48,6 +48,7 @@ requires = [
 # mypy
 [tool.mypy]
 python_version = "3.9"
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 warn_unused_configs = true
 warn_return_any = true
 # TODO: Use staticx package when all modules have been updated.
@@ -57,6 +58,7 @@ modules = [
     "staticx.assets",
     "staticx.bcjfilter",
     "staticx.constants",
+    "staticx.elf",
     "staticx.errors",
     "staticx.utils",
     "staticx.version",
