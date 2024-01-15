@@ -60,6 +60,7 @@ modules = [
     "staticx.constants",
     "staticx.elf",
     "staticx.errors",
+    "staticx.extract",
     "staticx.utils",
     "staticx.version",
 ]
