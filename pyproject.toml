@@ -54,6 +54,7 @@ warn_return_any = true
 #packages = ["staticx"]
 modules = [
     "staticx",  # __init__.py
+    "staticx.assets",
     "staticx.bcjfilter",
     "staticx.constants",
     "staticx.errors",
