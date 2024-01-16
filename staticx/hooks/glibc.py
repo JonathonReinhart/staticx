@@ -1,13 +1,17 @@
+from __future__ import annotations
 from ..assets import copy_asset_to_tempfile
 from ..errors import InternalError
 from ..elf import open_elf, get_shobj_deps, patch_elf
 from ..utils import make_executable
 from elftools.elf.gnuversions import GNUVerNeedSection
 import logging
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..api import StaticxGenerator
 
 LIBNSSFIX = 'libnssfix.so'
 
-def process_glibc_prog(sx):
+def process_glibc_prog(sx: StaticxGenerator) -> None:
     if not is_linked_against_glibc(sx.orig_prog):
         return
 
@@ -18,6 +22,7 @@ def process_glibc_prog(sx):
         raise InternalError("GLIBC binary detected but libnssfix.so not available")
 
     # Make the user program depend on libnssfix.so
+    assert sx.tmpprog
     patch_elf(sx.tmpprog, add_needed=LIBNSSFIX)
 
     # Add libnssfix.so and its dependencies to the archive.
@@ -34,16 +39,18 @@ def process_glibc_prog(sx):
         make_executable(nssfix.name)
 
         # TODO: Don't use sxar
+        assert sx.sxar
         sx.sxar.add_fileobj(LIBNSSFIX, nssfix)
         for libpath in get_shobj_deps(nssfix.name):
             sx.add_library(libpath, exist_ok=True)
 
 
-def is_linked_against_glibc(prog):
+def is_linked_against_glibc(prog: str) -> bool:
     with open_elf(prog) as elf:
         sec = elf.get_single_section(GNUVerNeedSection)
         if not sec:
             return False
+        assert isinstance(sec, GNUVerNeedSection)
         for verneed, vernaux_iter in sec.iter_versions():
             if not verneed.name.startswith('libc.so'):
                 continue
