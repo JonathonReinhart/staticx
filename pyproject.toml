@@ -63,6 +63,7 @@ warn_return_any = true
 #packages = ["staticx"]
 modules = [
     "staticx",  # __init__.py
+    "staticx.__main__",
     "staticx.api",
     "staticx.archive",
     "staticx.assets",

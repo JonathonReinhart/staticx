@@ -6,7 +6,7 @@ from .api import generate
 from .errors import Error
 from .version import __version__
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     DEFAULT_LOGLEVEL = 'WARNING'
 
     ap = argparse.ArgumentParser(prog='staticx')
@@ -41,7 +41,7 @@ def parse_args():
     return args
 
 
-def main():
+def main() -> None:
     args = parse_args()
     logging.basicConfig(level=args.loglevel)
 
