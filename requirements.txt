@@ -3,7 +3,11 @@
 build
 patchelf-wrapper
 pyinstaller
+types-pyinstaller
 scuba
 cffi        # Used for test/pyinstall-cffi/
 pytest
+mypy
+importlib-metadata  # Needed for mypy --python-version=3.7
+importlib-resources # Needed for mypy --python-version=3.8
 -r docs/requirements.txt

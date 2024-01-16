@@ -52,3 +52,17 @@ requires = [
     # TODO(#264): Remove when Python 3.7 support is removed.
     "importlib_metadata; python_version<'3.8'",
 ]
+
+# mypy
+[tool.mypy]
+python_version = "3.7"
+mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
+warn_unused_configs = true
+warn_return_any = true
+packages = ["staticx"]
+
+[[tool.mypy.overrides]]
+module = "staticx.*"
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true

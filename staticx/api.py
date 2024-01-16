@@ -2,12 +2,14 @@
 # Copyright 2017 Jonathon Reinhart
 # https://github.com/JonathonReinhart/staticx
 #
+from __future__ import annotations
 import shutil
 from tempfile import NamedTemporaryFile, mkdtemp
 import os
 from os.path import basename, islink
 import logging
 import subprocess
+from typing import Dict
 
 from .errors import *
 from .utils import *
@@ -22,8 +24,24 @@ from .version import __version__
 class StaticxGenerator:
     """StaticxGenerator is responsible for producing a staticx-ified executable.
     """
+    # Temporary output file (copy of bootloader to be modified)
+    tmpoutput: Optional[str]
 
-    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True):
+    # Temporary copy of user program to be modified
+    tmpprog: Optional[str]
+    
+    # Temporary working directory
+    tmpdir: Optional[str]
+
+    # Staticx archive being populated 
+    sxar: Optional[SxArchive]
+
+    def __init__(self,
+                 prog: str,
+                 strip: bool = False,
+                 compress: bool = True,
+                 debug: bool = False,
+                 cleanup: bool =True):
         """
         Parameters:
         prog:   Dynamic executable to staticx
@@ -36,7 +54,7 @@ class StaticxGenerator:
         self.cleanup = cleanup
 
         self._generate_called = False
-        self._added_libs = {}
+        self._added_libs: Dict[str, Optional[str]] = {}  # arcname => libpath (or None for symlink)
 
         # Temporary output file (bootloader copy)
         self.tmpoutput = None
@@ -47,14 +65,17 @@ class StaticxGenerator:
         self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
 
 
-    def __enter__(self):
+    def __enter__(self) -> StaticxGenerator:
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self,
+                 type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         if self.cleanup:
             self._cleanup()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         if self.tmpoutput:
             os.remove(self.tmpoutput)
             self.tmpoutput = None
@@ -72,12 +93,12 @@ class StaticxGenerator:
             self.sxar = None
 
 
-    def _get_bootloader(self):
+    def _get_bootloader(self) -> str:
         # Get a temporary copy of the bootloader
         fbl = copy_asset_to_tempfile('bootloader', self.debug,
                                      prefix='staticx-output-', delete=False)
         with fbl:
-            self.tmpoutput = bootloader = fbl.name
+            bootloader = fbl.name
         make_executable(bootloader)
 
         # Verify the bootloader machine matches that of the user program
@@ -98,8 +119,10 @@ class StaticxGenerator:
         lines = (line.split(':', 1)[1].strip() for line in r.stderr.splitlines())
         logging.debug("Bootloader: " + " ".join(lines))
 
+        return bootloader
 
-    def generate(self, output):
+
+    def generate(self, output: str) -> None:
         """Generate a Staticx program
 
         Parameters:
@@ -111,8 +134,10 @@ class StaticxGenerator:
             raise InternalError("generate() already called")
         self._generate_called = True
 
+        assert self.sxar
+
         # Work on a temp copy of the bootloader which becomes the output program
-        self._get_bootloader()
+        self.tmpoutput = self._get_bootloader()
 
         # First, learn things about the original program
         orig_interp = get_prog_interp(self.orig_prog)
@@ -152,7 +177,7 @@ class StaticxGenerator:
         self.tmpoutput = None
 
 
-    def add_library(self, libpath, exist_ok=False):
+    def add_library(self, libpath: str, exist_ok: bool = False) -> None:
         """Add a library to the archive
 
         The library will be added with its base name.
@@ -174,8 +199,9 @@ class StaticxGenerator:
         assert not islink(libpath)
 
         # Lazily make a copy of the library before modifying it
-        def work_on_copy():
+        def work_on_copy() -> None:
             nonlocal libpath
+            assert self.tmpdir
 
             tmplib = os.path.join(self.tmpdir, basename(libpath))
             logging.info(f"Copying {libpath} to {tmplib}")
@@ -183,7 +209,7 @@ class StaticxGenerator:
             libpath = tmplib
 
             nonlocal work_on_copy
-            def work_on_copy(): pass
+            def work_on_copy() -> None: pass
 
 
         # Audit library to check for problems
@@ -201,6 +227,7 @@ class StaticxGenerator:
             logging.info(f"Stripping library {libpath}")
             strip_elf(libpath)
 
+        assert self.sxar
 
         # Finally, add it to the archive.
         arcname = basename(libpath)
@@ -212,13 +239,15 @@ class StaticxGenerator:
         self._added_libs[arcname] = libpath
 
 
-    def _handle_lib_symlinks(self, libpath):
+    def _handle_lib_symlinks(self, libpath: str) -> str:
         """Recursively process symlinks along path to library
 
         Generate local symlinks inside the archive reflecting these.
 
         Return the fully-resolved path to the actual library.
         """
+        assert self.sxar
+
         while islink(libpath):
             arcname = basename(libpath)
             libpath = get_symlink_target(libpath)
@@ -237,18 +266,18 @@ class StaticxGenerator:
 
             if arcname in self._added_libs:
                 raise InternalError(
-                    f"libname {libname} absent from _added_libs but symlink {arcname} present")
+                    f"symlink {arcname} already present in _added_libs")
             self._added_libs[arcname] = None    # Don't care about real target for symlinks
 
         return libpath
 
 
-    def check_library_rpath(self, path, dangerous_only=False):
+    def check_library_rpath(self, path: str, dangerous_only: bool = False) -> None:
         """Inspect a library to see if it uses problematic RPATH/RUNPATH
 
         See https://github.com/JonathonReinhart/staticx/issues/172
         """
-        def is_dangerous(rpath):
+        def is_dangerous(rpath: str) -> bool:
             # rpath can be:
             # * Absolutute                  dangerous
             # * Relative (to working dir)   dangerous (and stupid)
@@ -275,10 +304,9 @@ class StaticxGenerator:
                 # RUNPATH is always dangerous because it kills RPATH
                 raise UnsupportedRunpathError(path, rp.runpath)
 
-
-
-    def _fixup_prog(self):
+    def _fixup_prog(self) -> None:
         """Fixup our temporary copy of the user's program"""
+        assert self.tmpprog
 
         # Strip user prog before modifying it
         if self.strip:
@@ -294,7 +322,14 @@ class StaticxGenerator:
                   force_rpath=True, no_default_lib=True)
 
 
-def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
+def generate(
+    prog: str,
+    output: str,
+    libs: Optional[List[str]] = None,
+    strip: bool = False,
+    compress: bool = True,
+    debug: bool = False,
+) -> None:
     """Main API: Generate a staticx executable
 
     Parameters:

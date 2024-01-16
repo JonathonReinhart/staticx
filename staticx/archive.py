@@ -1,41 +1,61 @@
+from __future__ import annotations
+import dataclasses
 import tarfile
 import logging
 import lzma
 from os.path import basename
+from types import TracebackType
+from typing import Dict, List, IO, Optional, Type, Union
+from typing_extensions import Literal
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 from .bcjfilter import get_bcj_filter_arch
 from .utils import get_symlink_target, make_mode_executable
 from .constants import *
 from .errors import *
 
+@dataclasses.dataclass
+class BcjFilter:
+    id: int
+    name: str
 
-def get_bcj_filter():
+
+def get_bcj_filter() -> Optional[BcjFilter]:
     arch = get_bcj_filter_arch()
     if not arch:
-        return None, ''
+        return None
 
     # Get the lzma module constant name and value
     filt_name = 'FILTER_' + arch
-    filt = getattr(lzma, filt_name)
+    return BcjFilter(
+        id=getattr(lzma, filt_name),
+        name=filt_name,
+    )
 
-    return filt, filt_name
+LzmaFilterChain = List[Dict[str, Union[str, int]]]
 
-
-def get_xz_filters():
-    filters = []
+def get_xz_filters() -> List[Dict[str, Union[str, int]]]:
+    filters: LzmaFilterChain = []
 
     # Get a BCJ filter for the current architecture
-    bcj_filter, bcj_filter_name = get_bcj_filter()
+    bcj_filter = get_bcj_filter()
     if bcj_filter:
-        logging.info(f"Using XZ BCJ filter {bcj_filter_name}")
-        filters.append(dict(id=bcj_filter))
+        logging.info(f"Using XZ BCJ filter {bcj_filter.name}")
+        filters.append(dict(id=bcj_filter.id))
 
     # The last filter in the chain must be a compression filter.
     filters.append(dict(id=lzma.FILTER_LZMA2))
     return filters
 
 class SxArchive:
-    def __init__(self, fileobj, mode, compress):
+    fileobj: IO[bytes]
+    xzf: Optional[lzma.LZMAFile]
+    tar: tarfile.TarFile
+
+    def __init__(self, fileobj: IO[bytes], mode: Literal["r", "w"], compress: bool):
         """Create a staticx archive
 
         Parameters:
@@ -48,7 +68,7 @@ class SxArchive:
         self.xzf = None
 
         if compress:
-            self.xzf = lzma.open(
+            xzf = lzma.open(
                 filename = fileobj,
                 mode = mode,
                 format = lzma.FORMAT_XZ,
@@ -59,31 +79,29 @@ class SxArchive:
 
                 filters = get_xz_filters(),
             )
-
-            fileobj = self.xzf
+            assert isinstance(xzf, lzma.LZMAFile)
+            self.xzf = xzf
+            fileobj = xzf
 
         # Our embedded libtar only supports older GNU format (not new PAX format)
         self.tar = tarfile.open(fileobj=fileobj, mode=mode, format=tarfile.GNU_FORMAT)
 
-    def __enter__(self):
+    def __enter__(self) -> SxArchive:
         return self
 
-    def __exit__(self, *excinfo):
+    def __exit__(self,
+                 type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         # Don't touch self.fileobj here
-
-        if self.tar:
-            self.tar.close()
-            self.tar = None
-
+        self.tar.close()
         if self.xzf:
             self.xzf.close()
-            self.xzf = None
 
-
-    def add_symlink(self, name, target):
+    def add_symlink(self, name: str, target: str) -> None:
         """Add a symlink to the archive"""
         if name == target:
             raise ValueError("Refusing to add self-referential symlink")
@@ -94,13 +112,13 @@ class SxArchive:
 
         self.tar.addfile(t)
 
-    def add_fileobj(self, name, fileobj):
+    def add_fileobj(self, name: str, fileobj: IO[bytes]) -> None:
         logging.info(f"Adding {name}")
         tarinfo = self.tar.gettarinfo(arcname=name, fileobj=fileobj)
         tarinfo.mode = make_mode_executable(tarinfo.mode)
         self.tar.addfile(tarinfo, fileobj)
 
-    def add_program(self, path, name):
+    def add_program(self, path: StrPath, name: str) -> None:
         """Add user program to the archive
 
         This adds the user program to the archive using its original filename.
@@ -113,7 +131,7 @@ class SxArchive:
 
         Should only be called once. TODO: Enforce this.
         """
-        def make_exec(tarinfo):
+        def make_exec(tarinfo: tarfile.TarInfo) -> tarfile.TarInfo:
             tarinfo.mode = make_mode_executable(tarinfo.mode)
             return tarinfo
 
@@ -123,9 +141,9 @@ class SxArchive:
         # Store a link to the program so the bootloader knows what to execute
         self.add_symlink(PROG_FILENAME, name)
 
-    def add_file(self, path, arcname=None):
+    def add_file(self, path: StrPath, arcname: Optional[StrPath] = None) -> None:
         self.tar.add(path, arcname=arcname)
 
-    def add_interp_symlink(self, interp):
+    def add_interp_symlink(self, interp: str) -> None:
         """Add symlink for ld.so interpreter"""
         self.add_symlink(INTERP_FILENAME, basename(interp))
