@@ -73,6 +73,7 @@ modules = [
     "staticx.errors",
     "staticx.extract",
     "staticx.hooks",
+    "staticx.hooks.glibc",
     "staticx.utils",
     "staticx.version",
 ]
