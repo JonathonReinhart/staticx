@@ -59,28 +59,7 @@ python_version = "3.7"
 mypy_path = "$MYPY_CONFIG_FILE_DIR/stubs"
 warn_unused_configs = true
 warn_return_any = true
-# TODO: Use staticx package when all modules have been updated.
-#packages = ["staticx"]
-modules = [
-    "staticx",  # __init__.py
-    "staticx.__main__",
-    "staticx.api",
-    "staticx.archive",
-    "staticx.assets",
-    "staticx.bcjfilter",
-    "staticx.constants",
-    "staticx.elf",
-    "staticx.errors",
-    "staticx.extract",
-    "staticx.hooks",
-    "staticx.hooks.glibc",
-    "staticx.hooks.pyinstaller",
-    "staticx.utils",
-    "staticx.version",
-]
-# TODO: Remove when all modules have been updated.
-follow_imports = 'silent'
-
+packages = ["staticx"]
 
 [[tool.mypy.overrides]]
 module = "staticx.*"
