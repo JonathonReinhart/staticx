@@ -72,6 +72,7 @@ modules = [
     "staticx.elf",
     "staticx.errors",
     "staticx.extract",
+    "staticx.hooks",
     "staticx.utils",
     "staticx.version",
 ]
