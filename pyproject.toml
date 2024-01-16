@@ -74,6 +74,7 @@ modules = [
     "staticx.extract",
     "staticx.hooks",
     "staticx.hooks.glibc",
+    "staticx.hooks.pyinstaller",
     "staticx.utils",
     "staticx.version",
 ]

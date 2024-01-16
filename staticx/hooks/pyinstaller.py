@@ -1,13 +1,27 @@
+from __future__ import annotations
 import os
 import logging
 import tempfile
+from types import TracebackType
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import TYPE_CHECKING
 
 from ..elf import get_shobj_deps, is_dynamic_elf, LddError
 from ..errors import Error, UnsupportedRpathError, UnsupportedRunpathError
 from ..utils import make_executable, mkdirs_for
 
+if TYPE_CHECKING:
+    from ..api import StaticxGenerator
+    from PyInstaller.archive.readers import CArchiveReader, _TocEntry
 
-def process_pyinstaller_archive(sx):
+    UArchiveReader = Union[CArchiveReader, CArchiveReaderPre510Adapter]  # type: ignore [used-before-def]
+
+    # NOTE: mypy doesn't support selecting different stubs based on library
+    # version, so we simply punt and declare this as Any.
+    CArchiveReaderPre510 = Any
+
+
+def process_pyinstaller_archive(sx: StaticxGenerator) -> None:
     # See utils/cliutils/archive_viewer.py
 
     # If PyInstaller is not installed, do nothing
@@ -22,6 +36,7 @@ def process_pyinstaller_archive(sx):
     pyi_version = tuple(int(x) for x in PyInstaller.__version__.split("."))
 
     # Attempt to open the program as PyInstaller archive
+    pyi_ar: UArchiveReader
     try:
         pyi_ar = CArchiveReader(sx.orig_prog)
     except:
@@ -50,19 +65,22 @@ def process_pyinstaller_archive(sx):
 
 
 class PyInstallHook:
-    def __init__(self, sx, pyi_archive):
+    def __init__(self, sx: StaticxGenerator, pyi_archive: UArchiveReader):
         self.sx = sx
         self.pyi_ar = pyi_archive
 
         self.tmpdir = tempfile.TemporaryDirectory(prefix="staticx-pyi-")
 
-    def __enter__(self):
+    def __enter__(self) -> PyInstallHook:
         return self
 
-    def __exit__(self, *exc_info):
+    def __exit__(self,
+                 type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.tmpdir.cleanup()
 
-    def process(self):
+    def process(self) -> None:
         binaries = self._extract_binaries()
 
         # These could be Python libraries, shared object dependencies, or
@@ -75,7 +93,7 @@ class PyInstallHook:
         for binary in binaries:
             self._add_required_deps(binary)
 
-    def _extract_binaries(self):
+    def _extract_binaries(self) -> List[str]:
         result = []
 
         for name, item in self.pyi_ar.toc.items():
@@ -103,7 +121,7 @@ class PyInstallHook:
 
         return result
 
-    def _audit_libs(self, libs):
+    def _audit_libs(self, libs: Iterable[str]) -> None:
         """Audit the dynamic libraries included in the PyInstaller archive"""
         errors = []
         for lib in libs:
@@ -126,7 +144,7 @@ class PyInstallHook:
             msg += "\nSee https://github.com/JonathonReinhart/staticx/issues/188"
             raise Error(msg)
 
-    def _add_required_deps(self, lib):
+    def _add_required_deps(self, lib: str) -> None:
         """Add dependencies of lib to staticx archive"""
 
         # Try to get any dependencies of this file
@@ -152,16 +170,19 @@ class PyInstallHook:
             self.sx.add_library(deppath, exist_ok=True)
 
 
+
 class CArchiveReaderPre510Adapter:
     """Adapts a pre-5.10 CArchiveReader to 5.10+ API"""
+    toc: Dict[str, _TocEntry]
 
-    def __init__(self, old_archive):
+    def __init__(self, old_archive: CArchiveReaderPre510):
         self._old_archive = old_archive
 
         self.toc = {
             name: tuple(entry) for *entry, name in self._old_archive.toc.data
         }
 
-    def extract(self, name):
+    def extract(self, name: str) -> bytes:
         _, data = self._old_archive.extract(name)
+        assert isinstance(data, bytes)
         return data
