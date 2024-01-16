@@ -43,7 +43,6 @@ jobs:
     # with StaticX. See #224.
     - name: Set up Python ${{ matrix.python-version }}
       uses: deadsnakes/action@v3.0.1
-      if: "(matrix.python-version != matrix.os.native-python)"  # Already installed
       with:
         python-version: ${{ matrix.python-version }}
 
