@@ -26,7 +26,7 @@ if [[ "$test_bundle_dir" != "$bundle_dir" ]]; then
 fi
 
 # Verify that the program is renamed to `--prog-name` when specified.
-test_prog_name=$($outfile -c 'echo $0')
+test_prog_name=$($outfile -c 'basename $0')
 echo "The program name is: $test_prog_name"
 if [[ "$test_prog_name" != "$prog_name" ]]; then
     echo "The program name does not match --prog-name: \"$test_prog_name\" != \"$prog_name\""

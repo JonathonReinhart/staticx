@@ -23,7 +23,7 @@ class StaticxGenerator:
     """StaticxGenerator is responsible for producing a staticx-ified executable.
     """
 
-    def __init__(self, prog, strip=False, compress=True, debug=False, cleanup=True):
+    def __init__(self, prog, strip=False, compress=True, bundle_dir=None, prog_name=None, debug=False, cleanup=True):
         """
         Parameters:
         prog:   Dynamic executable to staticx
@@ -32,6 +32,8 @@ class StaticxGenerator:
         self.orig_prog = prog
         self.strip = strip
         self.compress = compress
+        self.bundle_dir = bundle_dir
+        self.prog_name = prog_name
         self.debug = debug
         self.cleanup = cleanup
 
@@ -133,7 +135,7 @@ class StaticxGenerator:
         with self.sxar as ar:
             run_hooks(self)
 
-            ar.add_program(self.tmpprog, basename(self.orig_prog))
+            ar.add_program(self.tmpprog, self.prog_name or basename(self.orig_prog))
             ar.add_interp_symlink(orig_interp)
 
             # Add all of the libraries
@@ -294,7 +296,7 @@ class StaticxGenerator:
                   force_rpath=True, no_default_lib=True)
 
 
-def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
+def generate(prog, output, libs=None, strip=False, compress=True, bundle_dir=None, prog_name=None, debug=False):
     """Main API: Generate a staticx executable
 
     Parameters:
@@ -319,8 +321,9 @@ def generate(prog, output, libs=None, strip=False, compress=True, debug=False):
             prog=prog,
             strip=strip,
             compress=compress,
-            debug=debug,
-            )
+            bundle_dir=bundle_dir,
+            prog_name=prog_name,
+            debug=debug)
     with gen:
         for lib in (libs or []):
             gen.add_library(lib)

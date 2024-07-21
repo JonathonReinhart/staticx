@@ -54,8 +54,9 @@ def main():
                 libs = args.libs,
                 strip = args.strip,
                 compress = not args.no_compress,
-                debug = args.debug,
-                )
+                bundle_dir = args.bundle_dir,
+                prog_name = args.prog_name,
+                debug = args.debug)
     except Error as e:
         if args.debug:
             raise
