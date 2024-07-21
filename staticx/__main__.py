@@ -24,6 +24,10 @@ def parse_args():
             help = 'Strip binaries before adding to archive (reduces size)')
     ap.add_argument('--no-compress', action='store_true',
             help = "Don't compress the archive (increases size)")
+    ap.add_argument('--bundle-dir',
+            help = 'The directory that the program extracts to at runtime. When not specified, staticx extracts to /tmp/staticx-XXXXXX.')
+    ap.add_argument('--prog-name',
+            help = 'The name that the program extracts to at runtime. When not specified, staticx uses the name of the input program.')
 
     # Special / output-related options
     ap.add_argument('-V', '--version', action='version',
