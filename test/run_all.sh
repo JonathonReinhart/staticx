@@ -9,6 +9,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Test environment variables
 ./staticx-env-vars.sh
 
+# Test --bundle-dir and --prog-name options
+./bundle-dir-prog-name.sh
+
 # Run test an executable linked against musl-libc
 musl/run_test.sh
 

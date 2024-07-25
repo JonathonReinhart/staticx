@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <sys/wait.h>
+#include <sys/param.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -31,7 +32,7 @@
 
 
 /* The "bundle" directory, where the archive is extracted */
-static const char *m_bundle_dir;
+static char *m_bundle_dir;
 
 static char *
 path_join(const char *p1, const char *p2)
@@ -382,30 +383,58 @@ cleanup_bundle_dir(void)
         fprintf(stderr, "staticx: Failed to cleanup %s: %m\n", m_bundle_dir);
     }
 
-    free((void*)m_bundle_dir);
+    free(m_bundle_dir);
     m_bundle_dir = NULL;
 }
 
 /**
- * Returns the path to the actual user program to execute.
- * We resolve this manually rather than executing the symlink
- * to ensure the program sees the original argv[0]. See #134.
- *
- * Note however that we do not currently pass-through argv[0].
- * See #133.
+ * Returns the path stored in the specified symlink file.
+ * 
+ * We resolve this manually rather than executing the symlink for the program to ensure that the program sees the original argv[0] (see #134). Note however that we do not currently pass-through argv[0] (see #133).
  */
-static char *
-get_real_prog_path(void)
+static char *get_symlink(char *file_path)
 {
-    // PROG_FILENAME is a symlink to the user's program
-    char *linkpath = path_join(m_bundle_dir, PROG_FILENAME);
+    char *absolute_path = path_join(m_bundle_dir, file_path);
 
-    char *result = realpath(linkpath, NULL);
-    if (!result)
-        error(2, errno, "Failed to get realpath for %s", linkpath);
+    char *linked_path = malloc(MAXPATHLEN + 1);
+    ssize_t path_length = readlink(absolute_path, linked_path, MAXPATHLEN);
 
-    free(linkpath);
-    return result;
+    if (path_length == -1)
+        error(2, errno, "Failed to read the symlink for %s", absolute_path);
+    if (path_length > MAXPATHLEN)
+        error(2, errno, "Length of symlink value (%zu) for %s is too long", path_length, absolute_path);
+
+    free(absolute_path);
+    linked_path[path_length] = '\0';
+    return linked_path;
+}
+
+/**
+ * Moves and renames the bundle from `m_bundle_dir` to the `destination` and updates `m_bundle_dir` (do not free `destination`). Fails when a file or folder already exists at the `destination`.
+ */
+inline static void move_bundle(char *destination)
+{
+    char *origin = m_bundle_dir;
+    if (access(destination, F_OK) == 0)
+        error(2, 0, "Failed to move bundle from %s to %s because the destination already exists", origin, destination);
+
+    int result = rename(origin, destination);
+    if (result == -1)
+        error(2, errno, "Failed to move the bundle from %s to %s", origin, destination);
+
+    free(origin);
+    m_bundle_dir = destination;
+}
+
+/**
+ * Checks whether or not a file exists within the bundle. Does not follow symlinks.
+ */
+static bool file_exists(char *file_path)
+{
+    char *absolute_path = path_join(m_bundle_dir, file_path);
+    bool exists = faccessat(0, absolute_path, F_OK, AT_SYMLINK_NOFOLLOW) == 0;
+    free(absolute_path);
+    return exists;
 }
 
 static void identify(void)
@@ -432,8 +461,17 @@ main(int argc, char **argv)
     /* Extract the archive embedded in this program */
     extract_archive(m_bundle_dir);
 
+    /* Check for custom bundle directory and move the bundle */
+    if (file_exists(BUNDLE_DIR_FILENAME)) {
+        move_bundle(get_symlink(BUNDLE_DIR_FILENAME));
+        debug_printf("Moved the bundle dir to: %s\n", m_bundle_dir);
+    }
+
     /* Get path to user application inside temp dir */
-    char *prog_path = get_real_prog_path();
+    char *prog_name = get_symlink(PROG_FILENAME);
+    char *prog_path = path_join(m_bundle_dir, prog_name);
+    debug_printf("Program located at: %s\n", prog_path);
+    free(prog_name);
 
     /* Patch the user application ELF to run in the temp dir */
     patch_app(prog_path);

@@ -3,11 +3,12 @@ Usage
 
 Synopsis
 --------
-.. code-block::
+.. code-block:: shell
 
    staticx [-h]
-           [-l LIB] [--strip] [--no-compress] [-V]
-           [--loglevel LEVEL]
+           [-l LIB] [--strip] [--no-compress]
+           [--bundle-dir BUNDLE_DIR] [--prog-name PROG_NAME]
+           [-V] [--loglevel LEVEL]
            PROG OUTPUT
 
 Positional Arguments:
@@ -19,12 +20,17 @@ Positional Arguments:
 
 Options:
   -h, --help            Show help message and exit
+
   -l LIB                Add additional library (absolute path)
 
                         This option can be given multiple times.
 
   --strip               Strip binaries before adding to archive (reduces size)
   --no-compress         Don't compress the archive (increases size)
+  --bundle-dir BUNDLE_DIR
+                        The directory that the program extracts to at runtime. When not specified, staticx extracts to ``/tmp/staticx-XXXXXX``.
+  --prog-name PROG_NAME
+                        The name that the program extracts to at runtime. When not specified, staticx uses the name of the input program.
   --loglevel LEVEL      Set the logging level (default: WARNING)
 
                         Options: DEBUG,INFO,WARNING,ERROR,CRITICAL
@@ -70,6 +76,5 @@ Run-time Information
 --------------------
 StaticX sets the following environment variables for the wrapped user program:
 
-- ``STATICX_BUNDLE_DIR``: The absolute path of the "bundle" directory, the
-  temporary dir where the archive has been extracted.
-- ``STATICX_PROG_PATH``: The absolute path of the program being executed.
+- ``STATICX_BUNDLE_DIR``: The absolute path of the "bundle" directory, a temporary directory, where the archive has been extracted.
+- ``STATICX_PROG_PATH``: The absolute path of the program being executed (not the extracted program in the bundle directory).
