@@ -25,9 +25,13 @@ class StaticxGenerator:
 
     def __init__(self, prog, strip=False, compress=True, bundle_dir=None, prog_name=None, debug=False, cleanup=True):
         """
-        Parameters:
-        prog:   Dynamic executable to staticx
-        debug:  Run in debug mode (use debug bootloader)
+            Parameters:
+            prog:       Dynamic executable to staticx
+            strip:      Strip binaries to reduce size
+            compress:   Whether or not to compress the archive
+            bundle_dir: The directory that the program extracts to at runtime
+            prog_name:  The name that the program extracts to at runtime
+            debug:      Run in debug mode (use debug bootloader)
         """
         self.orig_prog = prog
         self.strip = strip
@@ -137,6 +141,8 @@ class StaticxGenerator:
 
             ar.add_program(self.tmpprog, self.prog_name or basename(self.orig_prog))
             ar.add_interp_symlink(orig_interp)
+            if self.bundle_dir is not None:
+                ar.add_bundle_dir_symlink(self.bundle_dir)
 
             # Add all of the libraries
             for libpath in get_shobj_deps(self.orig_prog):
@@ -300,11 +306,14 @@ def generate(prog, output, libs=None, strip=False, compress=True, bundle_dir=Non
     """Main API: Generate a staticx executable
 
     Parameters:
-    prog:   Dynamic executable to staticx
-    output: Path to result
-    libs: Extra libraries to include
-    strip: Strip binaries to reduce size
-    debug: Run in debug mode (use debug bootloader)
+    prog:       Dynamic executable to staticx
+    output:     Path to result
+    libs:       Extra libraries to include
+    strip:      Strip binaries to reduce size
+    compress:   Whether or not to compress the archive
+    bundle_dir: The directory that the program extracts to at runtime
+    prog_name:  The name that the program extracts to at runtime
+    debug:      Run in debug mode (use debug bootloader)
     """
 
     logging.info(f"Running StaticX version {__version__}")
