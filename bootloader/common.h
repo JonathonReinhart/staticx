@@ -5,6 +5,7 @@
 #define ARCHIVE_SECTION         ".staticx.archive"
 #define INTERP_FILENAME         ".staticx.interp"
 #define PROG_FILENAME           ".staticx.prog"
+#define BUNDLE_DIR_FILENAME     ".staticx.bundle-dir"
 
 static inline void *
 ptr_add(void *p, size_t off)

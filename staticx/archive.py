@@ -129,3 +129,7 @@ class SxArchive:
     def add_interp_symlink(self, interp):
         """Add symlink for ld.so interpreter"""
         self.add_symlink(INTERP_FILENAME, basename(interp))
+    
+    def add_bundle_dir_symlink(self, bundle_dir):
+        """Adds a symlink that holds the path that the bundle directory will be moved to."""
+        self.add_symlink(BUNDLE_DIR_FILENAME, bundle_dir)
