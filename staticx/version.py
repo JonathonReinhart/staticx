@@ -11,7 +11,7 @@ PROJPATH = PACKAGEPATH.parent
 DIST_SPEC = 'staticx'
 
 # Base version, which will be augmented with Git information
-BASE_VERSION = '0.14.1'
+BASE_VERSION = '0.14.2'
 
 # This string will be replaced by `git-archive`
 # with the abbreviated commit hash
