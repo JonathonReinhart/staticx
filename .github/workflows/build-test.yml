@@ -13,10 +13,10 @@ jobs:
         # It's undocumented, but matrix variable arrays can be maps, too!
         # https://stackoverflow.com/a/68940067/119527
         os:
-          - version: "ubuntu-20.04"
-            native-python: "3.8"
           - version: "ubuntu-22.04"
             native-python: "3.10"
+          - version: "ubuntu-24.04"
+            native-python: "3.12"
         python-version:
           - "3.7"
           - "3.8"
