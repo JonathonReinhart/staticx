@@ -34,7 +34,7 @@ jobs:
       TEST_DOCKER_IMAGE: "centos:5"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
 
     # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
     - run: git fetch --prune --unshallow
