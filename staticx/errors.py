@@ -1,3 +1,6 @@
+import abc
+from pathlib import Path
+from typing import Union
 
 class Error(Exception):
     """Base type for all exceptions raised by staticx"""
@@ -9,13 +12,13 @@ class InternalError(Error):
 
 class ToolError(Error):
     """An external tool indicated an error"""
-    def __init__(self, program, message=None):
+    def __init__(self, program: str, message: str = ""):
         super().__init__(message or f"'{program}' failed")
         self.program = program
 
 class MissingToolError(Error):
     """A required external tool is missing"""
-    def __init__(self, program, package):
+    def __init__(self, program: str, package: str):
         super().__init__(f"Couldn't find '{program}'. Is '{package}' installed?")
         self.program = program
         self.package = package
@@ -25,12 +28,14 @@ class InvalidInputError(Error):
     pass
 
 
-class UnsupportedDynTagError(InvalidInputError):
+class UnsupportedDynTagError(InvalidInputError, abc.ABC):
     """A library uses an unsupported dynamic entry
 
     See https://github.com/JonathonReinhart/staticx/issues/172
     """
-    def __init__(self, libpath, value):
+    tag: str
+
+    def __init__(self, libpath: str, value: str):
         self.libpath = libpath
         self.value = value
         super().__init__(
@@ -55,7 +60,7 @@ class ArchiveError(Error):
 
 class LibExistsError(ArchiveError):
     """Given library already exists in archive"""
-    def __init__(self, lib):
+    def __init__(self, lib: str):
         super().__init__(
                 f"Library '{lib}' already exists in archive")
         self.lib = lib
@@ -63,7 +68,7 @@ class LibExistsError(ArchiveError):
 
 class DirectoryExistsError(Error):
     """A given directory already exists"""
-    def __init__(self, path):
+    def __init__(self, path: Union[Path, str]):
         super().__init__(
                 f"{path}: is a directory")
         self.path = path

@@ -3,7 +3,9 @@
 build
 patchelf-wrapper
 pyinstaller
+types-pyinstaller
 scuba
 cffi        # Used for test/pyinstall-cffi/
 pytest
+mypy
 -r docs/requirements.txt
