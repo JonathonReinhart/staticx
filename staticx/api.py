@@ -178,7 +178,7 @@ class StaticxGenerator:
 
         # Build the archive to be appended
         with self.sxar as ar:
-            run_hooks(self)  # type: ignore[no-untyped-call]
+            run_hooks(self)
 
             ar.add_program(self.tmpprog, basename(self.orig_prog))
             ar.add_interp_symlink(orig_interp)
