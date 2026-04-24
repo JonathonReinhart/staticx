@@ -13,7 +13,6 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -24,15 +23,13 @@ classifiers = [
 ]
 dependencies = [
     "pyelftools",
-    # TODO(#264): Remove when Python 3.7 support is removed.
-    "importlib_metadata; python_version<'3.8'",
     # TODO(#265): Remove when Python 3.8 support is removed.
     "importlib_resources; python_version<'3.9'",
 ]
 description = "Build static self-extracting app from dynamic executable"
 license = {file = "LICENSE.txt"}
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 
 [project.scripts]
 staticx = "staticx.__main__:main"
@@ -49,6 +46,4 @@ changelog = "https://github.com/JonathonReinhart/staticx/blob/main/CHANGELOG.md"
 requires = [
     "wheel",
     "setuptools >= 42.0.0",
-    # TODO(#264): Remove when Python 3.7 support is removed.
-    "importlib_metadata; python_version<'3.8'",
 ]
