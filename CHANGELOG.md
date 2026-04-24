@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- Added Python type annotations (#277)
+
 ### Removed
 - Dropped support for Python 3.7 (#301)
 - Dropped support for Python 3.8 (#302)
