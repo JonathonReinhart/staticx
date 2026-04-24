@@ -13,7 +13,6 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -23,13 +22,11 @@ classifiers = [
 ]
 dependencies = [
     "pyelftools",
-    # TODO(#265): Remove when Python 3.8 support is removed.
-    "importlib_resources; python_version<'3.9'",
 ]
 description = "Build static self-extracting app from dynamic executable"
 license = {file = "LICENSE.txt"}
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.scripts]
 staticx = "staticx.__main__:main"
