@@ -14,7 +14,7 @@ from pathlib import Path
 doc_dir = Path(".").absolute()
 
 sys.path.append(str(doc_dir.parent))
-import staticx.version
+import staticx.version  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 

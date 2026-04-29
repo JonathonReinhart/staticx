@@ -70,3 +70,11 @@ module = "staticx.*"
 disallow_untyped_calls = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+
+# ruff
+# https://docs.astral.sh/ruff/configuration/
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "E4",  # pycodestyle: Import
+]
