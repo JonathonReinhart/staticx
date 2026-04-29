@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from ctypes import *
+from ctypes import CDLL, c_int
 from pathlib import Path
 
 mydir = Path(__file__).parent

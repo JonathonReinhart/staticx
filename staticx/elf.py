@@ -19,7 +19,12 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import Section
 from elftools.elf.segments import InterpSegment
 
-from .errors import *
+from .errors import (
+    Error,
+    InvalidInputError,
+    MissingToolError,
+    ToolError,
+)
 from .utils import coerce_sequence, single
 
 
