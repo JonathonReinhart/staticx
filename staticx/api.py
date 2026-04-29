@@ -43,8 +43,8 @@ from .version import __version__
 
 
 class StaticxGenerator:
-    """StaticxGenerator is responsible for producing a staticx-ified executable.
-    """
+    """StaticxGenerator is responsible for producing a staticx-ified executable."""
+
     # Temporary output file (copy of bootloader to be modified)
     tmpoutput: str | None
 
@@ -57,12 +57,14 @@ class StaticxGenerator:
     # Staticx archive being populated
     sxar: SxArchive | None
 
-    def __init__(self,
-                 prog: str,
-                 strip: bool = False,
-                 compress: bool = True,
-                 debug: bool = False,
-                 cleanup: bool =True):
+    def __init__(
+        self,
+        prog: str,
+        strip: bool = False,
+        compress: bool = True,
+        debug: bool = False,
+        cleanup: bool = True,
+    ):
         """
         Parameters:
         prog:   Dynamic executable to staticx
@@ -75,24 +77,27 @@ class StaticxGenerator:
         self.cleanup = cleanup
 
         self._generate_called = False
-        self._added_libs: dict[str, str | None] = {}  # arcname => libpath (or None for symlink)
+
+        # arcname => libpath (or None for symlink)
+        self._added_libs: dict[str, str | None] = {}
 
         # Temporary output file (bootloader copy)
         self.tmpoutput = None
         self.tmpprog = None
-        self.tmpdir = mkdtemp(prefix='staticx-archive-')
+        self.tmpdir = mkdtemp(prefix="staticx-archive-")
 
-        f = NamedTemporaryFile(prefix='staticx-archive-', suffix='.tar')
-        self.sxar = SxArchive(fileobj=f, mode='w', compress=self.compress)
-
+        f = NamedTemporaryFile(prefix="staticx-archive-", suffix=".tar")
+        self.sxar = SxArchive(fileobj=f, mode="w", compress=self.compress)
 
     def __enter__(self) -> StaticxGenerator:
         return self
 
-    def __exit__(self,
-                 type: type[BaseException] | None,
-                 value: BaseException | None,
-                 traceback: TracebackType | None) -> None:
+    def __exit__(
+        self,
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         if self.cleanup:
             self._cleanup()
 
@@ -113,11 +118,14 @@ class StaticxGenerator:
             self.sxar.close()
             self.sxar = None
 
-
     def _get_bootloader(self) -> str:
         # Get a temporary copy of the bootloader
-        fbl = copy_asset_to_tempfile('bootloader', self.debug,
-                                     prefix='staticx-output-', delete=False)
+        fbl = copy_asset_to_tempfile(
+            "bootloader",
+            self.debug,
+            prefix="staticx-output-",
+            delete=False,
+        )
         with fbl:
             bootloader = fbl.name
         make_executable(bootloader)
@@ -127,21 +135,21 @@ class StaticxGenerator:
         prog_mach = get_machine(self.orig_prog)
         if bldr_mach != prog_mach:
             raise FormatMismatchError(
-                f"Bootloader machine ({bldr_mach}) doesn't match program machine ({prog_mach})")
+                f"Bootloader machine ({bldr_mach}) doesn't match program machine ({prog_mach})"
+            )
 
         # Run the bootloader for identification
         r = subprocess.run(
-                args = [bootloader],
-                env = dict(STATICX_BOOTLOADER_IDENTIFY='1'),
-                stderr = subprocess.PIPE,
-                text = True,
-                )
+            args=[bootloader],
+            env=dict(STATICX_BOOTLOADER_IDENTIFY="1"),
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         r.check_returncode()
-        lines = (line.split(':', 1)[1].strip() for line in r.stderr.splitlines())
+        lines = (line.split(":", 1)[1].strip() for line in r.stderr.splitlines())
         logging.debug("Bootloader: " + " ".join(lines))
 
         return bootloader
-
 
     def generate(self, output: str) -> None:
         """Generate a Staticx program
@@ -165,7 +173,11 @@ class StaticxGenerator:
         logging.info("Program interpreter: " + orig_interp)
 
         # Now modify a copy of the user prog
-        self.tmpprog = copy_to_tempfile(self.orig_prog, prefix='staticx-prog-', delete=False).name
+        self.tmpprog = copy_to_tempfile(
+            self.orig_prog,
+            prefix="staticx-prog-",
+            delete=False,
+        ).name
         self._fixup_prog()
 
         if self.strip:
@@ -173,7 +185,6 @@ class StaticxGenerator:
             # do we ever want and need to do this at staticx-time?
             logging.info(f"Stripping bootloader {self.tmpoutput}")
             strip_elf(self.tmpoutput)
-
 
         # Build the archive to be appended
         with self.sxar as ar:
@@ -196,7 +207,6 @@ class StaticxGenerator:
         # Move the temporary output file to its final place
         move_file(self.tmpoutput, output)
         self.tmpoutput = None
-
 
     def add_library(self, libpath: str, exist_ok: bool = False) -> None:
         """Add a library to the archive
@@ -230,8 +240,9 @@ class StaticxGenerator:
             libpath = tmplib
 
             nonlocal work_on_copy
-            def work_on_copy() -> None: pass
 
+            def work_on_copy() -> None:
+                pass
 
         # Audit library to check for problems
         try:
@@ -256,9 +267,9 @@ class StaticxGenerator:
         self.sxar.add_file(libpath, arcname=arcname)
         if arcname in self._added_libs:
             raise InternalError(
-                f"libname {libname} absent from _added_libs but library {arcname} present")
+                f"libname {libname} absent from _added_libs but library {arcname} present"
+            )
         self._added_libs[arcname] = libpath
-
 
     def _handle_lib_symlinks(self, libpath: str) -> str:
         """Recursively process symlinks along path to library
@@ -286,29 +297,30 @@ class StaticxGenerator:
             self.sxar.add_symlink(arcname, target)
 
             if arcname in self._added_libs:
-                raise InternalError(
-                    f"symlink {arcname} already present in _added_libs")
-            self._added_libs[arcname] = None    # Don't care about real target for symlinks
+                raise InternalError(f"symlink {arcname} already present in _added_libs")
+
+            # Don't care about real target for symlinks
+            self._added_libs[arcname] = None
 
         return libpath
-
 
     def check_library_rpath(self, path: str, dangerous_only: bool = False) -> None:
         """Inspect a library to see if it uses problematic RPATH/RUNPATH
 
         See https://github.com/JonathonReinhart/staticx/issues/172
         """
+
         def is_dangerous(rpath: str) -> bool:
             # rpath can be:
             # * Absolutute                  dangerous
             # * Relative (to working dir)   dangerous (and stupid)
             # * Relative (to $ORIGIN)       safe (as long as no ..)
-            if not rpath.startswith('$ORIGIN'):
+            if not rpath.startswith("$ORIGIN"):
                 return True
 
             # There might be some odd corner cases here, but this
             # conservative approach should be good enough.
-            if '..' in rpath:
+            if ".." in rpath:
                 return True
 
             return False
@@ -337,10 +349,15 @@ class StaticxGenerator:
         # Set long dummy INTERP and RPATH in the executable to allow plenty of space
         # for bootloader to patch them at runtime, without the reording complexity
         # that patchelf has to do.
-        new_interp = 'i' * MAX_INTERP_LEN
-        new_rpath = 'r' * MAX_RPATH_LEN
-        patch_elf(self.tmpprog, interpreter=new_interp, rpath=new_rpath,
-                  force_rpath=True, no_default_lib=True)
+        new_interp = "i" * MAX_INTERP_LEN
+        new_rpath = "r" * MAX_RPATH_LEN
+        patch_elf(
+            self.tmpprog,
+            interpreter=new_interp,
+            rpath=new_rpath,
+            force_rpath=True,
+            no_default_lib=True,
+        )
 
 
 def generate(
@@ -372,13 +389,13 @@ def generate(
     logging.debug(f"  debug:     {debug!r}")
 
     gen = StaticxGenerator(
-            prog=prog,
-            strip=strip,
-            compress=compress,
-            debug=debug,
-            )
+        prog=prog,
+        strip=strip,
+        compress=compress,
+        debug=debug,
+    )
     with gen:
-        for lib in (libs or []):
+        for lib in libs or []:
             gen.add_library(lib)
 
         gen.generate(output=output)

@@ -6,18 +6,21 @@ from ..utils import make_executable
 from elftools.elf.gnuversions import GNUVerNeedSection
 import logging
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from ..api import StaticxGenerator
 
-LIBNSSFIX = 'libnssfix.so'
+LIBNSSFIX = "libnssfix.so"
+
 
 def process_glibc_prog(sx: StaticxGenerator) -> None:
     if not is_linked_against_glibc(sx.orig_prog):
         return
 
     try:
-        nssfix = copy_asset_to_tempfile(LIBNSSFIX, debug=sx.debug,
-                prefix='libnssfix-', suffix='.so')
+        nssfix = copy_asset_to_tempfile(
+            LIBNSSFIX, debug=sx.debug, prefix="libnssfix-", suffix=".so"
+        )
     except KeyError:
         raise InternalError("GLIBC binary detected but libnssfix.so not available")
 
@@ -52,11 +55,12 @@ def is_linked_against_glibc(prog: str) -> bool:
             return False
         assert isinstance(sec, GNUVerNeedSection)
         for verneed, vernaux_iter in sec.iter_versions():
-            if not verneed.name.startswith('libc.so'):
+            if not verneed.name.startswith("libc.so"):
                 continue
             for vernaux in vernaux_iter:
-                if vernaux.name.startswith('GLIBC_'):
+                if vernaux.name.startswith("GLIBC_"):
                     logging.debug(
-                        f"Program linked with GLIBC: Found {verneed.name} {vernaux.name}")
+                        f"Program linked with GLIBC: Found {verneed.name} {vernaux.name}"
+                    )
                     return True
     return False

@@ -75,10 +75,12 @@ class PyInstallHook:
     def __enter__(self) -> PyInstallHook:
         return self
 
-    def __exit__(self,
-                 type: type[BaseException] | None,
-                 value: BaseException | None,
-                 traceback: TracebackType | None) -> None:
+    def __exit__(
+        self,
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.tmpdir.cleanup()
 
     def process(self) -> None:
@@ -98,7 +100,7 @@ class PyInstallHook:
         result = []
 
         for name, item in self.pyi_ar.toc.items():
-            (dpos, dlen, ulen, flag, typcd) = item
+            dpos, dlen, ulen, flag, typcd = item
 
             # Only process binary files
             # See xformdict in PyInstaller.building.api.PKG
@@ -171,17 +173,15 @@ class PyInstallHook:
             self.sx.add_library(deppath, exist_ok=True)
 
 
-
 class CArchiveReaderPre510Adapter:
     """Adapts a pre-5.10 CArchiveReader to 5.10+ API"""
+
     toc: dict[str, _TocEntry]
 
     def __init__(self, old_archive: CArchiveReaderPre510):
         self._old_archive = old_archive
 
-        self.toc = {
-            name: tuple(entry) for *entry, name in self._old_archive.toc.data
-        }
+        self.toc = {name: tuple(entry) for *entry, name in self._old_archive.toc.data}
 
     def extract(self, name: str) -> bytes:
         _, data = self._old_archive.extract(name)
