@@ -24,3 +24,17 @@ information you desire.*
 4. Run `./static_analysis.sh` to run static analysis.
 
 See docs/installation for more details on building.
+
+## Code Format
+Staticx is compliant with the [Black](https://black.readthedocs.io/)
+code style. Code format in PRs is verified by a GitHub action.
+
+To check code formatting:
+```
+$ ./code_format.py
+```
+
+To fix code formatting:
+```
+$ ./code_format.py --fix
+```
