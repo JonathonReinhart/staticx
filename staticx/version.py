@@ -2,7 +2,6 @@ import dataclasses
 import importlib.metadata
 from pathlib import Path
 import subprocess
-import sys
 
 # This logic has been adapted from that of PyInstaller
 # https://github.com/pyinstaller/pyinstaller/

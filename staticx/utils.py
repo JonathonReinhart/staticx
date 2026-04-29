@@ -1,5 +1,4 @@
 import os
-import errno
 import shutil
 from collections.abc import Callable, Iterable
 from pathlib import Path

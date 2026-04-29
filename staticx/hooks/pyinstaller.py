@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..api import StaticxGenerator
     from PyInstaller.archive.readers import CArchiveReader, _TocEntry
 
-    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def]
+    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def] # noqa: F821
 
     # NOTE: mypy doesn't support selecting different stubs based on library
     # version, so we simply punt and declare this as Any.

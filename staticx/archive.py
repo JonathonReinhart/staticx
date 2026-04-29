@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from .bcjfilter import get_bcj_filter_arch
 from .constants import INTERP_FILENAME, PROG_FILENAME
-from .utils import get_symlink_target, make_mode_executable
+from .utils import make_mode_executable
 
 
 @dataclasses.dataclass

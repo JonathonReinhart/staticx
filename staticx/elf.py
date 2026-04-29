@@ -6,9 +6,7 @@ import sys
 import re
 import locale
 import logging
-import errno
 import os
-from os import PathLike
 from types import TracebackType
 from typing import Any, BinaryIO
 
@@ -162,7 +160,7 @@ def _parse_ldd_output(output: str) -> Iterable[str]:
             raise LddError("Unexpected line in ldd output: " + line)
         libname = m.group(1)
         resolved = m.group(2)
-        baseaddr = int(m.group(3), 16)
+        _baseaddr = int(m.group(3), 16)
 
         if resolved:
             # ldd outupt a resolved symlink, use that
@@ -386,5 +384,5 @@ def is_dynamic_elf(path: str) -> bool:
     try:
         with ELFFileX.open(path) as elf:
             return elf.is_dynamic()
-    except ELFError as e:
+    except ELFError:
         return False

@@ -79,4 +79,5 @@ select = [
     "E4",  # pycodestyle: Import
     "E7",  # pycodestyle: Statement
     "E9",  # pycodestyle: Runtime
+    "F",   # Pyflakes
 ]

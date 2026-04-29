@@ -1,5 +1,4 @@
 import importlib.resources
-import sys
 from tempfile import _TemporaryFileWrapper
 from typing import Any, IO
 from .utils import copy_fileobj_to_tempfile

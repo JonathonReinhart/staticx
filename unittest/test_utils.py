@@ -1,7 +1,6 @@
 import tempfile
 import os
 import pytest
-import subprocess
 
 from staticx import utils
 
