@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from tempfile import _TemporaryFileWrapper
-from typing import cast, Any, IO, TypeVar, TypeAlias
+from typing import cast, Any, IO, TypeVar, TypeAlias, TypeGuard
 from .errors import DirectoryExistsError
 
 
@@ -53,14 +53,13 @@ def copy_fileobj_to_tempfile(fsrc: IO[bytes], **kwargs: Any) -> _TemporaryFileWr
     return fdst
 
 
-def is_iterable(x: object) -> bool:
+def is_iterable(x: object) -> TypeGuard[Iterable]:
     """Returns true if x is iterable but not a string"""
-    # TODO: Return typing.TypeGuard
     return isinstance(x, Iterable) and not isinstance(x, str)
 
 def coerce_sequence(x: T | Iterable[T]) -> list[T]:
     if is_iterable(x):
-        return list(cast(Iterable, x))
+        return list(x)
     return [cast(T, x)]
 
 class _Sentinel:
