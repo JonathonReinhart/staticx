@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import Optional
 from .sections import Section
 
 class Version:
@@ -20,5 +19,5 @@ class GNUVerNeedSection(GNUVersionSection):
         ...
     def iter_versions(self) -> Iterable[tuple[Version, Iterable[VersionAuxiliary]]]:
         ...
-    def get_version(self, index: int) -> Optional[tuple[Version, VersionAuxiliary]]:
+    def get_version(self, index: int) -> tuple[Version, VersionAuxiliary] | None:
         ...

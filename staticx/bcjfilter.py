@@ -1,9 +1,8 @@
 import platform
-from typing import Optional
 
 # NOTE: This is also used by libxz/SConscript
 
-def get_bcj_filter_arch() -> Optional[str]:
+def get_bcj_filter_arch() -> str | None:
     """
     Get an appropriate BCJ filter for the current architecture.
 

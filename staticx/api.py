@@ -10,7 +10,6 @@ from os.path import basename, islink
 import logging
 import subprocess
 from types import TracebackType
-from typing import Optional
 
 from .errors import (
     FormatMismatchError,
@@ -47,16 +46,16 @@ class StaticxGenerator:
     """StaticxGenerator is responsible for producing a staticx-ified executable.
     """
     # Temporary output file (copy of bootloader to be modified)
-    tmpoutput: Optional[str]
+    tmpoutput: str | None
 
     # Temporary copy of user program to be modified
-    tmpprog: Optional[str]
+    tmpprog: str | None
 
     # Temporary working directory
-    tmpdir: Optional[str]
+    tmpdir: str | None
 
     # Staticx archive being populated
-    sxar: Optional[SxArchive]
+    sxar: SxArchive | None
 
     def __init__(self,
                  prog: str,
@@ -76,7 +75,7 @@ class StaticxGenerator:
         self.cleanup = cleanup
 
         self._generate_called = False
-        self._added_libs: dict[str, Optional[str]] = {}  # arcname => libpath (or None for symlink)
+        self._added_libs: dict[str, str | None] = {}  # arcname => libpath (or None for symlink)
 
         # Temporary output file (bootloader copy)
         self.tmpoutput = None
@@ -91,9 +90,9 @@ class StaticxGenerator:
         return self
 
     def __exit__(self,
-                 type: Optional[type[BaseException]],
-                 value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 type: type[BaseException] | None,
+                 value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         if self.cleanup:
             self._cleanup()
 
@@ -347,7 +346,7 @@ class StaticxGenerator:
 def generate(
     prog: str,
     output: str,
-    libs: Optional[list[str]] = None,
+    libs: list[str] | None = None,
     strip: bool = False,
     compress: bool = True,
     debug: bool = False,
