@@ -1,6 +1,6 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, BinaryIO, Iterable
+from typing import Any, BinaryIO
 from typing_extensions import Literal, Self, TypeAlias
 from types import TracebackType
 

@@ -1,4 +1,5 @@
-from typing import Iterable, Optional, Tuple
+from collections.abc import Iterable
+from typing import Optional, Tuple
 from .sections import Section
 
 class Version:
