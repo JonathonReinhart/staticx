@@ -8,12 +8,14 @@ from types import TracebackType
 from typing import IO, Literal, TypeAlias
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from _typeshed import StrPath
 
 from .bcjfilter import get_bcj_filter_arch
 from .constants import INTERP_FILENAME, PROG_FILENAME
 from .utils import get_symlink_target, make_mode_executable
+
 
 @dataclasses.dataclass
 class BcjFilter:
@@ -27,13 +29,15 @@ def get_bcj_filter() -> BcjFilter | None:
         return None
 
     # Get the lzma module constant name and value
-    filt_name = 'FILTER_' + arch
+    filt_name = f"FILTER_{arch}"
     return BcjFilter(
         id=getattr(lzma, filt_name),
         name=filt_name,
     )
 
+
 LzmaFilterChain: TypeAlias = list[dict[str, str | int]]
+
 
 def get_xz_filters() -> LzmaFilterChain:
     filters: LzmaFilterChain = []
@@ -47,6 +51,7 @@ def get_xz_filters() -> LzmaFilterChain:
     # The last filter in the chain must be a compression filter.
     filters.append(dict(id=lzma.FILTER_LZMA2))
     return filters
+
 
 class SxArchive:
     fileobj: IO[bytes]
@@ -67,15 +72,13 @@ class SxArchive:
 
         if compress:
             xzf = lzma.open(
-                filename = fileobj,
-                mode = mode,
-                format = lzma.FORMAT_XZ,
-
+                filename=fileobj,
+                mode=mode,
+                format=lzma.FORMAT_XZ,
                 # Use CRC32 instead of CRC64 (FORMAT_XZ default)
                 # Otherwise, enable XZ_USE_CRC64 in libxz/xz_config.h
-                check = lzma.CHECK_CRC32,
-
-                filters = get_xz_filters(),
+                check=lzma.CHECK_CRC32,
+                filters=get_xz_filters(),
             )
             assert isinstance(xzf, lzma.LZMAFile)
             self.xzf = xzf
@@ -87,10 +90,12 @@ class SxArchive:
     def __enter__(self) -> SxArchive:
         return self
 
-    def __exit__(self,
-                 type: type[BaseException] | None,
-                 value: BaseException | None,
-                 traceback: TracebackType | None) -> None:
+    def __exit__(
+        self,
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.close()
 
     def close(self) -> None:
@@ -129,6 +134,7 @@ class SxArchive:
 
         Should only be called once. TODO: Enforce this.
         """
+
         def make_exec(tarinfo: tarfile.TarInfo) -> tarfile.TarInfo:
             tarinfo.mode = make_mode_executable(tarinfo.mode)
             return tarinfo

@@ -1,5 +1,6 @@
 from SCons.Util import is_List
 
+
 def ShlibStubGen(env, target, symbols):
     """Generate a shared library stub
 
@@ -17,37 +18,40 @@ def ShlibStubGen(env, target, symbols):
         raise UserError("target must be a single string or node")
     target = env.fs.File(target)
 
-    lines = ['// Auto-generated stub']
+    lines = ["// Auto-generated stub"]
     for sym in symbols:
         lines += [
-            f'void {sym}(void);',       # for strict prototypes
-            f'void {sym}(void) {{}}',
-            '',
+            f"void {sym}(void);",  # for strict prototypes
+            f"void {sym}(void) {{}}",
+            "",
         ]
 
     csrc = env.Textfile(
-        target = target.name + '_stub.c',
-        source = lines,
+        target=f"{target.name}_stub.c",
+        source=lines,
     )
 
     stub = env.SharedLibrary(
-        target = target,
-        source = [csrc],
-        CCFLAGS = env['CCFLAGS'] + [
-            '-fno-builtin',
+        target=target,
+        source=[csrc],
+        CCFLAGS=[
+            *env["CCFLAGS"],
+            "-fno-builtin",
         ],
-        LINKFLAGS = env['LINKFLAGS'] + [
-            '-Wl,-soname=${TARGET.name}',
-            '-nostdlib',
+        LINKFLAGS=[
+            *env["LINKFLAGS"],
+            "-Wl,-soname=${TARGET.name}",
+            "-nostdlib",
         ],
-        SHLIBSUFFIX='',
+        SHLIBSUFFIX="",
     )
     return stub
 
 
 def generate(env):
-    env.Tool('textfile')
+    env.Tool("textfile")
     env.AddMethod(ShlibStubGen)
+
 
 def exists(env):
     return True

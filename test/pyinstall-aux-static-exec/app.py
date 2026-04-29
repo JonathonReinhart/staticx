@@ -5,9 +5,10 @@ import subprocess
 
 from auxlist import aux_apps
 
+
 def get_resource_dir():
     default = os.path.dirname(os.path.abspath(__file__))
-    return getattr(sys, '_MEIPASS', default)
+    return getattr(sys, "_MEIPASS", default)
 
 
 def get_resource(name):
@@ -16,8 +17,12 @@ def get_resource(name):
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--skip', action='append', default=[],
-            help="aux apps to skip")
+    ap.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        help="aux apps to skip",
+    )
     return ap.parse_args()
 
 
@@ -35,5 +40,6 @@ def main():
         if os.path.isfile(auxapp):
             subprocess.check_call([auxapp])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

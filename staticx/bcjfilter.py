@@ -2,6 +2,7 @@ import platform
 
 # NOTE: This is also used by libxz/SConscript
 
+
 def get_bcj_filter_arch() -> str | None:
     """
     Get an appropriate BCJ filter for the current architecture.
@@ -17,15 +18,15 @@ def get_bcj_filter_arch() -> str | None:
     # slightly worse compression ratio.
 
     match platform.machine():
-        case 'i386' | 'i686' | 'x86_64':
-            return 'X86'
-        case 'ia64':
-            return 'IA64'
-        case m if m.startswith('arm'):   # arm, armv8b, etc.
-            return 'ARM'
-        case m if m.startswith('ppc'):
-            return 'POWERPC'
-        case m if m.startswith('sparc'):
-            return 'SPARC'
+        case "i386" | "i686" | "x86_64":
+            return "X86"
+        case "ia64":
+            return "IA64"
+        case m if m.startswith("arm"):  # arm, armv8b, etc.
+            return "ARM"
+        case m if m.startswith("ppc"):
+            return "POWERPC"
+        case m if m.startswith("sparc"):
+            return "SPARC"
         case _:
             return None

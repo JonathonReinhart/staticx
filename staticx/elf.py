@@ -36,7 +36,13 @@ def verify_tools() -> None:
 
 
 class ExternTool:
-    def __init__(self, cmd: str, os_pkg: str, stderr_ignore: list[str] = [], encoding: str | None = None):
+    def __init__(
+        self,
+        cmd: str,
+        os_pkg: str,
+        stderr_ignore: list[str] = [],
+        encoding: str | None = None,
+    ):
         self.cmd = cmd
         self.os_pkg = os_pkg
         self.stderr_ignore = stderr_ignore
@@ -59,10 +65,11 @@ class ExternTool:
             logging.debug("Running " + str(proc_args))
         try:
             r = subprocess.run(
-                args = proc_args,
-                capture_output = True,
-                encoding = self.encoding,
-                **kw)
+                args=proc_args,
+                capture_output=True,
+                encoding=self.encoding,
+                **kw,
+            )
         except FileNotFoundError:
             raise MissingToolError(self.cmd, self.os_pkg)
 
@@ -75,17 +82,16 @@ class ExternTool:
 
         return r.returncode, r.stdout
 
-
     def run_check(self, *args: str, **kw: Any) -> str:
         rc, stdout = self.run(*args, **kw)
 
         if rc != 0:
-            raise ToolError(self.cmd, f'{self.cmd} returned {rc}')
+            raise ToolError(self.cmd, f"{self.cmd} returned {rc}")
 
         return stdout
 
     def get_version(self) -> str:
-        rc, output = self.run('--version', _internal=True)
+        rc, output = self.run("--version", _internal=True)
         if rc == 0:
             return output.splitlines()[0]
         return f"??? (exited {rc})"
@@ -97,19 +103,33 @@ class ExternTool:
         return path
 
 
+tool_ldd = ExternTool(
+    cmd=os.getenv("STATICX_LDD", "ldd"),
+    os_pkg="libc-bin",
+)
 
-tool_ldd        = ExternTool(os.getenv("STATICX_LDD", "ldd"), 'libc-bin')
-tool_objcopy    = ExternTool('objcopy', 'binutils')
-tool_patchelf   = ExternTool('patchelf', 'patchelf',
-                    stderr_ignore = [
-                        'working around a Linux kernel bug by creating a hole',
-                    ],
-                    # They literally have "e2 80 98" in their source file
-                    encoding='utf-8',
-                    )
-tool_strip      = ExternTool('strip', 'binutils')
+tool_objcopy = ExternTool(
+    cmd="objcopy",
+    os_pkg="binutils",
+)
+
+tool_patchelf = ExternTool(
+    cmd="patchelf",
+    os_pkg="patchelf",
+    stderr_ignore=[
+        "working around a Linux kernel bug by creating a hole",
+    ],
+    # They literally have "e2 80 98" in their source file
+    encoding="utf-8",
+)
+
+tool_strip = ExternTool(
+    cmd="strip",
+    os_pkg="binutils",
+)
 
 all_tools = (tool_ldd, tool_objcopy, tool_strip, tool_patchelf)
+
 
 def extern_tools_verify() -> None:
     logging.debug("External tools:")
@@ -119,69 +139,68 @@ def extern_tools_verify() -> None:
 
 class LddError(ToolError):
     def __init__(self, message: str):
-        super().__init__('ldd', message)
+        super().__init__("ldd", message)
 
 
 def _parse_ldd_output(output: str) -> Iterable[str]:
     # Example:
-    #	linux-vdso.so.1 (0x00007ffe53551000)
+    # 	linux-vdso.so.1 (0x00007ffe53551000)
     #     or
-    #	linux-vdso.so.1 =>  (0x00007ffe53551000)
-    #	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
-    #	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
+    # 	linux-vdso.so.1 =>  (0x00007ffe53551000)
+    # 	libc.so.6 => /usr/lib64/libc.so.6 (0x00007f42ac010000)
+    # 	/lib64/ld-linux-x86-64.so.2 (0x0000557376e75000)
     #     or
     #   /lib64/ld-linux-x86-64.so.2 => /usr/lib64/ld-linux-x86-64.so.2 (0x00007f1de63ac000)
-    pat = re.compile(r'\t([\w./${}+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)')
+    pat = re.compile(r"\t([\w./${}+-]*) (?:=> ([\w./+-]*) )?\((0x[0-9a-fA-F]*)\)")
 
     for line in output.splitlines():
         m = pat.match(line)
         if not m:
             # Some shared objs might have no DT_NEEDED tags (see issue #67)
-            if line == '\tstatically linked':
+            if line == "\tstatically linked":
                 break
             raise LddError("Unexpected line in ldd output: " + line)
-        libname  = m.group(1)
+        libname = m.group(1)
         resolved = m.group(2)
         baseaddr = int(m.group(3), 16)
 
         if resolved:
             # ldd outupt a resolved symlink, use that
             libpath = resolved
-        elif libname.startswith('/'):
+        elif libname.startswith("/"):
             # The library directly referenced an absolute path, use that
             libpath = libname
         else:
             # Assume an unresolved non-absolute library name is synthetic
             # like linux-vdso*.so or linux-gate.so which should be ignored
             # TODO: This check could be removed/relaxed
-            if not libname.startswith('linux-'):
+            if not libname.startswith("linux-"):
                 raise LddError("Unexpected unresolved libname: " + libname)
             logging.debug("Ignoring synthetic library: " + libname)
             continue
 
         # The library path must be absolute
-        if not libpath.startswith('/'):
+        if not libpath.startswith("/"):
             raise LddError("Unexpected non-absolute libpath: " + libpath)
         yield libpath
 
 
 def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
-    """Discover the dependencies of a shared object (*.so file)
-    """
+    """Discover the dependencies of a shared object (*.so file)"""
 
     # First verify we're dealing with a dynamic ELF file
     if not is_dynamic_elf(path):
         raise StaticELFError(path=path)
 
     # Prepare the environment
-    keep_vars = {'LD_LIBRARY_PATH'}
-    env = {k:v for k,v in os.environ.items() if k in keep_vars}
+    keep_vars = {"LD_LIBRARY_PATH"}
+    env = {k: v for k, v in os.environ.items() if k in keep_vars}
 
     if libpath:
         # Prepend to LD_LIBRARY_PATH
         assert isinstance(libpath, list)
-        old_libpath = env.get('LD_LIBRARY_PATH', '')
-        env['LD_LIBRARY_PATH'] = ':'.join(libpath + [old_libpath])
+        old_libpath = env.get("LD_LIBRARY_PATH", "")
+        env["LD_LIBRARY_PATH"] = ":".join(libpath + [old_libpath])
 
     rc, output = tool_ldd.run(path, env=env)
 
@@ -201,7 +220,7 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
         # produced by musl-libc
         #
         # We simply raise a specific exception and let the caller deal with it.
-        message = f"Unexpected ldd error ({rc}):\n" + output.strip('\n')
+        message = f"Unexpected ldd error ({rc}):\n" + output.strip("\n")
         if "invalid ELF header" in output:
             message += "\nHint: try setting STATICX_LDD to the appropriate ldd for this executable"
         raise LddError(message)
@@ -209,21 +228,21 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
     return list(_parse_ldd_output(output))
 
 
-
 def elf_add_section(elfpath: str, secname: str, secfilename: str) -> None:
-    tool_objcopy.run_check(
-        '--add-section', f'{secname}={secfilename}',
-        elfpath)
+    tool_objcopy.run_check("--add-section", f"{secname}={secfilename}", elfpath)
 
 
 def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
     # https://stackoverflow.com/a/3925113/119527
     tool_objcopy.run_check(
-        '-O', 'binary',
-        '--only-section', secname,
-        '--set-section-flags', f"{secname}=alloc",
-        elfpath, outpath)
-
+        # fmt: off
+        "-O", "binary",
+        "--only-section", secname,
+        "--set-section-flags", f"{secname}=alloc",
+        elfpath,
+        outpath,
+        # fmt: on
+    )
 
 
 def patch_elf(
@@ -236,9 +255,9 @@ def patch_elf(
 ) -> None:
     args = []
     if interpreter:
-        args += ['--set-interpreter', interpreter]
+        args += ["--set-interpreter", interpreter]
     if rpath:
-        args += ['--set-rpath', rpath]
+        args += ["--set-rpath", rpath]
     if force_rpath:
         # There is a bug in patchelf that requires --remove-rpath to be used
         # first before --force-rpath is effective.
@@ -246,10 +265,10 @@ def patch_elf(
         # This was fixed in v0.11 but that's newer than Debian Buster.
         remove_rpath(path)
 
-        args.append('--force-rpath')
+        args.append("--force-rpath")
     if add_needed:
         for lib in coerce_sequence(add_needed):
-            args += ['--add-needed', lib]
+            args += ["--add-needed", lib]
     args.append(path)
 
     tool_patchelf.run_check(*args)
@@ -258,10 +277,12 @@ def patch_elf(
     # --no-default-lib steps to be run in separate invocations.
     # https://github.com/NixOS/patchelf/issues/223
     if no_default_lib:
-        tool_patchelf.run_check('--no-default-lib', path)
+        tool_patchelf.run_check("--no-default-lib", path)
+
 
 def remove_rpath(path: str) -> None:
-    tool_patchelf.run_check('--remove-rpath', path)
+    tool_patchelf.run_check("--remove-rpath", path)
+
 
 def strip_elf(path: str) -> None:
     tool_strip.run_check(path)
@@ -270,11 +291,14 @@ def strip_elf(path: str) -> None:
 ################################################################################
 # Using pyelftools
 
+
 class StaticELFError(Error):
     """Dynamic operation requested on static executable"""
+
     def __init__(self, path: str):
         message = f"{path} is a static ELF file"
         super().__init__(message)
+
 
 class ELFFileX(ELFFile):
     def __init__(self, stream: BinaryIO, path: str | None = None):
@@ -288,10 +312,12 @@ class ELFFileX(ELFFile):
     def __enter__(self) -> ELFFileX:
         return self
 
-    def __exit__(self,
-                 type: type[BaseException] | None,
-                 value: BaseException | None,
-                 traceback: TracebackType | None) -> None:
+    def __exit__(
+        self,
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.stream.close()
 
     # TODO: Constrain return section type to sectype arg
@@ -307,12 +333,12 @@ class ELFFileX(ELFFile):
                 return seg.get_interp_name()
 
         raise InvalidInputError(
-            f"{self.__path}: not a dynamic executable (no interp segment)")
-
+            f"{self.__path}: not a dynamic executable (no interp segment)"
+        )
 
     def get_dynamic_segment(self) -> DynamicSegment | None:
         for seg in self.iter_segments():
-            if seg['p_type'] == 'PT_DYNAMIC':
+            if seg["p_type"] == "PT_DYNAMIC":
                 assert isinstance(seg, DynamicSegment)
                 return seg
         return None
@@ -328,11 +354,11 @@ class ELFFileX(ELFFile):
 
     def get_rpath(self) -> DynamicTag | None:
         """Returns the value of the DT_RPATH tag of the ELF file"""
-        return self.get_single_dynamic_tag('DT_RPATH')
+        return self.get_single_dynamic_tag("DT_RPATH")
 
     def get_runpath(self) -> DynamicTag | None:
         """Returns the value of the DT_RUNPATH tag of the ELF file"""
-        return self.get_single_dynamic_tag('DT_RUNPATH')
+        return self.get_single_dynamic_tag("DT_RUNPATH")
 
 
 def open_elf(path: str) -> ELFFileX:
@@ -344,13 +370,15 @@ def open_elf(path: str) -> ELFFileX:
 
 def get_machine(path: str) -> str:
     with open_elf(path) as elf:
-        machine = elf['e_machine']
+        machine = elf["e_machine"]
         assert isinstance(machine, str)
         return machine
+
 
 def get_prog_interp(path: str) -> str:
     with open_elf(path) as elf:
         return elf.get_prog_interp()
+
 
 def is_dynamic_elf(path: str) -> bool:
     try:

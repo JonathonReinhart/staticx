@@ -1,19 +1,21 @@
 from SCons.Action import Action
 
+
 def read_nsswitch_conf(path):
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
-            dbname, svcs = line.split(':')
+            dbname, svcs = line.split(":")
             dbname = dbname.strip()
             svcs = svcs.strip().split()
             yield dbname, svcs
 
+
 def _gen_nsswitch_conf_h(target, source, env):
     conf = read_nsswitch_conf(source[0].get_path())
-    with open(target[0].get_path(), 'w') as tgtf:
+    with open(target[0].get_path(), "w") as tgtf:
         for dbname, svcs in conf:
             svc_line = " ".join(svcs)
             tgtf.write(f'NSSWITCH_CONF("{dbname}", "{svc_line}")\n')
@@ -22,18 +24,21 @@ def _gen_nsswitch_conf_h(target, source, env):
 def _strfunc(target, source, env):
     return f"Creating '{target[0]}'"
 
+
 def NsswitchConfH(env, target, source):
     return env.Command(
-        action = Action(_gen_nsswitch_conf_h, _strfunc),
-        target = target,
-        source = source,
+        action=Action(_gen_nsswitch_conf_h, _strfunc),
+        target=target,
+        source=source,
     )
+
 
 # https://www.gnu.org/software/libc/manual/html_node/Adding-another-Service-to-NSS.html
 # https://www.gnu.org/software/libc/manual/html_node/NSS-Module-Names.html
 def _nss_module_name(service):
     NSS_INTERFACE_VERSION = 2
     return f"libnss_{service}.so.{NSS_INTERFACE_VERSION}"
+
 
 def GetNsswitchLibs(env, source):
     """Gets a list of NSS module names for the given nsswitch.conf
@@ -52,10 +57,12 @@ def GetNsswitchLibs(env, source):
         libs.update(_nss_module_name(svc) for svc in svcs)
     return list(libs)
 
+
 def generate(env):
     env.AddMethod(NsswitchConfH)
     env.AddMethod(GetNsswitchLibs)
     return True
+
 
 def exists(env):
     return True

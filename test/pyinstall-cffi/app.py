@@ -2,6 +2,7 @@ from cffi import FFI
 import os
 import sys
 
+
 def main():
     ffi = FFI()
     ffi.cdef("""
@@ -14,12 +15,14 @@ def main():
 
     libc = ffi.dlopen(None)
 
-    libc.printf(b"Hello, %s!\n",
-            ffi.new("char[]", b"world"),
-            )
+    libc.printf(
+        b"Hello, %s!\n",
+        ffi.new("char[]", b"world"),
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("PID:", os.getpid())
-    print("MEIPASS:", getattr(sys, '_MEIPASS', '<not set>'))
+    print("MEIPASS:", getattr(sys, "_MEIPASS", "<not set>"))
 
     main()

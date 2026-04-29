@@ -8,12 +8,12 @@ from tempfile import _TemporaryFileWrapper
 from typing import cast, Any, IO, TypeVar, TypeAlias, TypeGuard
 from .errors import DirectoryExistsError
 
-
 Pathlike: TypeAlias = Path | str
 T = TypeVar("T")
 
+
 def make_mode_executable(mode: int) -> int:
-    mode |= (mode & 0o444) >> 2    # copy R bits to X
+    mode |= (mode & 0o444) >> 2  # copy R bits to X
     return mode
 
 
@@ -22,9 +22,11 @@ def make_executable(path: Pathlike) -> None:
     mode = make_mode_executable(mode)
     os.chmod(path, mode)
 
+
 def get_symlink_target(path: Pathlike) -> str:
     dirpath = os.path.dirname(os.path.abspath(path))
     return os.path.join(dirpath, os.readlink(path))
+
 
 def move_file(src: str, dst: str) -> None:
     if os.path.isdir(dst):
@@ -38,7 +40,7 @@ def mkdirs_for(filename: Pathlike) -> None:
 
 
 def copy_to_tempfile(srcpath: Pathlike, **kwargs: Any) -> _TemporaryFileWrapper:
-    with open(srcpath, 'rb') as fsrc:
+    with open(srcpath, "rb") as fsrc:
         fdst = copy_fileobj_to_tempfile(fsrc, **kwargs)
 
     shutil.copystat(srcpath, fdst.name)
@@ -57,15 +59,19 @@ def is_iterable(x: object) -> TypeGuard[Iterable]:
     """Returns true if x is iterable but not a string"""
     return isinstance(x, Iterable) and not isinstance(x, str)
 
+
 def coerce_sequence(x: T | Iterable[T]) -> list[T]:
     if is_iterable(x):
         return list(x)
     return [cast(T, x)]
 
+
 class _Sentinel:
     pass
 
+
 _NO_DEFAULT = _Sentinel()
+
 
 def single(
     iterable: Iterable[T],
