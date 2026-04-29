@@ -234,15 +234,14 @@ def elf_add_section(elfpath: str, secname: str, secfilename: str) -> None:
 
 def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
     # https://stackoverflow.com/a/3925113/119527
-    tool_objcopy.run_check(
-        # fmt: off
+    args = [
         "-O", "binary",
         "--only-section", secname,
         "--set-section-flags", f"{secname}=alloc",
         elfpath,
         outpath,
-        # fmt: on
-    )
+    ]  # fmt: skip
+    tool_objcopy.run_check(*args)
 
 
 def patch_elf(
