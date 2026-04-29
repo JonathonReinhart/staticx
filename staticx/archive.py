@@ -5,8 +5,7 @@ import logging
 import lzma
 from os.path import basename
 from types import TracebackType
-from typing import IO, TypeAlias
-from typing_extensions import Literal
+from typing import IO, Literal, TypeAlias
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
