@@ -1,12 +1,13 @@
 from __future__ import annotations
-from collections.abc import Iterable
-import shutil
-import subprocess
-import sys
-import re
+
 import locale
 import logging
 import os
+import re
+import shutil
+import subprocess
+import sys
+from collections.abc import Iterable
 from types import TracebackType
 from typing import Any, BinaryIO
 

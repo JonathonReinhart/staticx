@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-import pytest
 import os
 from tempfile import NamedTemporaryFile
+
+import pytest
+
 from staticx import elf
 from staticx.errors import MissingToolError
 from staticx.utils import make_executable

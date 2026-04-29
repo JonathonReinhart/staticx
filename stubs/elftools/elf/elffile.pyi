@@ -1,10 +1,11 @@
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from types import TracebackType
 from typing import Any, BinaryIO, Literal, TypeAlias
+
 from typing_extensions import (
     Self,  # Python 3.11
 )
-from types import TracebackType
 
 # from ..construct import Struct
 # from ..dwarf.dwarfinfo import DWARFInfo

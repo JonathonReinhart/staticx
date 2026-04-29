@@ -1,13 +1,12 @@
 from __future__ import annotations
+
 import dataclasses
-import tarfile
 import logging
 import lzma
+import tarfile
 from os.path import basename
 from types import TracebackType
-from typing import IO, Literal, TypeAlias
-
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Literal, TypeAlias
 
 if TYPE_CHECKING:
     from _typeshed import StrPath

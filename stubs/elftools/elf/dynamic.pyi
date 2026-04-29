@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+
 from .segments import Segment
 
 class DynamicTag:

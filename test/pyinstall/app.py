@@ -1,6 +1,6 @@
 import os
-import sys
 import pwd
+import sys
 
 
 def get_resource_dir():

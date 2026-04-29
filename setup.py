@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # Derived from https://github.com/JonathonReinhart/scuba
-from setuptools import setup, Command, find_packages
-from wheel.bdist_wheel import bdist_wheel
-from distutils.command.build import build
 import os
 import sys
+from distutils.command.build import build
 from subprocess import check_call
+
+from setuptools import Command, find_packages, setup
+from wheel.bdist_wheel import bdist_wheel
 
 ################################################################################
 # Dynamic versioning

@@ -1,6 +1,7 @@
-from cffi import FFI
 import os
 import sys
+
+from cffi import FFI
 
 
 def main():

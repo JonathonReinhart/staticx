@@ -1,4 +1,5 @@
 from typing import Any
+
 from .sections import Section
 
 class Segment:

@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+
 from .sections import Section
 
 class Version:

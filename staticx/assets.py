@@ -1,6 +1,7 @@
 import importlib.resources
 from tempfile import _TemporaryFileWrapper
-from typing import Any, IO
+from typing import IO, Any
+
 from .utils import copy_fileobj_to_tempfile
 
 

@@ -1,6 +1,6 @@
 import argparse
-import sys
 import logging
+import sys
 
 from .api import generate
 from .errors import Error
