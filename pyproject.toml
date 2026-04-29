@@ -80,6 +80,7 @@ select = [
     "E7",  # pycodestyle: Statement
     "E9",  # pycodestyle: Runtime
     "F",   # Pyflakes
+    "FLY", # flynt
     "I",   # isort
     "N",   # pep8-naming
 ]
