@@ -4,7 +4,7 @@ import os
 import logging
 import tempfile
 from types import TracebackType
-from typing import Any
+from typing import Any, TypeAlias
 from typing import TYPE_CHECKING
 
 from ..elf import get_shobj_deps, is_dynamic_elf, LddError
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..api import StaticxGenerator
     from PyInstaller.archive.readers import CArchiveReader, _TocEntry
 
-    UArchiveReader = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def]
+    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def]
 
     # NOTE: mypy doesn't support selecting different stubs based on library
     # version, so we simply punt and declare this as Any.

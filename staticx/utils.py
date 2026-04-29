@@ -5,11 +5,11 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from tempfile import _TemporaryFileWrapper
-from typing import cast, Any, IO, TypeVar
+from typing import cast, Any, IO, TypeVar, TypeAlias
 from .errors import DirectoryExistsError
 
 
-Pathlike = Path | str
+Pathlike: TypeAlias = Path | str
 T = TypeVar("T")
 
 def make_mode_executable(mode: int) -> int:

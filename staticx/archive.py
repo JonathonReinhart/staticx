@@ -5,7 +5,7 @@ import logging
 import lzma
 from os.path import basename
 from types import TracebackType
-from typing import IO
+from typing import IO, TypeAlias
 from typing_extensions import Literal
 
 from typing import TYPE_CHECKING
@@ -34,9 +34,9 @@ def get_bcj_filter() -> BcjFilter | None:
         name=filt_name,
     )
 
-LzmaFilterChain = list[dict[str, str | int]]
+LzmaFilterChain: TypeAlias = list[dict[str, str | int]]
 
-def get_xz_filters() -> list[dict[str, str | int]]:
+def get_xz_filters() -> LzmaFilterChain:
     filters: LzmaFilterChain = []
 
     # Get a BCJ filter for the current architecture
