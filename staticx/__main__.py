@@ -6,10 +6,10 @@ from .api import generate
 from .errors import Error
 from .version import __version__
 
+_DEFAULT_LOGLEVEL = "WARNING"
+
 
 def parse_args() -> argparse.Namespace:
-    DEFAULT_LOGLEVEL = "WARNING"
-
     ap = argparse.ArgumentParser(prog="staticx")
 
     # Positional arguments
@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--loglevel",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help=f"Set the logging level (default: {DEFAULT_LOGLEVEL})",
+        help=f"Set the logging level (default: {_DEFAULT_LOGLEVEL})",
     )
 
     ap.add_argument("--debug", action="store_true")
@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
     args = ap.parse_args()
 
     if args.loglevel is None:
-        args.loglevel = "DEBUG" if args.debug else DEFAULT_LOGLEVEL
+        args.loglevel = "DEBUG" if args.debug else _DEFAULT_LOGLEVEL
 
     return args
 
