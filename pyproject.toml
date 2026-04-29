@@ -77,4 +77,5 @@ disallow_incomplete_defs = true
 # https://docs.astral.sh/ruff/rules/
 select = [
     "E4",  # pycodestyle: Import
+    "E7",  # pycodestyle: Statement
 ]

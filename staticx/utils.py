@@ -93,7 +93,9 @@ def single(
     """
 
     if key is None:
-        key = lambda _: True
+
+        def key(_: T) -> bool:
+            return True
 
     result: T
     have_result = False

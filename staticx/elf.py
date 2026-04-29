@@ -322,8 +322,11 @@ class ELFFileX(ELFFile):
     # TODO: Constrain return section type to sectype arg
     def get_single_section(self, sectype: type[Section]) -> Section | None:
         """Returns the only section of a given type, or None if absent"""
-        key = lambda sec: isinstance(sec, sectype)
-        return single(self.iter_sections(), key=key, default=None)
+        return single(
+            self.iter_sections(),
+            key=lambda sec: isinstance(sec, sectype),
+            default=None,
+        )
 
     def get_prog_interp(self) -> str:
         for seg in self.iter_segments():

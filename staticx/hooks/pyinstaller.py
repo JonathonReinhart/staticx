@@ -40,7 +40,7 @@ def process_pyinstaller_archive(sx: StaticxGenerator) -> None:
     pyi_ar: UArchiveReader
     try:
         pyi_ar = CArchiveReader(sx.orig_prog)
-    except:
+    except:  # noqa: E722
         # Silence all PyInstaller exceptions here
         return
     logging.info("Opened PyInstaller archive!")
