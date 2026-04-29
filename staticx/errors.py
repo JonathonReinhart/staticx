@@ -1,6 +1,5 @@
 import abc
 from pathlib import Path
-from typing import Union
 
 class Error(Exception):
     """Base type for all exceptions raised by staticx"""
@@ -68,7 +67,7 @@ class LibExistsError(ArchiveError):
 
 class DirectoryExistsError(Error):
     """A given directory already exists"""
-    def __init__(self, path: Union[Path, str]):
+    def __init__(self, path: Path | str):
         super().__init__(
                 f"{path}: is a directory")
         self.path = path

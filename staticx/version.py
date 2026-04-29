@@ -1,7 +1,6 @@
 import dataclasses
 import importlib.metadata
 from pathlib import Path
-from typing import Optional
 import subprocess
 import sys
 
@@ -28,7 +27,7 @@ class GitDescribe:
     rev: str
 
 
-def git_describe() -> Optional[GitDescribe]:
+def git_describe() -> GitDescribe | None:
     # Get the version from the local Git repository
     try:
         subprocess.run(["git", "update-index", "-q", "--refresh"], check=True, cwd=PROJPATH)

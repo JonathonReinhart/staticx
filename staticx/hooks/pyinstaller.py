@@ -4,7 +4,7 @@ import os
 import logging
 import tempfile
 from types import TracebackType
-from typing import Any, Optional, Union
+from typing import Any, TypeAlias
 from typing import TYPE_CHECKING
 
 from ..elf import get_shobj_deps, is_dynamic_elf, LddError
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..api import StaticxGenerator
     from PyInstaller.archive.readers import CArchiveReader, _TocEntry
 
-    UArchiveReader = Union[CArchiveReader, CArchiveReaderPre510Adapter]  # type: ignore [used-before-def]
+    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def]
 
     # NOTE: mypy doesn't support selecting different stubs based on library
     # version, so we simply punt and declare this as Any.
@@ -51,15 +51,15 @@ def process_pyinstaller_archive(sx: StaticxGenerator) -> None:
     # enough to detect this way.
     # We do this after opening the archive to avoid failing for non-pyinstalled
     # input files.
-    if pyi_version[:2] in ((4, 1), (4, 2)):
-        msg = f"PyInstaller v{PyInstaller.__version__} is unsupported\n"
-        msg += "(See https://github.com/JonathonReinhart/staticx/issues/170)"
-        raise Error(msg)
-
-    if pyi_version < (5, 10, 0):
-        # Adapt the CArchiveReader from PyInstaller before 5.10
-        # to the new 5.10+ API.
-        pyi_ar = CArchiveReaderPre510Adapter(pyi_ar)
+    match pyi_version:
+        case (4, 1 | 2, *_):
+            msg = f"PyInstaller v{PyInstaller.__version__} is unsupported\n"
+            msg += "(See https://github.com/JonathonReinhart/staticx/issues/170)"
+            raise Error(msg)
+        case v if v < (5, 10, 0):
+            # Adapt the CArchiveReader from PyInstaller before 5.10
+            # to the new 5.10+ API.
+            pyi_ar = CArchiveReaderPre510Adapter(pyi_ar)
 
     with PyInstallHook(sx, pyi_ar) as h:
         h.process()
@@ -76,9 +76,9 @@ class PyInstallHook:
         return self
 
     def __exit__(self,
-                 type: Optional[type[BaseException]],
-                 value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 type: type[BaseException] | None,
+                 value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         self.tmpdir.cleanup()
 
     def process(self) -> None:

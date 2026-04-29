@@ -5,8 +5,7 @@ import logging
 import lzma
 from os.path import basename
 from types import TracebackType
-from typing import IO, Optional, Union
-from typing_extensions import Literal
+from typing import IO, Literal, TypeAlias
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -22,7 +21,7 @@ class BcjFilter:
     name: str
 
 
-def get_bcj_filter() -> Optional[BcjFilter]:
+def get_bcj_filter() -> BcjFilter | None:
     arch = get_bcj_filter_arch()
     if not arch:
         return None
@@ -34,9 +33,9 @@ def get_bcj_filter() -> Optional[BcjFilter]:
         name=filt_name,
     )
 
-LzmaFilterChain = list[dict[str, Union[str, int]]]
+LzmaFilterChain: TypeAlias = list[dict[str, str | int]]
 
-def get_xz_filters() -> list[dict[str, Union[str, int]]]:
+def get_xz_filters() -> LzmaFilterChain:
     filters: LzmaFilterChain = []
 
     # Get a BCJ filter for the current architecture
@@ -51,7 +50,7 @@ def get_xz_filters() -> list[dict[str, Union[str, int]]]:
 
 class SxArchive:
     fileobj: IO[bytes]
-    xzf: Optional[lzma.LZMAFile]
+    xzf: lzma.LZMAFile | None
     tar: tarfile.TarFile
 
     def __init__(self, fileobj: IO[bytes], mode: Literal["r", "w"], compress: bool):
@@ -89,9 +88,9 @@ class SxArchive:
         return self
 
     def __exit__(self,
-                 type: Optional[type[BaseException]],
-                 value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 type: type[BaseException] | None,
+                 value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         self.close()
 
     def close(self) -> None:
@@ -140,7 +139,7 @@ class SxArchive:
         # Store a link to the program so the bootloader knows what to execute
         self.add_symlink(PROG_FILENAME, name)
 
-    def add_file(self, path: StrPath, arcname: Optional[StrPath] = None) -> None:
+    def add_file(self, path: StrPath, arcname: StrPath | None = None) -> None:
         self.tar.add(path, arcname=arcname)
 
     def add_interp_symlink(self, interp: str) -> None:

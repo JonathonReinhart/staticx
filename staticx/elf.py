@@ -10,7 +10,7 @@ import errno
 import os
 from os import PathLike
 from types import TracebackType
-from typing import Any, BinaryIO, Optional, Union
+from typing import Any, BinaryIO
 
 import elftools
 from elftools.common.exceptions import ELFError
@@ -19,7 +19,12 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import Section
 from elftools.elf.segments import InterpSegment
 
-from .errors import *
+from .errors import (
+    Error,
+    InvalidInputError,
+    MissingToolError,
+    ToolError,
+)
 from .utils import coerce_sequence, single
 
 
@@ -31,7 +36,7 @@ def verify_tools() -> None:
 
 
 class ExternTool:
-    def __init__(self, cmd: str, os_pkg: str, stderr_ignore: list[str] = [], encoding: Optional[str] = None):
+    def __init__(self, cmd: str, os_pkg: str, stderr_ignore: list[str] = [], encoding: str | None = None):
         self.cmd = cmd
         self.os_pkg = os_pkg
         self.stderr_ignore = stderr_ignore
@@ -160,7 +165,7 @@ def _parse_ldd_output(output: str) -> Iterable[str]:
         yield libpath
 
 
-def get_shobj_deps(path: str, libpath: Optional[list[str]] = None) -> list[str]:
+def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
     """Discover the dependencies of a shared object (*.so file)
     """
 
@@ -223,11 +228,11 @@ def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
 
 def patch_elf(
     path: str,
-    interpreter: Optional[str] = None,
-    rpath: Optional[str] = None,
+    interpreter: str | None = None,
+    rpath: str | None = None,
     force_rpath: bool = False,
     no_default_lib: bool = False,
-    add_needed: Union[list[str], str, None] = None,
+    add_needed: list[str] | str | None = None,
 ) -> None:
     args = []
     if interpreter:
@@ -272,7 +277,7 @@ class StaticELFError(Error):
         super().__init__(message)
 
 class ELFFileX(ELFFile):
-    def __init__(self, stream: BinaryIO, path: Optional[str] = None):
+    def __init__(self, stream: BinaryIO, path: str | None = None):
         self.__path = path
         super().__init__(stream)
 
@@ -284,13 +289,13 @@ class ELFFileX(ELFFile):
         return self
 
     def __exit__(self,
-                 type: Optional[type[BaseException]],
-                 value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+                 type: type[BaseException] | None,
+                 value: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         self.stream.close()
 
     # TODO: Constrain return section type to sectype arg
-    def get_single_section(self, sectype: type[Section]) -> Optional[Section]:
+    def get_single_section(self, sectype: type[Section]) -> Section | None:
         """Returns the only section of a given type, or None if absent"""
         key = lambda sec: isinstance(sec, sectype)
         return single(self.iter_sections(), key=key, default=None)
@@ -305,7 +310,7 @@ class ELFFileX(ELFFile):
             f"{self.__path}: not a dynamic executable (no interp segment)")
 
 
-    def get_dynamic_segment(self) -> Optional[DynamicSegment]:
+    def get_dynamic_segment(self) -> DynamicSegment | None:
         for seg in self.iter_segments():
             if seg['p_type'] == 'PT_DYNAMIC':
                 assert isinstance(seg, DynamicSegment)
@@ -315,17 +320,17 @@ class ELFFileX(ELFFile):
     def is_dynamic(self) -> bool:
         return bool(self.get_dynamic_segment())
 
-    def get_single_dynamic_tag(self, name: str) -> Optional[DynamicTag]:
+    def get_single_dynamic_tag(self, name: str) -> DynamicTag | None:
         dyn = self.get_dynamic_segment()
         if dyn:
             return single(dyn.iter_tags(name), default=None)
         return None
 
-    def get_rpath(self) -> Optional[DynamicTag]:
+    def get_rpath(self) -> DynamicTag | None:
         """Returns the value of the DT_RPATH tag of the ELF file"""
         return self.get_single_dynamic_tag('DT_RPATH')
 
-    def get_runpath(self) -> Optional[DynamicTag]:
+    def get_runpath(self) -> DynamicTag | None:
         """Returns the value of the DT_RUNPATH tag of the ELF file"""
         return self.get_single_dynamic_tag('DT_RUNPATH')
 
