@@ -84,8 +84,7 @@ jobs:
 
     - name: Build and install
       run: |
-        python -m build
-        pip install dist/staticx-*-py3-none-manylinux1_x86_64.whl
+        pip install .
         staticx --version
 
         # Make sure we only use the installed wheel

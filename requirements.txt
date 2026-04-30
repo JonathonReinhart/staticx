@@ -1,7 +1,6 @@
 # These requirements are in addition to install_requires from setup.py
 # and are only used for development and testing.
 black~=26.0  # Must match .github/workflows/black.yml
-build
 patchelf-wrapper
 pyinstaller
 types-pyinstaller
