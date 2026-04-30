@@ -2,7 +2,7 @@ from SCons.Action import Action
 
 
 def read_nsswitch_conf(path):
-    with open(path, "r") as f:
+    with open(path) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
