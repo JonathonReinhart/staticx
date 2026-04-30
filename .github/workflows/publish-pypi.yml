@@ -39,7 +39,7 @@ jobs:
         pip install build
 
         sudo apt-get update
-        sudo apt-get install -y musl-tools scons
+        sudo apt-get install -y musl-tools
 
     - name: Build
       env:

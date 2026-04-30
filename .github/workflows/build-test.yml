@@ -48,10 +48,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install --group dev
 
         sudo apt-get update
-        sudo apt-get install -y busybox musl-tools scons
+        sudo apt-get install -y busybox musl-tools
 
         docker pull $TEST_DOCKER_IMAGE
 
@@ -84,8 +84,7 @@ jobs:
 
     - name: Build and install
       run: |
-        python -m build
-        pip install dist/staticx-*-py3-none-manylinux1_x86_64.whl
+        pip install .
         staticx --version
 
         # Make sure we only use the installed wheel

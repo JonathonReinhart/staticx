@@ -36,12 +36,24 @@ documentation = "https://staticx.readthedocs.io/"
 repository = "https://github.com/JonathonReinhart/staticx"
 changelog = "https://github.com/JonathonReinhart/staticx/blob/main/CHANGELOG.md"
 
+[dependency-groups]
+dev = [
+    "cffi",  # Used for test/pyinstall-cffi/
+    "mypy",
+    "pyinstaller",
+    "pytest",
+    "scons",  # Used for test/nss-isolated/
+    "scuba",
+    "types-pyinstaller",
+]
+
 [build-system]
 # Tells pip to install wheel before trying to install
 # from an sdist or from Github.
 requires = [
     "wheel",
     "setuptools >= 42.0.0",
+    "scons",
 ]
 
 # mypy
