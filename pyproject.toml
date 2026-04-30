@@ -42,6 +42,7 @@ dev = [
     "mypy",
     "pyinstaller",
     "pytest",
+    "ruff~=0.15",
     "scons",  # Used for test/nss-isolated/
     "scuba",
     "types-pyinstaller",
