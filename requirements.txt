@@ -9,4 +9,5 @@ scuba
 cffi        # Used for test/pyinstall-cffi/
 pytest
 mypy
+scons       # Used for test/nss-isolated/
 -r docs/requirements.txt
