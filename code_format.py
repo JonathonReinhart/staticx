@@ -24,7 +24,7 @@ def _format_python(fix: bool) -> bool:
 
     if not fix:
         # check only
-        args = args + [
+        args += [
             "--check",
             "--diff",
         ]

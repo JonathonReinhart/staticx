@@ -199,7 +199,7 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
         # Prepend to LD_LIBRARY_PATH
         assert isinstance(libpath, list)
         old_libpath = env.get("LD_LIBRARY_PATH", "")
-        env["LD_LIBRARY_PATH"] = ":".join(libpath + [old_libpath])
+        env["LD_LIBRARY_PATH"] = ":".join([*libpath, old_libpath])
 
     rc, output = tool_ldd.run(path, env=env)
 

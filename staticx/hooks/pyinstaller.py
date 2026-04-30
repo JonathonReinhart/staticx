@@ -101,7 +101,7 @@ class PyInstallHook:
         result = []
 
         for name, item in self.pyi_ar.toc.items():
-            dpos, dlen, ulen, flag, typcd = item
+            _dpos, _dlen, _ulen, _flag, typcd = item
 
             # Only process binary files
             # See xformdict in PyInstaller.building.api.PKG
