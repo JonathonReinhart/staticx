@@ -1,11 +1,10 @@
 import os
-import errno
 import shutil
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from tempfile import _TemporaryFileWrapper
-from typing import cast, Any, IO, TypeVar, TypeAlias, TypeGuard
+from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
+from typing import IO, Any, TypeAlias, TypeGuard, TypeVar, cast
+
 from .errors import DirectoryExistsError
 
 Pathlike: TypeAlias = Path | str
@@ -93,7 +92,9 @@ def single(
     """
 
     if key is None:
-        key = lambda _: True
+
+        def key(_: T) -> bool:
+            return True
 
     result: T
     have_result = False

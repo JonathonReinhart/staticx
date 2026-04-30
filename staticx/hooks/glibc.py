@@ -1,11 +1,14 @@
 from __future__ import annotations
-from ..assets import copy_asset_to_tempfile
-from ..errors import InternalError
-from ..elf import open_elf, get_shobj_deps, patch_elf
-from ..utils import make_executable
-from elftools.elf.gnuversions import GNUVerNeedSection
+
 import logging
 from typing import TYPE_CHECKING
+
+from elftools.elf.gnuversions import GNUVerNeedSection
+
+from ..assets import copy_asset_to_tempfile
+from ..elf import get_shobj_deps, open_elf, patch_elf
+from ..errors import InternalError
+from ..utils import make_executable
 
 if TYPE_CHECKING:
     from ..api import StaticxGenerator

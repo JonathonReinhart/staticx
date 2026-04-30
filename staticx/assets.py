@@ -1,13 +1,13 @@
 import importlib.resources
-import sys
 from tempfile import _TemporaryFileWrapper
-from typing import Any, IO
+from typing import IO, Any
+
 from .utils import copy_fileobj_to_tempfile
 
 
 def locate_asset(name: str, debug: bool) -> IO[bytes]:
     mode = "debug" if debug else "release"
-    path = "/".join(("assets", mode, name))
+    path = f"assets/{mode}/{name}"
     try:
         return importlib.resources.files("staticx").joinpath(path).open("rb")
     except FileNotFoundError:

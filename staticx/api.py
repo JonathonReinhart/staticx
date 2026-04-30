@@ -3,27 +3,18 @@
 # https://github.com/JonathonReinhart/staticx
 #
 from __future__ import annotations
-import shutil
-from tempfile import NamedTemporaryFile, mkdtemp
-import os
-from os.path import basename, islink
+
 import logging
+import os
+import shutil
 import subprocess
+from os.path import basename, islink
+from tempfile import NamedTemporaryFile, mkdtemp
 from types import TracebackType
 
-from .errors import (
-    FormatMismatchError,
-    InternalError,
-    LibExistsError,
-    UnsupportedRpathError,
-    UnsupportedRunpathError,
-)
-from .utils import (
-    copy_to_tempfile,
-    get_symlink_target,
-    make_executable,
-    move_file,
-)
+from .archive import SxArchive
+from .assets import copy_asset_to_tempfile
+from .constants import ARCHIVE_SECTION, MAX_INTERP_LEN, MAX_RPATH_LEN
 from .elf import (
     elf_add_section,
     get_machine,
@@ -35,10 +26,20 @@ from .elf import (
     strip_elf,
     verify_tools,
 )
-from .archive import SxArchive
-from .assets import copy_asset_to_tempfile
-from .constants import ARCHIVE_SECTION, MAX_INTERP_LEN, MAX_RPATH_LEN
+from .errors import (
+    FormatMismatchError,
+    InternalError,
+    LibExistsError,
+    UnsupportedRpathError,
+    UnsupportedRunpathError,
+)
 from .hooks import run_hooks
+from .utils import (
+    copy_to_tempfile,
+    get_symlink_target,
+    make_executable,
+    move_file,
+)
 from .version import __version__
 
 

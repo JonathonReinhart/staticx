@@ -1,7 +1,7 @@
 import argparse
 import os
-import sys
 import subprocess
+import sys
 
 from auxlist import aux_apps
 

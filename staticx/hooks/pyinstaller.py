@@ -1,21 +1,22 @@
 from __future__ import annotations
-from collections.abc import Iterable
-import os
-import logging
-import tempfile
-from types import TracebackType
-from typing import Any, TypeAlias
-from typing import TYPE_CHECKING
 
-from ..elf import get_shobj_deps, is_dynamic_elf, LddError
+import logging
+import os
+import tempfile
+from collections.abc import Iterable
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, TypeAlias
+
+from ..elf import LddError, get_shobj_deps, is_dynamic_elf
 from ..errors import Error, UnsupportedRpathError, UnsupportedRunpathError
 from ..utils import make_executable, mkdirs_for
 
 if TYPE_CHECKING:
-    from ..api import StaticxGenerator
     from PyInstaller.archive.readers import CArchiveReader, _TocEntry
 
-    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def]
+    from ..api import StaticxGenerator
+
+    UArchiveReader: TypeAlias = CArchiveReader | CArchiveReaderPre510Adapter  # type: ignore [used-before-def] # noqa: F821
 
     # NOTE: mypy doesn't support selecting different stubs based on library
     # version, so we simply punt and declare this as Any.
@@ -40,7 +41,7 @@ def process_pyinstaller_archive(sx: StaticxGenerator) -> None:
     pyi_ar: UArchiveReader
     try:
         pyi_ar = CArchiveReader(sx.orig_prog)
-    except:
+    except:  # noqa: E722
         # Silence all PyInstaller exceptions here
         return
     logging.info("Opened PyInstaller archive!")
@@ -100,7 +101,7 @@ class PyInstallHook:
         result = []
 
         for name, item in self.pyi_ar.toc.items():
-            dpos, dlen, ulen, flag, typcd = item
+            _dpos, _dlen, _ulen, _flag, typcd = item
 
             # Only process binary files
             # See xformdict in PyInstaller.building.api.PKG

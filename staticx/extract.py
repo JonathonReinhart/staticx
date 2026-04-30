@@ -1,6 +1,6 @@
-from tempfile import NamedTemporaryFile
-import tarfile
 import os
+import tarfile
+from tempfile import NamedTemporaryFile
 
 from .constants import ARCHIVE_SECTION
 from .elf import elf_dump_section

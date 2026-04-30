@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import black
 import glob
+import subprocess
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.resolve()
@@ -17,20 +17,19 @@ PYTHON_CODE = (
 )
 
 
-def _run_black(fix: bool) -> bool:
-    args = []
+def _format_python(fix: bool) -> bool:
+    args = ["ruff", "format"]
     for pat in PYTHON_CODE:
         args += glob.glob(pat, root_dir=PROJECT_DIR)
 
     if not fix:
         # check only
-        args = args + [
+        args += [
             "--check",
-            "--color",
             "--diff",
         ]
 
-    status = black.main(args, standalone_mode=False)
+    status = subprocess.run(args).returncode
 
     if status == 0:
         return True
@@ -55,7 +54,7 @@ def main() -> None:
     ok = True
 
     print(f"\n{'Fixing' if args.fix else 'Checking'} Python code formatting...")
-    ok &= _run_black(args.fix)
+    ok &= _format_python(args.fix)
 
     if not ok:
         print("\nTo fix, rerun with --fix")

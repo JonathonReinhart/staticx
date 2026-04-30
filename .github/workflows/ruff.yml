@@ -1,0 +1,22 @@
+# Enforce code formatting and linting with Ruff
+# https://docs.astral.sh/ruff/integrations/#github-actions
+name: Ruff
+on: [push, pull_request]
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Run the linter
+      - name: Lint with Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check"
+
+      # Run the formatter in check mode
+      - name: Format with Ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check"

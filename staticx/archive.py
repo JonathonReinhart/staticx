@@ -1,20 +1,19 @@
 from __future__ import annotations
+
 import dataclasses
-import tarfile
 import logging
 import lzma
+import tarfile
 from os.path import basename
 from types import TracebackType
-from typing import IO, Literal, TypeAlias
-
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Literal, TypeAlias
 
 if TYPE_CHECKING:
     from _typeshed import StrPath
 
 from .bcjfilter import get_bcj_filter_arch
 from .constants import INTERP_FILENAME, PROG_FILENAME
-from .utils import get_symlink_target, make_mode_executable
+from .utils import make_mode_executable
 
 
 @dataclasses.dataclass

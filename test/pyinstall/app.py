@@ -1,7 +1,6 @@
 import os
-import sys
 import pwd
-import subprocess
+import sys
 
 
 def get_resource_dir():

@@ -1,3 +1,4 @@
+from SCons.Errors import UserError
 from SCons.Util import is_List
 
 

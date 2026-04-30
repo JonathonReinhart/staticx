@@ -1,14 +1,13 @@
 from __future__ import annotations
-from collections.abc import Iterable
+
+import locale
+import logging
+import os
+import re
 import shutil
 import subprocess
 import sys
-import re
-import locale
-import logging
-import errno
-import os
-from os import PathLike
+from collections.abc import Iterable
 from types import TracebackType
 from typing import Any, BinaryIO
 
@@ -162,7 +161,7 @@ def _parse_ldd_output(output: str) -> Iterable[str]:
             raise LddError("Unexpected line in ldd output: " + line)
         libname = m.group(1)
         resolved = m.group(2)
-        baseaddr = int(m.group(3), 16)
+        _baseaddr = int(m.group(3), 16)
 
         if resolved:
             # ldd outupt a resolved symlink, use that
@@ -200,7 +199,7 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
         # Prepend to LD_LIBRARY_PATH
         assert isinstance(libpath, list)
         old_libpath = env.get("LD_LIBRARY_PATH", "")
-        env["LD_LIBRARY_PATH"] = ":".join(libpath + [old_libpath])
+        env["LD_LIBRARY_PATH"] = ":".join([*libpath, old_libpath])
 
     rc, output = tool_ldd.run(path, env=env)
 
@@ -234,15 +233,14 @@ def elf_add_section(elfpath: str, secname: str, secfilename: str) -> None:
 
 def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
     # https://stackoverflow.com/a/3925113/119527
-    tool_objcopy.run_check(
-        # fmt: off
+    args = [
         "-O", "binary",
         "--only-section", secname,
         "--set-section-flags", f"{secname}=alloc",
         elfpath,
         outpath,
-        # fmt: on
-    )
+    ]  # fmt: skip
+    tool_objcopy.run_check(*args)
 
 
 def patch_elf(
@@ -323,8 +321,11 @@ class ELFFileX(ELFFile):
     # TODO: Constrain return section type to sectype arg
     def get_single_section(self, sectype: type[Section]) -> Section | None:
         """Returns the only section of a given type, or None if absent"""
-        key = lambda sec: isinstance(sec, sectype)
-        return single(self.iter_sections(), key=key, default=None)
+        return single(
+            self.iter_sections(),
+            key=lambda sec: isinstance(sec, sectype),
+            default=None,
+        )
 
     def get_prog_interp(self) -> str:
         for seg in self.iter_segments():
@@ -384,5 +385,5 @@ def is_dynamic_elf(path: str) -> bool:
     try:
         with ELFFileX.open(path) as elf:
             return elf.is_dynamic()
-    except ELFError as e:
+    except ELFError:
         return False

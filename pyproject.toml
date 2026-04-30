@@ -42,6 +42,7 @@ dev = [
     "mypy",
     "pyinstaller",
     "pytest",
+    "ruff~=0.15",
     "scons",  # Used for test/nss-isolated/
     "scuba",
     "types-pyinstaller",
@@ -69,3 +70,24 @@ module = "staticx.*"
 disallow_untyped_calls = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+
+# ruff
+# https://docs.astral.sh/ruff/configuration/
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = [
+    "E4",  # pycodestyle: Import
+    "E7",  # pycodestyle: Statement
+    "E9",  # pycodestyle: Runtime
+    "F",   # Pyflakes
+    "FLY", # flynt
+    "I",   # isort
+    "N",   # pep8-naming
+    "RUF", # Ruff-specific rules
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore pep8-naming (N) rules in site_scons and setup.py.
+"site_scons/**.py" = ["N"]
+"setup.py" = ["N", "RUF"]

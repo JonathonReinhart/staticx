@@ -1,7 +1,9 @@
 from __future__ import annotations
-from .pyinstaller import process_pyinstaller_archive
-from .glibc import process_glibc_prog
+
 from typing import TYPE_CHECKING
+
+from .glibc import process_glibc_prog
+from .pyinstaller import process_pyinstaller_archive
 
 if TYPE_CHECKING:
     from ..api import StaticxGenerator

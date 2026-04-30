@@ -1,6 +1,6 @@
 def CheckNSS(context):
     context.Message("Checking for NSS...")
-    ok, output = context.TryRun(
+    ok, _output = context.TryRun(
         extension=".c",
         text="""
 #include <nss.h>
