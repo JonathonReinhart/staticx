@@ -6,7 +6,7 @@ from distutils.command.build import build
 from subprocess import check_call
 
 from setuptools import Command, find_packages, setup
-from wheel.bdist_wheel import bdist_wheel
+from setuptools.command.bdist_wheel import bdist_wheel
 
 ################################################################################
 # Dynamic versioning
