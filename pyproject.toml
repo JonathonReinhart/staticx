@@ -57,6 +57,19 @@ requires = [
     "scons",
 ]
 
+[tool.setuptools]
+packages = [
+    "staticx",
+    "staticx.hooks",
+]
+zip-safe = false # http://stackoverflow.com/q/24642788/119527
+
+[tool.setuptools.package-data]
+staticx = [
+    "assets/debug/*",
+    "assets/release/*",
+]
+
 # mypy
 [tool.mypy]
 python_version = "3.10"
