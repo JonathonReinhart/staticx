@@ -33,6 +33,10 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
+    # Avoid issues with other apt actions (see #315)
+    - name: APT Update
+      run: sudo apt-get update
+
     # https://github.com/actions/checkout#fetch-all-history-for-all-tags-and-branches
     - run: git fetch --prune --unshallow
 
@@ -50,7 +54,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install --group dev
 
-        sudo apt-get update
         sudo apt-get install -y busybox musl-tools
 
         docker pull $TEST_DOCKER_IMAGE
