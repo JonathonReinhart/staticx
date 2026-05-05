@@ -9,7 +9,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
@@ -23,7 +22,8 @@ dependencies = [
     "pyelftools",
 ]
 description = "Build static self-extracting app from dynamic executable"
-license = {file = "LICENSE.txt"}
+license = "GPL-2.0-or-later WITH Bootloader-exception"
+license-files = ["LICENSE.txt"]
 readme = "README.md"
 requires-python = ">=3.10"
 
@@ -53,7 +53,7 @@ dev = [
 # from an sdist or from Github.
 requires = [
     "wheel",
-    "setuptools >= 42.0.0",
+    "setuptools >= 77.0.3",  # PEP 639 support added in 77.0.3
     "scons",
 ]
 
