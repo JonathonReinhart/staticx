@@ -5,7 +5,7 @@ import sys
 from distutils.command.build import build
 from subprocess import check_call
 
-from setuptools import Command, find_packages, setup
+from setuptools import Command, setup
 from setuptools.command.bdist_wheel import bdist_wheel
 
 ################################################################################
@@ -125,16 +125,6 @@ setup(
     version=get_dynamic_version(),
     #####
     # Setuptools-specific config
-    # We could put this in pyproject.toml [tool.setuptools], but choose not to:
-    # - The functionality is still in beta and requires setuptools >= 61.0.0
-    # - We need setup.py to provide build_hook, so we might as well keep all
-    #   setuptools-specific config here, in one file.
-    packages=find_packages(),
-    package_data={
-        "staticx": ["assets/*/*"],
-    },
-    include_package_data=True,  # https://github.com/pypa/setuptools/issues/1064
-    zip_safe=False,  # http://stackoverflow.com/q/24642788/119527
     # http://stackoverflow.com/questions/17806485
     # http://stackoverflow.com/questions/21915469
     # PyInstaller setup.py
