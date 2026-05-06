@@ -6,11 +6,73 @@ import pytest
 from staticx import utils
 
 
+def test_make_mode_executable():
+    assert utils.make_mode_executable(0o444) == 0o555
+    assert utils.make_mode_executable(0o644) == 0o755
+    assert utils.make_mode_executable(0o600) == 0o700
+    assert utils.make_mode_executable(0o755) == 0o755
+
+
 def test_make_executable():
     with tempfile.NamedTemporaryFile() as tf:
+        os.chmod(tf.name, 0o644)
         assert (os.stat(tf.name).st_mode & 0o111) == 0
         utils.make_executable(tf.name)
         assert (os.stat(tf.name).st_mode & 0o111) != 0
+
+
+def test_get_symlink_target(tmp_path):
+    target = tmp_path / "target"
+    target.write_text("hello")
+    link = tmp_path / "link"
+    os.symlink(target, link)
+    assert utils.get_symlink_target(link) == str(target)
+
+
+def test_move_file(tmp_path):
+    src = tmp_path / "src"
+    src.write_text("hello")
+    dst = tmp_path / "dst"
+    utils.move_file(str(src), str(dst))
+    assert dst.read_text() == "hello"
+    assert not src.exists()
+
+
+def test_move_file_directory_exists_error(tmp_path):
+    src = tmp_path / "src"
+    src.write_text("hello")
+    dst = tmp_path / "dst_dir"
+    dst.mkdir()
+    from staticx.errors import DirectoryExistsError
+
+    with pytest.raises(DirectoryExistsError):
+        utils.move_file(str(src), str(dst))
+
+
+def test_mkdirs_for(tmp_path):
+    path = tmp_path / "a" / "b" / "c.txt"
+    utils.mkdirs_for(path)
+    assert (tmp_path / "a" / "b").is_dir()
+
+
+def test_copy_fileobj_to_tempfile():
+    content = b"hello world"
+    with tempfile.TemporaryFile() as fsrc:
+        fsrc.write(content)
+        fsrc.seek(0)
+        with utils.copy_fileobj_to_tempfile(fsrc) as tf:
+            assert tf.read() == content
+
+
+def test_copy_to_tempfile(tmp_path):
+    src = tmp_path / "test.txt"
+    content = b"hello world"
+    src.write_bytes(content)
+    os.chmod(src, 0o755)
+
+    with utils.copy_to_tempfile(src) as tf:
+        assert tf.read() == content
+        assert (os.stat(tf.name).st_mode & 0o777) == 0o755
 
 
 # is_iterable
