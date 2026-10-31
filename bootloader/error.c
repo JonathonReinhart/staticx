@@ -11,7 +11,8 @@ error(int status, int errnum, const char *format, ...)
 {
     fflush(stdout);
 
-    fprintf(stderr, "%s: ", program_invocation_short_name);
+    const char *prog = program_invocation_short_name ? program_invocation_short_name : "unknown";
+    fprintf(stderr, "staticx [%s]: ", prog);
 
     va_list ap;
     va_start(ap, format);
