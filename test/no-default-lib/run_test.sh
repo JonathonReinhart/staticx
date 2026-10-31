@@ -11,7 +11,7 @@ outfile="./app.staticx"
 libname="libcrypt.so"
 
 # Build the application
-gcc -Wall -Werror -DLIBNAME="\"$libname\"" -o $app app.c -ldl || exit $?
+gcc -Wall -Werror -o $app app.c -ldl || exit $?
 
 # Run the application normally
 echo -e "\nApp run normally:"
