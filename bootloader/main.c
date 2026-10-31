@@ -11,6 +11,9 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <sys/wait.h>
+#ifdef __linux__
+#include <sys/auxv.h>
+#endif
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -408,6 +411,18 @@ get_real_prog_path(void)
     return result;
 }
 
+static void
+check_secure_execution(void)
+{
+    if (getuid() != geteuid() || getgid() != getegid())
+        error(2, 0, "Running as setuid/setgid is unsupported for security reasons.");
+
+#if defined(__linux__) && defined(AT_SECURE)
+    if (getauxval(AT_SECURE))
+        error(2, 0, "Binary was launched in secure mode (AT_SECURE).");
+#endif
+}
+
 static void identify(void)
 {
     debug_printf("bootloader version %s\n", STATICX_VERSION);
@@ -424,6 +439,8 @@ main(int argc, char **argv)
 {
     identify();
     xz_crc32_init();
+
+    check_secure_execution();
 
     /* Create temporary directory where archive will be extracted */
     m_bundle_dir = create_tmpdir();
