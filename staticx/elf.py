@@ -345,6 +345,14 @@ class ELFFileX(ELFFile):
             default=None,
         )
 
+    def get_section_by_name(self, name: str) -> Section | None:
+        """Returns the only section of a given name, or None if absent"""
+        return single(
+            self.iter_sections(),
+            key=lambda sec: sec.name == name,
+            default=None,
+        )
+
     def get_prog_interp(self) -> str:
         for seg in self.iter_segments():
             # Amazingly, this is slightly faster than
