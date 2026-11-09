@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <elf.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <libgen.h>
 #include "xz.h"
 #include "error.h"
 #include "mmap.h"
@@ -205,10 +207,29 @@ patch_app(const char *prog_path)
     free(interp_path);
 }
 
+int
+mkpath(const char *dir, mode_t mode)
+{
+	struct stat sb;
+
+	if (!dir) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (!stat(dir, &sb))
+		return 0;
+
+	mkpath(dirname(strdupa(dir)), mode);
+
+	return mkdir(dir, mode);
+}
+
 static char *
 create_tmpdir(void)
 {
     const char *tmproot = getenv(TMPDIR) ?: "/tmp";
+	mkpath(tmproot, 0755);
     char *template = path_join(tmproot, "staticx-XXXXXX");
     char *tmpdir = mkdtemp(template);
     if (!tmpdir)
