@@ -10,7 +10,7 @@ python3 -m venv venv || return $?
 source venv/bin/activate || return $?
 
 echo -e "\nInstalling dependencies..."
-pip install --upgrade pip || return $?
+pip install --upgrade pip setuptools || return $?
 pip install --group dev || return $?
 
 echo -e "\nInstalling editable package..."
