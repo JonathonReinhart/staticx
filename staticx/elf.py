@@ -8,8 +8,9 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Iterable
+from pathlib import Path
 from types import TracebackType
-from typing import Any, BinaryIO
+from typing import TYPE_CHECKING, Any, BinaryIO
 
 import elftools
 from elftools.common.exceptions import ELFError
@@ -24,7 +25,10 @@ from .errors import (
     MissingToolError,
     ToolError,
 )
-from .utils import coerce_sequence, single
+from .utils import Pathlike, coerce_sequence, single
+
+if TYPE_CHECKING:
+    from _typeshed import StrOrBytesPath
 
 
 def verify_tools() -> None:
@@ -56,7 +60,12 @@ class ExternTool:
                 return True
         return False
 
-    def run(self, *args: str, _internal: bool = False, **kw: Any) -> tuple[int, str]:
+    def run(
+        self,
+        *args: StrOrBytesPath,
+        _internal: bool = False,
+        **kw: Any,
+    ) -> tuple[int, str]:
         proc_args = list(args)
         proc_args.insert(0, self.cmd)
 
@@ -81,7 +90,7 @@ class ExternTool:
 
         return r.returncode, r.stdout
 
-    def run_check(self, *args: str, **kw: Any) -> str:
+    def run_check(self, *args: StrOrBytesPath, **kw: Any) -> str:
         rc, stdout = self.run(*args, **kw)
 
         if rc != 0:
@@ -184,7 +193,7 @@ def _parse_ldd_output(output: str) -> Iterable[str]:
         yield libpath
 
 
-def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
+def get_shobj_deps(path: Pathlike, libpath: list[str] | None = None) -> list[str]:
     """Discover the dependencies of a shared object (*.so file)"""
 
     # First verify we're dealing with a dynamic ELF file
@@ -201,7 +210,7 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
         old_libpath = env.get("LD_LIBRARY_PATH", "")
         env["LD_LIBRARY_PATH"] = ":".join([*libpath, old_libpath])
 
-    rc, output = tool_ldd.run(path, env=env)
+    rc, output = tool_ldd.run(str(path), env=env)
 
     if rc != 0:
         # There are multiple ways this can happen:
@@ -227,11 +236,19 @@ def get_shobj_deps(path: str, libpath: list[str] | None = None) -> list[str]:
     return list(_parse_ldd_output(output))
 
 
-def elf_add_section(elfpath: str, secname: str, secfilename: str) -> None:
+def elf_add_section(elfpath: Pathlike, secname: str, secfilename: str) -> None:
     tool_objcopy.run_check("--add-section", f"{secname}={secfilename}", elfpath)
 
 
-def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
+def elf_update_section(elfpath: Pathlike, secname: str, secfilename: str) -> None:
+    tool_objcopy.run_check("--update-section", f"{secname}={secfilename}", elfpath)
+
+
+def elf_remove_section(elfpath: Pathlike, secname: str) -> None:
+    tool_objcopy.run_check("--remove-section", f"{secname}", elfpath)
+
+
+def elf_dump_section(elfpath: Pathlike, secname: str, outpath: Pathlike) -> None:
     # https://stackoverflow.com/a/3925113/119527
     args = [
         "-O", "binary",
@@ -244,14 +261,14 @@ def elf_dump_section(elfpath: str, secname: str, outpath: str) -> None:
 
 
 def patch_elf(
-    path: str,
+    path: Pathlike,
     interpreter: str | None = None,
     rpath: str | None = None,
     force_rpath: bool = False,
     no_default_lib: bool = False,
     add_needed: list[str] | str | None = None,
 ) -> None:
-    args = []
+    args: list[str | Pathlike] = []
     if interpreter:
         args += ["--set-interpreter", interpreter]
     if rpath:
@@ -278,11 +295,11 @@ def patch_elf(
         tool_patchelf.run_check("--no-default-lib", path)
 
 
-def remove_rpath(path: str) -> None:
+def remove_rpath(path: Pathlike) -> None:
     tool_patchelf.run_check("--remove-rpath", path)
 
 
-def strip_elf(path: str) -> None:
+def strip_elf(path: Pathlike) -> None:
     tool_strip.run_check(path)
 
 
@@ -293,19 +310,20 @@ def strip_elf(path: str) -> None:
 class StaticELFError(Error):
     """Dynamic operation requested on static executable"""
 
-    def __init__(self, path: str):
+    def __init__(self, path: Pathlike):
         message = f"{path} is a static ELF file"
         super().__init__(message)
 
 
 class ELFFileX(ELFFile):
-    def __init__(self, stream: BinaryIO, path: str | None = None):
+    def __init__(self, stream: BinaryIO, path: Path | None = None):
         self.__path = path
         super().__init__(stream)
 
     @classmethod
-    def open(cls, path: str) -> ELFFileX:
-        return cls(open(path, "rb"), path=path)
+    def open(cls, path: Pathlike) -> ELFFileX:
+        path = Path(path)
+        return cls(path.open("rb"), path=path)
 
     def __enter__(self) -> ELFFileX:
         return self
@@ -362,26 +380,26 @@ class ELFFileX(ELFFile):
         return self.get_single_dynamic_tag("DT_RUNPATH")
 
 
-def open_elf(path: str) -> ELFFileX:
+def open_elf(path: Pathlike) -> ELFFileX:
     try:
         return ELFFileX.open(path)
     except ELFError as e:
         raise InvalidInputError(f"{path}: Invalid ELF image: {e}")
 
 
-def get_machine(path: str) -> str:
+def get_machine(path: Pathlike) -> str:
     with open_elf(path) as elf:
         machine = elf["e_machine"]
         assert isinstance(machine, str)
         return machine
 
 
-def get_prog_interp(path: str) -> str:
+def get_prog_interp(path: Pathlike) -> str:
     with open_elf(path) as elf:
         return elf.get_prog_interp()
 
 
-def is_dynamic_elf(path: str) -> bool:
+def is_dynamic_elf(path: Pathlike) -> bool:
     try:
         with ELFFileX.open(path) as elf:
             return elf.is_dynamic()
