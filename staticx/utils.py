@@ -8,6 +8,7 @@ from typing import IO, Any, TypeAlias, TypeGuard, TypeVar, cast
 from .errors import DirectoryExistsError
 
 Pathlike: TypeAlias = Path | str
+D = TypeVar("D")
 T = TypeVar("T")
 
 
@@ -75,8 +76,8 @@ _NO_DEFAULT = _Sentinel()
 def single(
     iterable: Iterable[T],
     key: Callable[[T], bool] | None = None,
-    default: T | _Sentinel = _NO_DEFAULT,
-) -> T:
+    default: D | _Sentinel = _NO_DEFAULT,
+) -> T | D:
     """Returns a single item from iterable
 
     Arguments:
