@@ -13,9 +13,9 @@ from pathlib import Path
 from types import TracebackType
 from typing import TYPE_CHECKING
 
-from ..elf import ELFFileX, LddError, get_shobj_deps, is_dynamic_elf
+from ..elf import ELFFileX, LddError, get_shobj_deps, is_dynamic_elf, remove_rpath
 from ..errors import Error, UnsupportedRpathError, UnsupportedRunpathError
-from ..utils import Pathlike, make_executable, mkdirs_for
+from ..utils import Pathlike, align_up, get_env_flag, make_executable, mkdirs_for
 
 if TYPE_CHECKING:
     from ..api import StaticxGenerator
@@ -31,7 +31,13 @@ def process_pyinstaller_archive(sx: StaticxGenerator) -> None:
         return
     logging.info("Opened PyInstaller archive!")
 
-    with PyInstallHook(sx, pyi_ar) as h:
+    with PyInstallHook(
+        sx,
+        pyi_ar,
+        enable_archive_rewrite=get_env_flag(
+            "STATICX_ENABLE_PYINSTALLER_ARCHIVE_REWRITE"
+        ),
+    ) as h:
         h.process()
 
 
@@ -40,9 +46,11 @@ class PyInstallHook:
         self,
         sx: StaticxGenerator,
         pyi_archive: ArchiveReader,
+        enable_archive_rewrite: bool = False,
     ):
         self.sx = sx
         self.pyi_ar = pyi_archive
+        self.enable_archive_rewrite = enable_archive_rewrite
 
         self._tmpdir = tempfile.TemporaryDirectory(prefix="staticx-pyi-")
 
@@ -62,17 +70,111 @@ class PyInstallHook:
         return Path(self._tmpdir.name)
 
     def process(self) -> None:
+        logging.debug("Extracting binaries")
         binaries = self._extract_binaries()
+        logging.debug(f"Extracted {len(binaries)} binaries")
 
         # These could be Python libraries, shared object dependencies, or
         # anything else a user might add via `binaries` in the .spec file.
         # Filter out everything except dynamic ELFs
         binaries = [b for b in binaries if is_dynamic_elf(b)]
+        logging.debug(f"Found {len(binaries)} dynamic ELF files")
 
-        self._audit_libs(binaries)
+        logging.debug("Auditing libs")
+        rewritten_libs = self._audit_libs(binaries)
 
+        logging.debug("Adding deps")
         for binary in binaries:
             self._add_required_deps(binary)
+
+        # Rebuild the PyInstaller archive if necessary
+        # (e.g. because library RPATH/RUNPATH were rewritten).
+        if rewritten_libs:
+            assert self.enable_archive_rewrite
+
+            new_ar_path = self.workdir / "NEW_FUCKING_ARCHIVE.pkg"
+            logging.info(f"Rebuilding PyInstaller archive: {new_ar_path}")
+
+            writer = ArchiveWriter(new_ar_path)
+            with writer:
+                # For each entry in the original archive TOC...
+                for toc_entry in self.pyi_ar.toc:
+                    # Was this rewritten?
+                    if toc_entry.name in rewritten_libs:
+                        # Add from modified file
+                        logging.debug(f"  Copying {toc_entry.name} from modified lib!")
+                        modified_lib_path = self.workdir / toc_entry.name
+                        data = modified_lib_path.read_bytes()
+
+                        writer.write_blob(
+                            name=toc_entry.name,
+                            typecode=toc_entry.typecode,
+                            data=data,
+                            compress=True,  # TODO ???
+                        )
+                    else:
+                        # Copy from input archive
+                        logging.debug(
+                            f"  Copying {toc_entry.name} from original archive"
+                        )
+                        raw_data = self.pyi_ar.extract_raw(toc_entry)
+                        # raw_data may or may not be compressed
+
+                        # TODO: Add ArchiveWriter.copy_from(other_ar, toc_entry)?
+                        writer.write_raw(
+                            name=toc_entry.name,
+                            typecode=toc_entry.typecode,
+                            data=raw_data,
+                            compression_flag=toc_entry.compression_flag,
+                            uncompressed_length=toc_entry.uncompressed_length,
+                        )
+
+                writer.finalize(
+                    pyvers=self.pyi_ar.cookie.pyvers,
+                    pylib_name=self.pyi_ar.cookie.pylib_name,
+                )
+
+            logging.info(f"Wrote new PyInstaller archive: {new_ar_path}")
+
+            # Replace the original archive in the user program PyInstaller app
+
+            # XXX Figure out why this causes corruption (test/pyinstall-lib-runpath)
+            #
+            # At build time:
+            # objcopy: /tmp/sttlniT3: warning: allocated section `.dynsym' not in segment
+            #
+            # At runtime: segfault
+            #
+            # GDB:
+            # warning: Loadable section ".dynamic" outside of ELF segments
+            # warning: Loadable section ".dynsym" outside of ELF segments
+            # warning: Loadable section ".dynstr" outside of ELF segments
+            #
+            # elf_update_section(self.sx.tmpprog, _ARCHIVE_ELF_SECTION_NAME, new_ar_path)
+            #
+            # elf_remove_section(self.sx.tmpprog, _ARCHIVE_ELF_SECTION_NAME)
+            # elf_add_section(self.sx.tmpprog, _ARCHIVE_ELF_SECTION_NAME, new_ar_path)
+
+            new_ar_data = new_ar_path.read_bytes()
+
+            assert self.sx.tmpprog
+            with ELFFileX.open(self.sx.tmpprog) as elf:
+                pydata_sec = elf.get_section_by_name(_ARCHIVE_ELF_SECTION_NAME)
+                assert pydata_sec
+                logging.info(
+                    f"Found {pydata_sec.name!r} section: {pydata_sec.data_size} bytes"
+                    f" at offset {pydata_sec.header.sh_offset:#x}"
+                )
+
+                assert len(new_ar_data) <= pydata_sec.data_size
+                target_off = pydata_sec.header.sh_offset
+                extra = pydata_sec.data_size - len(new_ar_data)
+
+            with open(self.sx.tmpprog, "r+b") as f:
+                f.seek(target_off)
+                f.write(new_ar_data)
+                f.write(b"Z" * extra)
+            logging.info(f"Patched {self.sx.tmpprog}")
 
     def _extract_binaries(self) -> list[Path]:
         result = []
@@ -99,19 +201,31 @@ class PyInstallHook:
 
         return result
 
-    def _audit_libs(self, libs: Iterable[Path]) -> None:
-        """Audit the dynamic libraries included in the PyInstaller archive"""
+    def _audit_libs(self, libs: Iterable[Path]) -> set[str]:
+        """Audit the dynamic libraries included in the PyInstaller archive
+
+        Returns a set of modified library names (as found in the TOC).
+        """
+        rewritten: set[str] = set()
         errors = []
         for libpath in libs:
+            libname = str(libpath.relative_to(self.workdir))
+
             # Check for RPATH/RUNPATH, but only "dangerous" values and let
             # "harmless" values pass (e.g. "$ORIGIN/cffi.libs")
             try:
                 self.sx.check_library_rpath(str(libpath), dangerous_only=True)
             except (UnsupportedRpathError, UnsupportedRunpathError) as e:
-                # Unfortunately, there's no easy way to fix an UnsupportedRunpathError
-                # here, because staticx is not about to to modify the library and
-                # re-pack the PyInstaller archive itself.
-                errors.append(e)
+                if self.enable_archive_rewrite:
+                    # Experimental new behavior: Strip rpath/runpath and
+                    # rewrite the PyInstaller archive.
+                    logging.info(f"Removing RPATH/RUNPATH from library {libname}")
+                    remove_rpath(libpath)
+                    assert libname not in rewritten
+                    rewritten.add(libname)
+                else:
+                    # Legacy beahvior: Report an error and abort.
+                    errors.append(e)
 
         if errors:
             msg = "Unsupported PyInstaller input\n\n"
@@ -121,6 +235,8 @@ class PyInstallHook:
                 msg += f"  {err.libpath}: {err.tag}={err.value!r}\n"
             msg += "\nSee https://github.com/JonathonReinhart/staticx/issues/188"
             raise Error(msg)
+
+        return rewritten
 
     def _add_required_deps(self, lib: Path) -> None:
         """Add dependencies of lib to staticx archive"""
@@ -149,7 +265,8 @@ class PyInstallHook:
 
 
 ################################################################################
-# PyInstaller Archive (PKG) interaction
+# PyInstaller format
+
 
 # typedef struct _archive_cookie
 # {
@@ -187,6 +304,17 @@ class Cookie:
             toc_length=parts[3],
             pyvers=parts[4],
             pylib_name=parts[5].rstrip(b"\0").decode("ascii"),
+        )
+
+    def serialize(self) -> bytes:
+        return struct.pack(
+            _COOKIE_FORMAT,
+            _COOKIE_MAGIC_PATTERN,
+            self.archive_length,
+            self.toc_offset,
+            self.toc_length,
+            self.pyvers,
+            self.pylib_name.encode("ascii"),
         )
 
 
@@ -236,11 +364,119 @@ class TocEntry:
             name=name,
         ), entry_length
 
+    def serialize(self) -> bytes:
+        name_bytes = self.name.encode("utf-8") + b"\0"
+
+        # Pad entry to multiple of 16 bytes
+        entry_length = align_up(TocEntryStruct.size + len(name_bytes), 16)
+
+        data = (
+            TocEntryStruct.pack(
+                entry_length,
+                self.offset,
+                self.length,
+                self.uncompressed_length,
+                self.compression_flag,
+                self.typecode.encode("ascii"),
+            )
+            + name_bytes
+        )
+        return data.ljust(entry_length, b"\0")
+
 
 # See PyInstaller/builders/api.py EXE.assemble()
 # Since commit 85dfef01 Use objcopy to create a vaild ELF file
 # on Feb 18, 2016 first seen in v3.2.
 _ARCHIVE_ELF_SECTION_NAME = "pydata"
+
+
+class ArchiveWriter:
+    _COMPRESSION_LEVEL = 9
+
+    def __init__(self, outpath: Pathlike):
+        self._exit_stack = contextlib.ExitStack()
+        self._f = self._exit_stack.enter_context(open(outpath, "wb"))
+        self._finalized = False
+        self._toc_entries: list[TocEntry] = []
+
+    def __enter__(self) -> ArchiveWriter:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        if exc_type is None and not self._finalized:
+            raise Exception("Not finalized!")
+        return self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
+
+    def write_raw(
+        self,
+        name: str,
+        typecode: str,
+        data: bytes,
+        compression_flag: bool,
+        uncompressed_length: int,
+    ) -> None:
+        offset = self._f.tell()
+        self._f.write(data)
+
+        toc_entry = TocEntry(
+            offset=offset,
+            length=len(data),
+            uncompressed_length=uncompressed_length,
+            compression_flag=compression_flag,
+            typecode=typecode,
+            name=name,
+        )
+        self._toc_entries.append(toc_entry)
+
+    def write_blob(
+        self,
+        name: str,
+        typecode: str,
+        data: bytes,
+        compress: bool = False,
+    ) -> None:
+        orig_len = len(data)
+        if compress:
+            data = zlib.compress(data, level=self._COMPRESSION_LEVEL)
+        return self.write_raw(
+            name=name,
+            typecode=typecode,
+            data=data,
+            compression_flag=compress,
+            uncompressed_length=orig_len,
+        )
+
+    def finalize(
+        self,
+        pyvers: int,
+        pylib_name: str,
+    ) -> None:
+        assert not self._finalized
+
+        # Write TOC
+        toc_offset = self._f.tell()
+        for toc_entry in self._toc_entries:
+            self._f.write(toc_entry.serialize())
+        toc_length = self._f.tell() - toc_offset
+
+        # Write Cookie
+        archive_length = toc_offset + toc_length + _COOKIE_LENGTH
+        cookie = Cookie(
+            archive_length=archive_length,
+            toc_offset=toc_offset,
+            toc_length=toc_length,
+            pyvers=pyvers,
+            pylib_name=pylib_name,
+        )
+        self._f.write(cookie.serialize())
+        assert self._f.tell() == archive_length
+
+        self._finalized = True
 
 
 class ArchiveReader:
@@ -349,6 +585,31 @@ def _cmd_extract(args: argparse.Namespace) -> None:
             logging.info(f"Wrote {toc_entry.name}")
 
 
+def _cmd_recreate(args: argparse.Namespace) -> None:
+    reader = ArchiveReader.open_elf(args.input)
+    writer = ArchiveWriter(args.output)
+
+    with reader, writer:
+        for toc_entry in reader.toc:
+            raw_data = reader.extract_raw(toc_entry)
+            # raw_data may or may not be compressed
+
+            writer.write_raw(
+                name=toc_entry.name,
+                typecode=toc_entry.typecode,
+                data=raw_data,
+                compression_flag=toc_entry.compression_flag,
+                uncompressed_length=toc_entry.uncompressed_length,
+            )
+
+        writer.finalize(
+            pyvers=reader.cookie.pyvers,
+            pylib_name=reader.cookie.pylib_name,
+        )
+
+    logging.info(f"New archive written to {args.output}")
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
@@ -365,6 +626,14 @@ def _parse_args() -> argparse.Namespace:
     extract_parser.set_defaults(func=_cmd_extract)
     extract_parser.add_argument("archive", type=Path)
     extract_parser.add_argument("outdir", type=Path)
+
+    recreate_parser = subparsers.add_parser(
+        "recreate",
+        help="Recreate an input archive",
+    )
+    recreate_parser.set_defaults(func=_cmd_recreate)
+    recreate_parser.add_argument("input", type=Path)
+    recreate_parser.add_argument("output", type=Path)
 
     return parser.parse_args()
 

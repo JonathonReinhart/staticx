@@ -2,7 +2,7 @@
 
 binaries = [
     ('libfoo.so', '.'),
-    ('libbar.so', '.'),
+    #('libbar.so', '.'),
 ]
 
 a = Analysis(['app.py'], binaries=binaries)

@@ -115,3 +115,19 @@ def single(
         return default
 
     raise KeyError("No items match key")
+
+
+def align_up(value: int, multiple: int) -> int:
+    return ((value + multiple - 1) // multiple) * multiple
+
+
+def get_env_flag(key: str, default: bool = False) -> bool:
+    value = os.getenv(key)
+    if value is None:
+        return default
+
+    if value in ("true", "1"):
+        return True
+    if value in ("false", "0"):
+        return False
+    raise ValueError(f"Invalid value for boolean flag {key}: {value!r}")

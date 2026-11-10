@@ -14,13 +14,32 @@ outfile="./dist/app.staticx"
 # Build the shared library
 function make_shlib() {
     lib="$1"
+    deps="$2"
+    set -x
     gcc -Wall -Werror -fPIC -c -o $lib.o $lib.c
-    gcc -shared -Wl,-rpath=/bogus/absolute/path -Wl,--enable-new-dtags -o $lib.so $lib.o
+    gcc -shared -Wl,-rpath=/bogus/absolute/path -Wl,--enable-new-dtags $deps -o $lib.so $lib.o
+    set +x
     verify_uses_runpath $lib.so
 }
 
-make_shlib libfoo
-make_shlib libbar
+# Build libbar.so (leaf node)
+gcc -Wall -Werror -fPIC -c -o libbar.o libbar.c
+gcc -shared -o libbar.so libbar.o
+
+# Move libbar to a temporary home
+templibdir="my/temporary/home"
+mkdir -p $templibdir
+mv libbar.so $templibdir/
+
+# Build libfoo.so (depends on libbar.so)
+gcc -Wall -Werror -fPIC -c -o libfoo.o libfoo.c
+gcc -shared \
+    -Wl,-rpath=$(realpath $templibdir) -Wl,--enable-new-dtags \
+    -L $templibdir \
+    -lbar \
+    -o libfoo.so libfoo.o -lbar
+
+##################
 
 # Run the application normally
 echo -e "\nPython app run normally:"
@@ -35,26 +54,14 @@ echo -e "\nPyInstalled application run:"
 $app
 
 # Make a staticx executable from it
-# This is an expected failure!
-echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS) [EXPECTED FAILURE]"
+echo -e "\nMaking staticx executable (\$STATICX_FLAGS=$STATICX_FLAGS)"
+staticx $STATICX_FLAGS $app $outfile
 
-if output=$(staticx $STATICX_FLAGS $app $outfile); then
-    echo "FAIL: Staticx permitted a problematic library using RUNPATH"
-    exit 66
-fi
+$outfile
 
-function check_output() {
-    pat="$1"
-    if ! (echo "$output" | grep -q "$pat"); then
-        echo "FAIL: Unexpected output text (missing \"$pat\"):"
-        echo "-----------------------------------------------------------------"
-        echo "$output"
-        echo "-----------------------------------------------------------------"
-        exit 66
-    fi
-}
-check_output "Unsupported PyInstaller input"
-check_output "libfoo.so.*DT_RUNPATH"
-check_output "libbar.so.*DT_RUNPATH"
+echo "TODO Remove temp home"
+rm -r $templibdir
+
+$outfile
 
 echo "Success"

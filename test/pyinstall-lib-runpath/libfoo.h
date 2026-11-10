@@ -2,5 +2,6 @@
 #define LIBFOO_DOT_H
 
 int foo(void);
+int foobar(void);
 
 #endif /* LIBFOO_DOT_H */
