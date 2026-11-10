@@ -75,8 +75,8 @@ _NO_DEFAULT = _Sentinel()
 def single(
     iterable: Iterable[T],
     key: Callable[[T], bool] | None = None,
-    default: T | None | _Sentinel = _NO_DEFAULT,
-) -> T | None:
+    default: T | _Sentinel = _NO_DEFAULT,
+) -> T:
     """Returns a single item from iterable
 
     Arguments:
