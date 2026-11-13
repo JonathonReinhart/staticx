@@ -269,6 +269,7 @@ def patch_elf(
             args += ["--add-needed", lib]
     args.append(path)
 
+    stat_info = os.stat(path)
     tool_patchelf.run_check(*args)
 
     # There is a bug in patchelf that requires the --force-rpath and
@@ -276,6 +277,7 @@ def patch_elf(
     # https://github.com/NixOS/patchelf/issues/223
     if no_default_lib:
         tool_patchelf.run_check("--no-default-lib", path)
+    os.utime(path, ns=(stat_info.st_atime_ns, stat_info.st_mtime_ns))
 
 
 def remove_rpath(path: str) -> None:

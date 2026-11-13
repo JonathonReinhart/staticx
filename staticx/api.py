@@ -237,7 +237,7 @@ class StaticxGenerator:
 
             tmplib = os.path.join(self.tmpdir, basename(libpath))
             logging.info(f"Copying {libpath} to {tmplib}")
-            shutil.copy(libpath, tmplib)
+            shutil.copy2(libpath, tmplib)
             libpath = tmplib
 
             nonlocal work_on_copy
