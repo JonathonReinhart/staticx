@@ -133,5 +133,10 @@ def test_single_empty_default():
     assert utils.single([], default="ok") == "ok"
 
 
+def test_single_default_none() -> None:
+    data: list[int] = []
+    assert utils.single(data, default=None) is None
+
+
 def test_single_key_none_default():
     assert utils.single([1, 2, 3], key=lambda x: x < 0, default="ok") == "ok"
